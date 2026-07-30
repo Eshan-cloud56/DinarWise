@@ -15,20 +15,10 @@ from sqlalchemy import (
     Numeric,
     String,
     Text,
-    UniqueConstraint,
-    Uuid,
-    func,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base, Timestamped, UUIDPrimaryKey
-
-
-class MemberRole(StrEnum):
-    owner = "owner"
-    admin = "admin"
-    member = "member"
-    viewer = "viewer"
 
 
 class TransactionType(StrEnum):
@@ -45,37 +35,11 @@ class CaptureStatus(StrEnum):
     failed = "failed"
 
 
-class User(UUIDPrimaryKey, Timestamped, Base):
-    __tablename__ = "users"
-
-    email: Mapped[str] = mapped_column(String(320), unique=True, index=True)
-    password_hash: Mapped[str] = mapped_column(String(512))
-    full_name: Mapped[str] = mapped_column(String(120))
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-
-
-class LoginEvent(UUIDPrimaryKey, Base):
-    __tablename__ = "login_events"
-
-    user_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("users.id", ondelete="SET NULL"), index=True
-    )
-    email_attempted: Mapped[str] = mapped_column(String(320))
-    succeeded: Mapped[bool] = mapped_column(Boolean)
-    ip_address: Mapped[str | None] = mapped_column(String(64))
-    user_agent: Mapped[str | None] = mapped_column(String(500))
-    occurred_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
-
-
 class Profile(UUIDPrimaryKey, Timestamped, Base):
     __tablename__ = "profiles"
 
-    auth_user_id: Mapped[uuid.UUID] = mapped_column(
-        Uuid(as_uuid=True),
-        ForeignKey("users.id", ondelete="CASCADE"),
+    local_profile_id: Mapped[str] = mapped_column(
+        String(36),
         unique=True,
         index=True,
     )
@@ -86,32 +50,10 @@ class Profile(UUIDPrimaryKey, Timestamped, Base):
     timezone: Mapped[str] = mapped_column(String(64), default="Asia/Riyadh")
 
 
-class Household(UUIDPrimaryKey, Timestamped, Base):
-    __tablename__ = "households"
-
-    name: Mapped[str] = mapped_column(String(120))
-    currency: Mapped[str] = mapped_column(String(3), default="SAR")
-
-
-class HouseholdMember(UUIDPrimaryKey, Timestamped, Base):
-    __tablename__ = "household_members"
-    __table_args__ = (UniqueConstraint("household_id", "profile_id"),)
-
-    household_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("households.id", ondelete="CASCADE"), index=True
-    )
-    profile_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("profiles.id", ondelete="CASCADE"), index=True
-    )
-    role: Mapped[MemberRole] = mapped_column(Enum(MemberRole), default=MemberRole.member)
-
-
 class Category(UUIDPrimaryKey, Timestamped, Base):
     __tablename__ = "categories"
 
-    household_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("households.id", ondelete="CASCADE"), index=True
-    )
+    local_profile_id: Mapped[str | None] = mapped_column(String(36), index=True)
     code: Mapped[str] = mapped_column(String(50), index=True)
     name_en: Mapped[str] = mapped_column(String(80))
     name_ar: Mapped[str] = mapped_column(String(80))
@@ -121,10 +63,7 @@ class Category(UUIDPrimaryKey, Timestamped, Base):
 class Transaction(UUIDPrimaryKey, Timestamped, Base):
     __tablename__ = "transactions"
 
-    household_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("households.id", ondelete="CASCADE"), index=True
-    )
-    created_by_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("profiles.id"))
+    local_profile_id: Mapped[str] = mapped_column(String(36), index=True)
     category_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("categories.id"))
     category_code: Mapped[str] = mapped_column(String(50), default="other")
     type: Mapped[TransactionType] = mapped_column(Enum(TransactionType))
@@ -140,9 +79,7 @@ class Transaction(UUIDPrimaryKey, Timestamped, Base):
 class Receipt(UUIDPrimaryKey, Timestamped, Base):
     __tablename__ = "receipts"
 
-    household_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("households.id", ondelete="CASCADE"), index=True
-    )
+    local_profile_id: Mapped[str] = mapped_column(String(36), index=True)
     transaction_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("transactions.id", ondelete="SET NULL")
     )
@@ -157,9 +94,7 @@ class Receipt(UUIDPrimaryKey, Timestamped, Base):
 class Budget(UUIDPrimaryKey, Timestamped, Base):
     __tablename__ = "budgets"
 
-    household_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("households.id", ondelete="CASCADE"), index=True
-    )
+    local_profile_id: Mapped[str] = mapped_column(String(36), index=True)
     starts_on: Mapped[date] = mapped_column(Date)
     ends_on: Mapped[date] = mapped_column(Date)
     income_minor: Mapped[int] = mapped_column(BigInteger)
@@ -171,9 +106,7 @@ class Budget(UUIDPrimaryKey, Timestamped, Base):
 class RecurringPayment(UUIDPrimaryKey, Timestamped, Base):
     __tablename__ = "recurring_payments"
 
-    household_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("households.id", ondelete="CASCADE"), index=True
-    )
+    local_profile_id: Mapped[str] = mapped_column(String(36), index=True)
     name: Mapped[str] = mapped_column(String(120))
     amount_minor: Mapped[int] = mapped_column(BigInteger)
     currency: Mapped[str] = mapped_column(String(3))
@@ -185,9 +118,7 @@ class RecurringPayment(UUIDPrimaryKey, Timestamped, Base):
 class BnplPlan(UUIDPrimaryKey, Timestamped, Base):
     __tablename__ = "bnpl_plans"
 
-    household_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("households.id", ondelete="CASCADE"), index=True
-    )
+    local_profile_id: Mapped[str] = mapped_column(String(36), index=True)
     provider: Mapped[str] = mapped_column(String(60))
     merchant_name: Mapped[str] = mapped_column(String(160))
     purchase_amount_minor: Mapped[int] = mapped_column(BigInteger)
@@ -198,9 +129,7 @@ class BnplPlan(UUIDPrimaryKey, Timestamped, Base):
 class BnplInstalment(UUIDPrimaryKey, Timestamped, Base):
     __tablename__ = "bnpl_instalments"
 
-    household_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("households.id", ondelete="CASCADE"), index=True
-    )
+    local_profile_id: Mapped[str] = mapped_column(String(36), index=True)
     plan_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("bnpl_plans.id", ondelete="CASCADE"), index=True
     )

@@ -1,13 +1,10 @@
 import 'package:dio/dio.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-final secureStorageProvider = Provider<FlutterSecureStorage>(
-  (_) => const FlutterSecureStorage(),
-);
-
-final apiClientProvider = Provider<Dio>((ref) {
-  final dio = Dio(
+/// Used only by optional network-dependent AI features.
+/// Core financial records never pass through this client.
+final apiClientProvider = Provider<Dio>((_) {
+  return Dio(
     BaseOptions(
       baseUrl: const String.fromEnvironment(
         'API_BASE_URL',
@@ -18,16 +15,4 @@ final apiClientProvider = Provider<Dio>((ref) {
       contentType: Headers.jsonContentType,
     ),
   );
-  dio.interceptors.add(
-    InterceptorsWrapper(
-      onRequest: (options, handler) async {
-        final token = await ref.read(secureStorageProvider).read(key: 'access_token');
-        if (token != null) {
-          options.headers['Authorization'] = 'Bearer $token';
-        }
-        handler.next(options);
-      },
-    ),
-  );
-  return dio;
 });

@@ -2,7 +2,6 @@ import uuid
 
 from fastapi import APIRouter, HTTPException
 
-from app.api.dependencies import DbDependency, UserDependency, require_household_member
 from app.schemas.capture import CaptureDraft, TextCaptureRequest
 from app.services.normalization import extract_text_draft
 
@@ -11,9 +10,8 @@ router = APIRouter(prefix="/capture", tags=["capture"])
 
 @router.post("/text", response_model=CaptureDraft)
 async def capture_text(
-    request: TextCaptureRequest, user: UserDependency, db: DbDependency
+    request: TextCaptureRequest,
 ) -> CaptureDraft:
-    await require_household_member(request.household_id, user, db)
     try:
         extraction = extract_text_draft(request.text)
     except ValueError as exc:

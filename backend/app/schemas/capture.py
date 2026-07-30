@@ -1,4 +1,3 @@
-import uuid
 from datetime import date
 from decimal import Decimal
 from typing import Literal
@@ -26,7 +25,6 @@ class ExtractedTransaction(BaseModel):
 
 
 class TextCaptureRequest(BaseModel):
-    household_id: uuid.UUID
     text: str = Field(min_length=2, max_length=1000)
     language: Literal["ar", "en"] | None = None
 

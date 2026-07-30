@@ -4,14 +4,10 @@ from app.models.entities import (
     BnplPlan,
     Budget,
     Category,
-    Household,
-    HouseholdMember,
-    LoginEvent,
     Profile,
     Receipt,
     RecurringPayment,
     Transaction,
-    User,
 )
 
 __all__ = [
@@ -20,12 +16,8 @@ __all__ = [
     "BnplPlan",
     "Budget",
     "Category",
-    "Household",
-    "HouseholdMember",
-    "LoginEvent",
     "Profile",
     "Receipt",
     "RecurringPayment",
     "Transaction",
-    "User",
 ]

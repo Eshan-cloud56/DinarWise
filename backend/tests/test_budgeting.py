@@ -1,4 +1,3 @@
-import uuid
 from datetime import date
 
 from app.schemas.budget import SafeToSpendRequest
@@ -8,7 +7,6 @@ from app.services.budgeting import calculate_safe_to_spend
 def test_safe_to_spend_reserves_commitments_and_splits_remaining_days() -> None:
     result = calculate_safe_to_spend(
         SafeToSpendRequest(
-            household_id=uuid.UUID(int=0),
             current_available_minor=200_000,
             upcoming_bills_minor=50_000,
             upcoming_bnpl_minor=20_000,
@@ -27,7 +25,6 @@ def test_safe_to_spend_reserves_commitments_and_splits_remaining_days() -> None:
 def test_safe_to_spend_never_goes_negative() -> None:
     result = calculate_safe_to_spend(
         SafeToSpendRequest(
-            household_id=uuid.UUID(int=0),
             current_available_minor=100,
             upcoming_bills_minor=200,
             upcoming_bnpl_minor=0,

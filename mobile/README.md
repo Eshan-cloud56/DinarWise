@@ -1,17 +1,21 @@
-# dinarwise
+# DinarWise mobile
 
-A new Flutter project.
+Run from this directory:
 
-## Getting Started
+```bash
+flutter pub get
+flutter run
+```
 
-This project is a starting point for a Flutter application.
+The app is offline-first and has no login. On first launch, select English or
+Arabic and accept the Privacy Policy. Use an Android emulator from Android
+Studio's Device Manager or a connected Samsung device selected in VS Code.
 
-A few resources to get you started if this is your first Flutter project:
+Useful checks:
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+```bash
+dart format .
+flutter analyze
+flutter test
+flutter build apk --debug
+```

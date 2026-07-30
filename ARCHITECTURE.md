@@ -1,34 +1,58 @@
 # Architecture decisions
 
-## Trust boundary
+## Local-first trust boundary
 
-Flutter communicates only with FastAPI. Supabase JWTs identify users; every
-household-scoped query must join through `household_members`. Private object
-paths stay in PostgreSQL and clients receive short-lived signed URLs only.
+The Flutter application has no authentication boundary. It creates one stable
+anonymous profile ID and stores it in device preferences. Core financial data
+is stored locally in Drift/SQLite and scoped to that ID. Widgets depend on
+repository interfaces rather than accessing Drift directly.
 
-## Financial correctness
+Only optional AI capture and guidance cross the network boundary. Flutter never
+contains an OpenAI API key. The FastAPI service receives only the minimum input
+needed for an individual AI operation.
 
-All persisted money uses integer minor units (`amount_minor`) to avoid
-floating-point rounding. Safe-to-spend, totals, forecasts, and comparisons are
-calculated in Python. AI receives only sanitized calculated facts when asked to
-explain a weekly summary.
+## Startup resolver
+
+One Riverpod controller loads preferences before GoRouter is created:
+
+1. No locale: language selection.
+2. Locale selected but consent missing or outdated: privacy consent.
+3. Current consent stored: dashboard.
+
+Router redirects apply the same rules to deep links. Onboarding completion uses
+route replacement so Android Back cannot return to completed onboarding.
+
+## Persistence
+
+SharedPreferences stores only:
+
+- selected locale;
+- privacy accepted flag, policy version, and ISO-8601 timestamp;
+- onboarding completion;
+- stable local profile ID.
+
+Drift/SQLite stores transactions, categories, budgets, savings goals and
+contributions, BNPL plans and instalments, recurring payments, and financial
+preferences. Money is persisted in integer minor units.
+
+Income and expense mutations execute inside Drift transactions. Each mutation
+calculates the proposed totals before writing. Expenses that exceed the
+remaining balance and income reductions that would overdraw the balance are
+rejected before any row changes.
+
+## Localization
+
+`app_en.arb` and `app_ar.arb` are the source of all system-generated UI text.
+Flutter's generated localization delegate applies locale directionality
+globally. System category codes are localized at display time; merchant names,
+notes, and custom category names remain exactly as entered.
 
 ## AI capture lifecycle
 
-1. Flutter uploads or sends text to FastAPI.
-2. FastAPI stores private media and queues an extraction job.
-3. The worker asks the AI provider for schema-constrained output.
-4. FastAPI validates and normalizes dates, currencies, Arabic digits, and amount.
-5. Flutter shows confidence-aware review.
-6. Only a user-confirmed request creates a verified transaction.
+1. Flutter sends an explicit AI request to FastAPI when online.
+2. FastAPI validates and normalizes the response.
+3. Flutter displays a review draft.
+4. Only user confirmation writes the transaction to the local database.
 
-Confidence levels are `normal` at 0.85+, `uncertain` at 0.60–0.84, and `manual`
-below 0.60. Confidence changes presentation, never the confirmation requirement.
-
-## Modules
-
-- `mobile`: presentation, device integrations, secure token storage, offline cache
-- `backend/app/api`: HTTP boundary and authorization
-- `backend/app/services`: deterministic domain and capture normalization logic
-- `backend/app/models`: household-scoped PostgreSQL persistence
-- Future worker: receipt/voice processing, reminders, and weekly summaries
+Core manual tracking remains available when the backend or internet is
+unavailable.

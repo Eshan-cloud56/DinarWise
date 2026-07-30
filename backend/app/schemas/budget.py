@@ -1,11 +1,9 @@
-import uuid
 from datetime import date
 
 from pydantic import BaseModel, Field
 
 
 class SafeToSpendRequest(BaseModel):
-    household_id: uuid.UUID
     current_available_minor: int = Field(ge=0)
     upcoming_bills_minor: int = Field(ge=0)
     upcoming_bnpl_minor: int = Field(ge=0)
