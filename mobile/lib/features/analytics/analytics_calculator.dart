@@ -14,7 +14,9 @@ class AnalyticsSummary {
     required this.highestCategoryId,
     required this.categoryExpenses,
     required this.dailyExpenses,
+    required this.weeklyExpenses,
     required this.monthlyExpenses,
+    required this.yearlyExpenses,
   });
 
   final int totalIncomeMinor;
@@ -29,7 +31,9 @@ class AnalyticsSummary {
   final String? highestCategoryId;
   final Map<String, int> categoryExpenses;
   final Map<DateTime, int> dailyExpenses;
+  final Map<DateTime, int> weeklyExpenses;
   final Map<DateTime, int> monthlyExpenses;
+  final Map<DateTime, int> yearlyExpenses;
 }
 
 class AnalyticsCalculator {
@@ -56,14 +60,20 @@ class AnalyticsCalculator {
         expenses.fold<int>(0, (sum, record) => sum + record.amountMinor);
 
     final daily = <DateTime, int>{};
+    final weekly = <DateTime, int>{};
     final monthly = <DateTime, int>{};
+    final yearly = <DateTime, int>{};
     final categories = <String, int>{};
     final merchants = <String, int>{};
     for (final expense in expenses) {
       final day = _dateOnly(expense.transactedAt);
       final month = DateTime(day.year, day.month);
+      final week = day.subtract(Duration(days: day.weekday - 1));
+      final year = DateTime(day.year);
       daily[day] = (daily[day] ?? 0) + expense.amountMinor;
+      weekly[week] = (weekly[week] ?? 0) + expense.amountMinor;
       monthly[month] = (monthly[month] ?? 0) + expense.amountMinor;
+      yearly[year] = (yearly[year] ?? 0) + expense.amountMinor;
       categories[expense.categoryId] =
           (categories[expense.categoryId] ?? 0) + expense.amountMinor;
       final merchant = expense.merchant?.trim();
@@ -108,7 +118,9 @@ class AnalyticsCalculator {
       highestCategoryId: _highestKey(categories),
       categoryExpenses: categories,
       dailyExpenses: daily,
+      weeklyExpenses: weekly,
       monthlyExpenses: monthly,
+      yearlyExpenses: yearly,
     );
   }
 

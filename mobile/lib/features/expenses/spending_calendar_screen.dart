@@ -1,3 +1,4 @@
+import 'package:dinarwise/core/currency/gulf_currency.dart';
 import 'package:dinarwise/core/database/database_provider.dart';
 import 'package:dinarwise/core/preferences/onboarding_controller.dart';
 import 'package:dinarwise/features/categories/data/category_repository.dart';
@@ -90,6 +91,7 @@ class _SpendingCalendarScreenState
   @override
   Widget build(BuildContext context) {
     final categories = ref.watch(categoriesProvider).valueOrNull ?? const [];
+    final currency = ref.watch(selectedCurrencyProvider);
     return Scaffold(
       appBar: AppBar(
         title: Text(context.l10n.spendingCalendar),
@@ -167,6 +169,7 @@ class _SpendingCalendarScreenState
                     showHijri: _showHijri,
                     records: _records,
                     categories: categories,
+                    currency: currency,
                   ),
                 ),
               ],
@@ -213,6 +216,7 @@ class _CalendarGrid extends StatelessWidget {
     required this.showHijri,
     required this.records,
     required this.categories,
+    required this.currency,
   });
 
   final DateTime month;
@@ -220,6 +224,7 @@ class _CalendarGrid extends StatelessWidget {
   final bool showHijri;
   final List<ExpenseRecord> records;
   final List<CategoryRecord> categories;
+  final GulfCurrency currency;
 
   @override
   Widget build(BuildContext context) {
@@ -245,6 +250,7 @@ class _CalendarGrid extends StatelessWidget {
           summary: summary,
           showHijri: showHijri,
           categories: categories,
+          currency: currency,
         );
       },
     );
@@ -257,12 +263,14 @@ class _CalendarDay extends StatelessWidget {
     required this.summary,
     required this.showHijri,
     required this.categories,
+    required this.currency,
   });
 
   final DateTime date;
   final CalendarDaySummary? summary;
   final bool showHijri;
   final List<CategoryRecord> categories;
+  final GulfCurrency currency;
 
   @override
   Widget build(BuildContext context) {
@@ -277,7 +285,11 @@ class _CalendarDay extends StatelessWidget {
           : () => showModalBottomSheet<void>(
                 context: context,
                 showDragHandle: true,
-                builder: (_) => _DayTransactions(date: date, records: records),
+                builder: (_) => _DayTransactions(
+                  date: date,
+                  records: records,
+                  currency: currency,
+                ),
               ),
       borderRadius: BorderRadius.circular(10),
       child: Card(
@@ -298,7 +310,8 @@ class _CalendarDay extends StatelessWidget {
                 const Spacer(),
                 FittedBox(
                   child: Text(
-                    '${net >= 0 ? '+' : ''}${(net / 100).toStringAsFixed(0)}',
+                    '${net >= 0 ? '+' : ''}'
+                    '${currency.formatter(Localizations.localeOf(context).toLanguageTag()).format(currency.toMajor(net))}',
                     style: TextStyle(
                       fontSize: 10,
                       color: net >= 0 ? Colors.green : Colors.red,
@@ -329,10 +342,15 @@ class _CalendarDay extends StatelessWidget {
 }
 
 class _DayTransactions extends StatelessWidget {
-  const _DayTransactions({required this.date, required this.records});
+  const _DayTransactions({
+    required this.date,
+    required this.records,
+    required this.currency,
+  });
 
   final DateTime date;
   final List<ExpenseRecord> records;
+  final GulfCurrency currency;
 
   @override
   Widget build(BuildContext context) => SafeArea(
@@ -360,7 +378,7 @@ class _DayTransactions extends StatelessWidget {
                     subtitle: Text(record.description ?? ''),
                     trailing: Text(
                       '${record.type == 'income' ? '+' : '-'}'
-                      '${(record.amountMinor / 100).toStringAsFixed(2)}',
+                      '${currency.formatter(Localizations.localeOf(context).toLanguageTag()).format(currency.toMajor(record.amountMinor))}',
                     ),
                   );
                 },

@@ -1,19 +1,38 @@
 import 'package:dinarwise/features/categories/category_localization.dart';
+import 'package:dinarwise/core/currency/gulf_currency.dart';
+import 'package:dinarwise/core/preferences/onboarding_controller.dart';
 import 'package:dinarwise/features/capture/offline_ai_notice.dart';
 import 'package:dinarwise/features/expenses/data/expense_providers.dart';
 import 'package:dinarwise/features/expenses/data/expense_repository.dart';
 import 'package:dinarwise/features/expenses/income_actions.dart';
+import 'package:dinarwise/features/planning/data/planning_providers.dart';
 import 'package:dinarwise/l10n/l10n_extension.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 
-class DashboardScreen extends ConsumerWidget {
-  const DashboardScreen({super.key});
+class DashboardScreen extends ConsumerStatefulWidget {
+  const DashboardScreen({this.openIncome = false, super.key});
+
+  final bool openIncome;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends ConsumerState<DashboardScreen> {
+  @override
+  void initState() {
+    super.initState();
+    if (widget.openIncome) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) manageIncome(context, ref);
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final l10n = context.l10n;
     final expenses = ref.watch(recentTransactionsProvider);
     final summary = ref.watch(financialSummaryProvider).valueOrNull ??
@@ -22,12 +41,16 @@ class DashboardScreen extends ConsumerWidget {
           totalExpensesMinor: 0,
         );
     final categories = ref.watch(categoriesProvider).valueOrNull ?? [];
+    final safeToSpend = ref.watch(safeToSpendProvider).valueOrNull;
+    final bnplPlans = ref.watch(bnplDetailsProvider).valueOrNull ?? const [];
+    final recurring =
+        ref.watch(recurringDetailsProvider).valueOrNull ?? const [];
     final categoryById = {for (final item in categories) item.id: item};
-    final currency = NumberFormat.currency(
-      name: 'SAR',
-      symbol: '${l10n.currencySar} ',
-      decimalDigits: 2,
-      locale: Localizations.localeOf(context).toLanguageTag(),
+    final currencySpec = GulfCurrency.fromCode(
+      ref.watch(onboardingControllerProvider).requireValue.currencyCode,
+    );
+    final currency = currencySpec.formatter(
+      Localizations.localeOf(context).toLanguageTag(),
     );
     return Scaffold(
       appBar: AppBar(
@@ -74,8 +97,8 @@ class DashboardScreen extends ConsumerWidget {
                           child: _BannerMetric(
                             icon: Icons.north_east_rounded,
                             label: l10n.totalExpenses,
-                            value: currency
-                                .format(summary.totalExpensesMinor / 100),
+                            value: currency.format(currencySpec
+                                .toMajor(summary.totalExpensesMinor)),
                           ),
                         ),
                         Container(
@@ -91,8 +114,8 @@ class DashboardScreen extends ConsumerWidget {
                           child: _BannerMetric(
                             icon: Icons.south_west_rounded,
                             label: l10n.totalIncome,
-                            value:
-                                currency.format(summary.totalIncomeMinor / 100),
+                            value: currency.format(
+                                currencySpec.toMajor(summary.totalIncomeMinor)),
                           ),
                         ),
                       ],
@@ -116,7 +139,8 @@ class DashboardScreen extends ConsumerWidget {
                     FittedBox(
                       fit: BoxFit.scaleDown,
                       child: Text(
-                        currency.format(summary.remainingBalanceMinor / 100),
+                        currency.format(currencySpec
+                            .toMajor(summary.remainingBalanceMinor)),
                         style: Theme.of(context)
                             .textTheme
                             .displaySmall
@@ -138,6 +162,77 @@ class DashboardScreen extends ConsumerWidget {
                 ),
               ),
             ),
+            if (safeToSpend != null) ...[
+              const SizedBox(height: 12),
+              Card(
+                color: Theme.of(context).colorScheme.secondaryContainer,
+                child: ListTile(
+                  leading: const Icon(Icons.shield_outlined),
+                  title: Text(l10n.safeToSpend),
+                  subtitle: Text(
+                    l10n.daysUntilPayday(safeToSpend.daysUntilPayday),
+                  ),
+                  trailing: Text(
+                    currency
+                        .format(currencySpec.toMajor(safeToSpend.amountMinor)),
+                    style: const TextStyle(fontWeight: FontWeight.w800),
+                  ),
+                  onTap: () => context.push('/planning/budgets'),
+                ),
+              ),
+            ],
+            if (recurring.any((item) => item.nextOccurrence != null) ||
+                bnplPlans.any((item) => item.nextInstalment != null)) ...[
+              const SizedBox(height: 8),
+              if (recurring.any((item) => item.nextOccurrence != null))
+                Card(
+                  child: ListTile(
+                    leading: const Icon(Icons.receipt_long_outlined),
+                    title: Text(l10n.nextBill),
+                    subtitle: Text(
+                      recurring
+                          .firstWhere((item) => item.nextOccurrence != null)
+                          .name,
+                    ),
+                    trailing: Text(
+                      currency.format(
+                        recurring
+                                .firstWhere(
+                                  (item) => item.nextOccurrence != null,
+                                )
+                                .nextOccurrence!
+                                .amountMinor /
+                            100,
+                      ),
+                    ),
+                    onTap: () => context.push('/planning/recurring'),
+                  ),
+                ),
+              if (bnplPlans.any((item) => item.nextInstalment != null))
+                Card(
+                  child: ListTile(
+                    leading: const Icon(Icons.calendar_month_outlined),
+                    title: Text(l10n.nextBnplPayment),
+                    subtitle: Text(
+                      bnplPlans
+                          .firstWhere((item) => item.nextInstalment != null)
+                          .merchant,
+                    ),
+                    trailing: Text(
+                      currency.format(
+                        bnplPlans
+                                .firstWhere(
+                                  (item) => item.nextInstalment != null,
+                                )
+                                .nextInstalment!
+                                .amountMinor /
+                            100,
+                      ),
+                    ),
+                    onTap: () => context.push('/planning/bnpl'),
+                  ),
+                ),
+            ],
             const SizedBox(height: 12),
             FilledButton.tonalIcon(
               key: const ValueKey('dashboardAddIncome'),
@@ -246,7 +341,7 @@ class DashboardScreen extends ConsumerWidget {
                                           ),
                                   ),
                                   trailing: Text(
-                                    '${expense.type == 'income' ? '+' : '-'} ${currency.format(expense.amountMinor / 100)}',
+                                    '${expense.type == 'income' ? '+' : '-'} ${currency.format(currencySpec.toMajor(expense.amountMinor))}',
                                     style: const TextStyle(
                                       fontWeight: FontWeight.w700,
                                     ),

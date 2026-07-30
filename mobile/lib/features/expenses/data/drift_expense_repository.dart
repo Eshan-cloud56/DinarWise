@@ -20,6 +20,8 @@ class DriftExpenseRepository implements ExpenseRepository {
         description: row.description,
         categoryId: row.categoryId,
         transactedAt: row.transactedAt,
+        paymentMethodId: row.paymentMethodId,
+        receiptAttachmentId: row.receiptAttachmentId,
       );
 
   @override
@@ -96,7 +98,8 @@ class DriftExpenseRepository implements ExpenseRepository {
       final parsedAmount = parseLocalizedAmount(search);
       if (parsedAmount != null) {
         searchExpression = searchExpression |
-            transactions.amountMinor.equals((parsedAmount * 100).round());
+            transactions.amountMinor.equals((parsedAmount * 100).round()) |
+            transactions.amountMinor.equals((parsedAmount * 1000).round());
       }
       if (categorySearchIds.isNotEmpty) {
         searchExpression =
@@ -160,6 +163,7 @@ class DriftExpenseRepository implements ExpenseRepository {
       transactedAt: DateTime.now(),
       type: transaction.type,
       currency: transaction.currency,
+      paymentMethodId: transaction.paymentMethodId,
     );
   }
 
@@ -213,7 +217,7 @@ class DriftExpenseRepository implements ExpenseRepository {
   }
 
   @override
-  Future<void> create({
+  Future<String> create({
     required String profileId,
     required int amountMinor,
     required String merchant,
@@ -222,8 +226,10 @@ class DriftExpenseRepository implements ExpenseRepository {
     required DateTime transactedAt,
     String type = 'expense',
     String currency = 'SAR',
+    String? paymentMethodId,
   }) async {
     _validateAmount(amountMinor);
+    final id = const Uuid().v4();
     await _database.transaction(() async {
       final rows = await _profileRows(profileId);
       _validateProposedBalance(
@@ -234,7 +240,7 @@ class DriftExpenseRepository implements ExpenseRepository {
       );
       await _database.into(_database.financialTransactions).insert(
             FinancialTransactionsCompanion.insert(
-              id: const Uuid().v4(),
+              id: id,
               profileId: profileId,
               amountMinor: amountMinor,
               merchant: Value(merchant.trim()),
@@ -244,9 +250,11 @@ class DriftExpenseRepository implements ExpenseRepository {
               transactedAt: transactedAt,
               type: Value(type),
               currency: Value(currency),
+              paymentMethodId: Value(paymentMethodId),
             ),
           );
     });
+    return id;
   }
 
   @override
@@ -280,6 +288,8 @@ class DriftExpenseRepository implements ExpenseRepository {
           description: Value(expense.description?.trim()),
           categoryId: Value(expense.categoryId),
           transactedAt: Value(expense.transactedAt),
+          paymentMethodId: Value(expense.paymentMethodId),
+          receiptAttachmentId: Value(expense.receiptAttachmentId),
           updatedAt: Value(DateTime.now()),
         ),
       );

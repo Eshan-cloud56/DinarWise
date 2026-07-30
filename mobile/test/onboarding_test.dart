@@ -109,6 +109,12 @@ void main() {
     expect(button.onPressed, isNotNull);
     await tester.tap(find.text('Get Started'));
     await tester.pumpAndSettle();
+    expect(find.text('Choose your currency'), findsOneWidget);
+    await tester.tap(find.text('Saudi Riyal'));
+    await tester.pump();
+    await tester.ensureVisible(find.text('Continue'));
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
     expect(find.text('Recent transactions'), findsOneWidget);
     final preferences = await SharedPreferences.getInstance();
     expect(preferences.getBool('privacy_policy_accepted'), isTrue);
@@ -117,6 +123,7 @@ void main() {
       currentPrivacyPolicyVersion,
     );
     expect(preferences.getBool('onboarding_completed'), isTrue);
+    expect(preferences.getString('selected_currency'), 'SAR');
     expect(preferences.getString('privacy_policy_accepted_at'), isNotNull);
     await database.close();
   });
@@ -130,6 +137,7 @@ void main() {
         'privacy_policy_version': currentPrivacyPolicyVersion,
         'privacy_policy_accepted_at': '2026-07-29T00:00:00.000Z',
         'onboarding_completed': true,
+        'selected_currency': 'SAR',
         'local_profile_id': 'stable-test-profile',
       },
     );
@@ -160,6 +168,7 @@ void main() {
         'privacy_policy_accepted': true,
         'privacy_policy_version': '0.9',
         'onboarding_completed': true,
+        'selected_currency': 'SAR',
       },
     );
     expect(find.text('Welcome to DinarWise'), findsOneWidget);
@@ -178,12 +187,13 @@ void main() {
         'privacy_policy_version': currentPrivacyPolicyVersion,
         'privacy_policy_accepted_at': '2026-07-29T00:00:00.000Z',
         'onboarding_completed': true,
+        'selected_currency': 'SAR',
         'local_profile_id': 'stable-test-profile',
       },
     );
     await tester.tap(find.byIcon(Icons.settings_outlined));
     await tester.pumpAndSettle();
-    await tester.tap(find.byType(DropdownButton<String>));
+    await tester.tap(find.byType(DropdownButton<String>).first);
     await tester.pumpAndSettle();
     await tester.tap(find.text('العربية').last);
     await tester.pumpAndSettle();
@@ -204,6 +214,7 @@ void main() {
         'privacy_policy_version': currentPrivacyPolicyVersion,
         'privacy_policy_accepted_at': '2026-07-29T00:00:00.000Z',
         'onboarding_completed': true,
+        'selected_currency': 'SAR',
         'local_profile_id': 'stable-test-profile',
       },
     );
@@ -271,6 +282,7 @@ void main() {
         'privacy_policy_version': currentPrivacyPolicyVersion,
         'privacy_policy_accepted_at': '2026-07-29T00:00:00.000Z',
         'onboarding_completed': true,
+        'selected_currency': 'SAR',
         'local_profile_id': 'stable-test-profile',
       },
     );

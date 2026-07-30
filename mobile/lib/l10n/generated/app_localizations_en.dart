@@ -541,4 +541,608 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get showHijriDates => 'Show Hijri dates';
+
+  @override
+  String get addBudget => 'Add budget';
+
+  @override
+  String get editBudget => 'Edit budget';
+
+  @override
+  String get overallBudget => 'Overall budget';
+
+  @override
+  String get rollover => 'Monthly rollover';
+
+  @override
+  String get noRollover => 'No rollover';
+
+  @override
+  String get carryUnused => 'Carry unused amount';
+
+  @override
+  String get carryUnusedAndOverspending =>
+      'Carry unused amount and overspending';
+
+  @override
+  String get budgetCycle => 'Budget cycle';
+
+  @override
+  String get monthly => 'Monthly';
+
+  @override
+  String get payday => 'Payday';
+
+  @override
+  String get fixedCommitments => 'Fixed commitments';
+
+  @override
+  String get emergencyBuffer => 'Emergency buffer';
+
+  @override
+  String get budgetHistory => 'Budget history';
+
+  @override
+  String get noHistory => 'No history yet';
+
+  @override
+  String get amountSpent => 'Amount spent';
+
+  @override
+  String get amountRemaining => 'Amount remaining';
+
+  @override
+  String get used => 'used';
+
+  @override
+  String get budgetOverspent => 'This budget has been exceeded.';
+
+  @override
+  String budgetWarning(int percent) {
+    return 'You have used $percent% of this budget.';
+  }
+
+  @override
+  String daysUntilPayday(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count days until payday',
+      one: '1 day until payday',
+      zero: 'Payday is today',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get upcomingBills => 'Upcoming bills';
+
+  @override
+  String get upcomingBnpl => 'Upcoming BNPL';
+
+  @override
+  String get plannedSavings => 'Planned savings';
+
+  @override
+  String get remaining => 'Remaining';
+
+  @override
+  String get goalCompleted => 'Goal completed';
+
+  @override
+  String get requiredWeekly => 'Required weekly';
+
+  @override
+  String get requiredMonthly => 'Required monthly';
+
+  @override
+  String get addContribution => 'Add contribution';
+
+  @override
+  String get noContributions => 'No contributions yet';
+
+  @override
+  String get addGoal => 'Add savings goal';
+
+  @override
+  String get editGoal => 'Edit savings goal';
+
+  @override
+  String get goalTemplate => 'Goal template';
+
+  @override
+  String get targetDate => 'Target date';
+
+  @override
+  String get optional => 'Optional';
+
+  @override
+  String get emergencyFund => 'Emergency Fund';
+
+  @override
+  String get travel => 'Travel';
+
+  @override
+  String get wedding => 'Wedding';
+
+  @override
+  String get car => 'Car';
+
+  @override
+  String get education => 'Education';
+
+  @override
+  String get hajj => 'Hajj';
+
+  @override
+  String get umrah => 'Umrah';
+
+  @override
+  String get eid => 'Eid';
+
+  @override
+  String get customGoal => 'Custom Goal';
+
+  @override
+  String get addBnplPlan => 'Add BNPL plan';
+
+  @override
+  String get editBnplPlan => 'Edit BNPL plan';
+
+  @override
+  String get provider => 'Provider';
+
+  @override
+  String get customProvider => 'Custom provider';
+
+  @override
+  String get providerName => 'Provider name';
+
+  @override
+  String get purchaseDate => 'Purchase date';
+
+  @override
+  String get paidAmount => 'Paid amount';
+
+  @override
+  String get totalOutstandingBnpl => 'Total outstanding BNPL';
+
+  @override
+  String get completed => 'Completed';
+
+  @override
+  String get latePayment => 'Payment is late';
+
+  @override
+  String get paymentHistory => 'Payment history';
+
+  @override
+  String get markedPaid => 'Marked as paid';
+
+  @override
+  String get paymentUndone => 'Payment status undone';
+
+  @override
+  String instalmentNumber(int number) {
+    return 'Instalment $number';
+  }
+
+  @override
+  String get instalmentTotalError =>
+      'The instalments must total exactly the purchase amount.';
+
+  @override
+  String get addRecurring => 'Add bill or subscription';
+
+  @override
+  String get editRecurring => 'Edit bill or subscription';
+
+  @override
+  String get recurrence => 'Recurrence';
+
+  @override
+  String get daily => 'Daily';
+
+  @override
+  String get weekly => 'Weekly';
+
+  @override
+  String get yearly => 'Yearly';
+
+  @override
+  String get every => 'Repeat every';
+
+  @override
+  String get isSubscription => 'This is a subscription';
+
+  @override
+  String get startDate => 'Start date';
+
+  @override
+  String get endDate => 'End date';
+
+  @override
+  String get maxOccurrences => 'Number of occurrences (optional)';
+
+  @override
+  String get lifetimePaid => 'Lifetime amount paid';
+
+  @override
+  String get monthlyEquivalent => 'Monthly equivalent';
+
+  @override
+  String get paid => 'Paid';
+
+  @override
+  String get upcoming => 'Upcoming';
+
+  @override
+  String get markAsPaid => 'Mark as paid';
+
+  @override
+  String get editOneOccurrence => 'Edit this occurrence';
+
+  @override
+  String get stopRecurring => 'Stop recurring rule';
+
+  @override
+  String get ended => 'Ended';
+
+  @override
+  String get nextBill => 'Next bill or subscription';
+
+  @override
+  String get nextBnplPayment => 'Next BNPL payment';
+
+  @override
+  String get incomeVsExpense => 'Income versus expenses';
+
+  @override
+  String get spendingCharts => 'Spending charts';
+
+  @override
+  String get paymentMethod => 'Payment method';
+
+  @override
+  String get paymentMethods => 'Payment methods';
+
+  @override
+  String get allPaymentMethods => 'All payment methods';
+
+  @override
+  String get cash => 'Cash';
+
+  @override
+  String get debitCard => 'Debit Card';
+
+  @override
+  String get creditCard => 'Credit Card';
+
+  @override
+  String get bankTransfer => 'Bank Transfer';
+
+  @override
+  String get paymentMethodDuplicate =>
+      'A payment method with this name already exists.';
+
+  @override
+  String get reassignPaymentMethod => 'Move transactions before deleting';
+
+  @override
+  String get reassignAndDelete => 'Move and delete';
+
+  @override
+  String usageCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Used $count times',
+      one: 'Used once',
+      zero: 'Not used',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get categoryAppearance => 'Icon and color';
+
+  @override
+  String get sortCategories => 'Category ordering';
+
+  @override
+  String get mostUsed => 'Most used';
+
+  @override
+  String get recentlyUsed => 'Recently used';
+
+  @override
+  String get alphabetical => 'Alphabetical';
+
+  @override
+  String get reassignCategory => 'Move related records before deleting';
+
+  @override
+  String get defaultPaymentMethod => 'Default payment method';
+
+  @override
+  String get attachReceipt => 'Attach receipt';
+
+  @override
+  String get takeReceiptPhoto => 'Take receipt photo';
+
+  @override
+  String get chooseReceiptPhoto => 'Choose from gallery';
+
+  @override
+  String get receiptAttached => 'Receipt attached';
+
+  @override
+  String get tapToView => 'Tap to view';
+
+  @override
+  String get removeReceipt => 'Remove receipt';
+
+  @override
+  String get receiptPickError =>
+      'The receipt image could not be opened. Please try another image.';
+
+  @override
+  String get receiptStorage => 'Receipt storage';
+
+  @override
+  String get storageUsed => 'Storage used';
+
+  @override
+  String get clearAllReceipts => 'Clear all receipt images';
+
+  @override
+  String get clearAllReceiptsMessage =>
+      'This permanently removes all saved receipt images. Transactions will be kept.';
+
+  @override
+  String get noReceipts => 'No receipt images saved';
+
+  @override
+  String get enableNotifications => 'Enable local reminders';
+
+  @override
+  String get notificationPermissionHint =>
+      'Bills, subscriptions, BNPL, budgets and goals';
+
+  @override
+  String get notificationsEnabled => 'Local reminders are enabled.';
+
+  @override
+  String get notificationsDenied => 'Notification permission was not granted.';
+
+  @override
+  String get backupAndExport => 'Backup, import and export';
+
+  @override
+  String get exportCsv => 'Export transactions as CSV';
+
+  @override
+  String get importCsv => 'Import transactions from CSV';
+
+  @override
+  String get monthlyPdf => 'Share monthly PDF report';
+
+  @override
+  String get encryptedBackup => 'Create encrypted backup';
+
+  @override
+  String get restoreBackup => 'Restore encrypted backup';
+
+  @override
+  String get backupPassword => 'Backup password';
+
+  @override
+  String get minimumSixCharacters => 'At least 6 characters';
+
+  @override
+  String get restore => 'Restore';
+
+  @override
+  String get continueLabel => 'Continue';
+
+  @override
+  String get operationFailed => 'The operation could not be completed';
+
+  @override
+  String get importPreview => 'Import preview';
+
+  @override
+  String get importLabel => 'Import';
+
+  @override
+  String importPreviewCounts(int valid, int invalid, int duplicates) {
+    return '$valid valid, $invalid invalid, $duplicates duplicates';
+  }
+
+  @override
+  String get restoreReplacesData =>
+      'Restoring replaces all current local financial data. If validation fails, your existing data will remain unchanged.';
+
+  @override
+  String get applicationSecurity => 'Application security';
+
+  @override
+  String get applicationPin => 'Application PIN';
+
+  @override
+  String get pinStoredSecurely =>
+      'Your PIN is salted and securely hashed; it is never stored as plain text.';
+
+  @override
+  String get createPin => 'Create PIN';
+
+  @override
+  String get verifyCurrentPin => 'Verify current PIN';
+
+  @override
+  String get pinRequirements => 'Use a numeric PIN containing 4 to 8 digits.';
+
+  @override
+  String get changePin => 'Change PIN';
+
+  @override
+  String get useBiometrics => 'Use fingerprint or face';
+
+  @override
+  String get fingerprintOrFace =>
+      'Use Android biometric authentication when supported';
+
+  @override
+  String get biometricsUnavailable =>
+      'Biometric authentication is not available on this device.';
+
+  @override
+  String get lockInBackground => 'Lock when app is in the background';
+
+  @override
+  String get autoLockTimeout => 'Automatic-lock timeout';
+
+  @override
+  String get immediately => 'Immediately';
+
+  @override
+  String get seconds30 => '30 seconds';
+
+  @override
+  String get minute1 => '1 minute';
+
+  @override
+  String get minutes5 => '5 minutes';
+
+  @override
+  String get appLocked => 'DinarWise is locked';
+
+  @override
+  String get incorrectPin => 'Incorrect PIN';
+
+  @override
+  String get unlockDinarWise => 'Unlock DinarWise';
+
+  @override
+  String get unlock => 'Unlock';
+
+  @override
+  String get offlineCalculators => 'Offline financial calculators';
+
+  @override
+  String get calculator => 'Calculator';
+
+  @override
+  String get budgetCalculator => '50/30/20 budget calculator';
+
+  @override
+  String get emergencyCalculator => 'Emergency-fund calculator';
+
+  @override
+  String get travelCalculator => 'Travel-budget calculator';
+
+  @override
+  String get debtCalculator => 'Debt-payoff calculator';
+
+  @override
+  String get goalCalculator => 'Savings-goal calculator';
+
+  @override
+  String get compoundCalculator => 'Compound-interest calculator';
+
+  @override
+  String get needs => 'Needs (50%)';
+
+  @override
+  String get wants => 'Wants (30%)';
+
+  @override
+  String get savings => 'Savings (20%)';
+
+  @override
+  String get monthlyEssentials => 'Monthly essential costs';
+
+  @override
+  String get monthlyIncome => 'Monthly income';
+
+  @override
+  String get currentSaved => 'Current saved amount';
+
+  @override
+  String get months => 'Months';
+
+  @override
+  String get transport => 'Transport';
+
+  @override
+  String get lodging => 'Lodging';
+
+  @override
+  String get dailyCost => 'Daily cost';
+
+  @override
+  String get days => 'Days';
+
+  @override
+  String get bufferPercent => 'Buffer (%)';
+
+  @override
+  String get debtBalance => 'Debt balance';
+
+  @override
+  String get annualRate => 'Annual interest rate (%)';
+
+  @override
+  String get monthlyPayment => 'Monthly payment';
+
+  @override
+  String get paymentTooLow => 'The payment is too low to repay this debt.';
+
+  @override
+  String monthCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count months',
+      one: '1 month',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get startingAmount => 'Starting amount';
+
+  @override
+  String get years => 'Years';
+
+  @override
+  String get monthlyContribution => 'Monthly contribution';
+
+  @override
+  String get calculate => 'Calculate';
+
+  @override
+  String get result => 'Result';
+
+  @override
+  String get calculatorDoesNotSave =>
+      'Calculator results do not change your financial records.';
+
+  @override
+  String get chooseCurrency => 'Choose your currency';
+
+  @override
+  String get chooseCurrencyDescription =>
+      'DinarWise will use this currency for your income, expenses, budgets and reports.';
+
+  @override
+  String decimalPlaces(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count decimal places',
+      one: '1 decimal place',
+    );
+    return '$_temp0';
+  }
 }

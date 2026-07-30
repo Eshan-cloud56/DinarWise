@@ -15,17 +15,29 @@ class IncomeDialogResult {
 Future<IncomeDialogResult?> showIncomeDialog(
   BuildContext context, {
   double? initialAmount,
+  String currencyCode = 'SAR',
+  int decimalDigits = 2,
 }) {
   return showDialog<IncomeDialogResult>(
     context: context,
-    builder: (_) => _IncomeDialog(initialAmount: initialAmount),
+    builder: (_) => _IncomeDialog(
+      initialAmount: initialAmount,
+      currencyCode: currencyCode,
+      decimalDigits: decimalDigits,
+    ),
   );
 }
 
 class _IncomeDialog extends StatefulWidget {
-  const _IncomeDialog({this.initialAmount});
+  const _IncomeDialog({
+    this.initialAmount,
+    required this.currencyCode,
+    required this.decimalDigits,
+  });
 
   final double? initialAmount;
+  final String currencyCode;
+  final int decimalDigits;
 
   @override
   State<_IncomeDialog> createState() => _IncomeDialogState();
@@ -41,7 +53,7 @@ class _IncomeDialogState extends State<_IncomeDialog> {
   void initState() {
     super.initState();
     _controller = TextEditingController(
-      text: widget.initialAmount?.toStringAsFixed(2) ?? '',
+      text: widget.initialAmount?.toStringAsFixed(widget.decimalDigits) ?? '',
     );
   }
 
@@ -66,7 +78,7 @@ class _IncomeDialogState extends State<_IncomeDialog> {
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           decoration: InputDecoration(
             labelText: l10n.incomeAmount,
-            prefixText: '${l10n.currencySar} ',
+            prefixText: '${widget.currencyCode} ',
             prefixIcon: const Icon(Icons.payments_outlined),
           ),
           validator: (value) {

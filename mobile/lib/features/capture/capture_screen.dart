@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:dinarwise/core/currency/gulf_currency.dart';
 import 'package:dinarwise/core/preferences/onboarding_controller.dart';
 import 'package:dinarwise/features/categories/category_localization.dart';
 import 'package:dinarwise/features/categories/custom_category_dialog.dart';
@@ -5,15 +8,27 @@ import 'package:dinarwise/features/expenses/amount_parser.dart';
 import 'package:dinarwise/features/expenses/data/expense_providers.dart';
 import 'package:dinarwise/features/expenses/data/expense_repository.dart';
 import 'package:dinarwise/l10n/l10n_extension.dart';
+import 'package:dinarwise/features/payment_methods/payment_method_providers.dart';
+import 'package:dinarwise/features/receipts/receipt_providers.dart';
+import 'package:dinarwise/features/receipts/receipt_viewer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:image_picker/image_picker.dart';
 
-class CaptureScreen extends ConsumerStatefulWidget {
-  const CaptureScreen({this.expense, super.key});
+class CaptureLaunchArgs {
+  const CaptureLaunchArgs({this.expense, this.sharedReceiptPath});
 
   final ExpenseRecord? expense;
+  final String? sharedReceiptPath;
+}
+
+class CaptureScreen extends ConsumerStatefulWidget {
+  const CaptureScreen({this.expense, this.sharedReceiptPath, super.key});
+
+  final ExpenseRecord? expense;
+  final String? sharedReceiptPath;
 
   @override
   ConsumerState<CaptureScreen> createState() => _CaptureScreenState();
@@ -26,9 +41,13 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
   late final TextEditingController _amountController;
   late final TextEditingController _notesController;
   String? _categoryId;
+  String? _paymentMethodId;
   late DateTime _date;
   bool _saving = false;
   String? _error;
+  late final GulfCurrency _currency;
+  String? _pendingReceiptPath;
+  String? _storedReceiptPath;
 
   bool get _editing => widget.expense != null;
 
@@ -50,14 +69,30 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
   void initState() {
     super.initState();
     final expense = widget.expense;
+    _currency = GulfCurrency.fromCode(
+      ref.read(onboardingControllerProvider).requireValue.currencyCode,
+    );
     _merchantController = TextEditingController(text: expense?.merchant);
     _amountController = TextEditingController(
-      text:
-          expense == null ? '' : (expense.amountMinor / 100).toStringAsFixed(2),
+      text: expense == null
+          ? ''
+          : _currency
+              .toMajor(expense.amountMinor)
+              .toStringAsFixed(_currency.decimalDigits),
     );
     _notesController = TextEditingController(text: expense?.description);
     _categoryId = expense?.categoryId;
+    _paymentMethodId = expense?.paymentMethodId;
     _date = expense?.transactedAt ?? DateTime.now();
+    _pendingReceiptPath = widget.sharedReceiptPath;
+    if (expense != null) {
+      Future<void>(() async {
+        final receipt = await ref
+            .read(receiptRepositoryProvider)
+            .forTransaction(expense.id);
+        if (mounted) setState(() => _storedReceiptPath = receipt?.filePath);
+      });
+    }
   }
 
   @override
@@ -78,30 +113,43 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
       final parsedAmount = parseLocalizedAmount(_amountController.text)!;
       final repository = ref.read(expenseRepositoryProvider);
       final onboarding = await ref.read(onboardingControllerProvider.future);
+      late final String transactionId;
       if (_editing) {
+        transactionId = widget.expense!.id;
         await repository.update(
           ExpenseRecord(
             id: widget.expense!.id,
             profileId: onboarding.localProfileId,
             type: 'expense',
-            amountMinor: (parsedAmount * 100).round(),
-            currency: widget.expense!.currency,
+            amountMinor: _currency.toMinor(parsedAmount),
+            currency: _currency.code,
             merchant: _merchantController.text.trim(),
             description: _notesController.text.trim(),
             categoryId: _categoryId!,
             transactedAt: _date,
+            paymentMethodId: _paymentMethodId,
+            receiptAttachmentId: widget.expense!.receiptAttachmentId,
           ),
         );
       } else {
-        await repository.create(
+        transactionId = await repository.create(
           profileId: onboarding.localProfileId,
-          amountMinor: (parsedAmount * 100).round(),
+          amountMinor: _currency.toMinor(parsedAmount),
           merchant: _merchantController.text,
           description: _notesController.text,
           categoryId: _categoryId!,
           transactedAt: _date,
           type: 'expense',
+          paymentMethodId: _paymentMethodId,
+          currency: _currency.code,
         );
+      }
+      if (_pendingReceiptPath != null) {
+        await ref.read(receiptRepositoryProvider).attach(
+              profileId: onboarding.localProfileId,
+              transactionId: transactionId,
+              sourcePath: _pendingReceiptPath!,
+            );
       }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -123,6 +171,61 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
         });
       }
     }
+  }
+
+  Future<void> _pickReceipt(ImageSource source) async {
+    try {
+      final picked = await ImagePicker().pickImage(source: source);
+      if (picked != null && mounted) {
+        setState(() => _pendingReceiptPath = picked.path);
+      }
+    } catch (_) {
+      if (mounted) setState(() => _error = context.l10n.receiptPickError);
+    }
+  }
+
+  Future<void> _removeReceipt() async {
+    if (_editing && _storedReceiptPath != null) {
+      await ref
+          .read(receiptRepositoryProvider)
+          .removeForTransaction(widget.expense!.id);
+    }
+    if (mounted) {
+      setState(() {
+        _pendingReceiptPath = null;
+        _storedReceiptPath = null;
+      });
+      ref.invalidate(receiptStorageProvider);
+    }
+  }
+
+  void _showReceiptSource() {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_camera_outlined),
+              title: Text(context.l10n.takeReceiptPhoto),
+              onTap: () {
+                Navigator.pop(context);
+                _pickReceipt(ImageSource.camera);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: Text(context.l10n.chooseReceiptPhoto),
+              onTap: () {
+                Navigator.pop(context);
+                _pickReceipt(ImageSource.gallery);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _delete() async {
@@ -198,6 +301,45 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
                   (value?.trim().isEmpty ?? true) ? l10n.enterMerchant : null,
             ),
             const SizedBox(height: 14),
+            Consumer(
+              builder: (context, ref, _) {
+                final methods = ref.watch(paymentMethodsProvider);
+                return methods.when(
+                  loading: () => const LinearProgressIndicator(),
+                  error: (_, __) => const SizedBox.shrink(),
+                  data: (items) {
+                    _paymentMethodId ??= items
+                        .where((method) => method.isDefault)
+                        .firstOrNull
+                        ?.id;
+                    return DropdownButtonFormField<String>(
+                      initialValue:
+                          items.any((item) => item.id == _paymentMethodId)
+                              ? _paymentMethodId
+                              : null,
+                      decoration: InputDecoration(
+                        labelText: l10n.paymentMethod,
+                        prefixIcon: const Icon(Icons.account_balance_wallet),
+                      ),
+                      items: items
+                          .map(
+                            (method) => DropdownMenuItem(
+                              value: method.id,
+                              child: Text(
+                                _paymentMethodLabel(
+                                    context, method.systemCode, method.name),
+                              ),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (value) =>
+                          setState(() => _paymentMethodId = value),
+                    );
+                  },
+                );
+              },
+            ),
+            const SizedBox(height: 14),
             TextFormField(
               controller: _amountController,
               keyboardType:
@@ -205,7 +347,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
               textInputAction: TextInputAction.next,
               decoration: InputDecoration(
                 labelText: l10n.amount,
-                prefixText: '${l10n.currencySar} ',
+                prefixText: '${_currency.code} ',
                 prefixIcon: const Icon(Icons.payments_outlined),
               ),
               validator: (value) {
@@ -290,6 +432,12 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
                 if (selected != null) setState(() => _date = selected);
               },
             ),
+            const SizedBox(height: 14),
+            _ReceiptAttachmentCard(
+              filePath: _pendingReceiptPath ?? _storedReceiptPath,
+              onAdd: _showReceiptSource,
+              onRemove: _removeReceipt,
+            ),
             if (_error != null) ...[
               const SizedBox(height: 14),
               Text(
@@ -314,6 +462,84 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+String _paymentMethodLabel(
+  BuildContext context,
+  String? code,
+  String fallback,
+) =>
+    switch (code) {
+      'cash' => context.l10n.cash,
+      'debit_card' => context.l10n.debitCard,
+      'credit_card' => context.l10n.creditCard,
+      'bank_transfer' => context.l10n.bankTransfer,
+      'mada' => 'Mada',
+      'stc_pay' => 'STC Pay',
+      'google_pay' => 'Google Pay',
+      'tabby' => 'Tabby',
+      'tamara' => 'Tamara',
+      'other' => context.l10n.other,
+      _ => fallback,
+    };
+
+class _ReceiptAttachmentCard extends StatelessWidget {
+  const _ReceiptAttachmentCard({
+    required this.filePath,
+    required this.onAdd,
+    required this.onRemove,
+  });
+
+  final String? filePath;
+  final VoidCallback onAdd;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final path = filePath;
+    if (path == null) {
+      return OutlinedButton.icon(
+        onPressed: onAdd,
+        icon: const Icon(Icons.receipt_long_outlined),
+        label: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Text(context.l10n.attachReceipt),
+        ),
+      );
+    }
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: Row(
+        children: [
+          InkWell(
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => ReceiptViewer(filePath: path),
+              ),
+            ),
+            child: Image.file(
+              File(path),
+              width: 96,
+              height: 96,
+              fit: BoxFit.cover,
+            ),
+          ),
+          Expanded(
+            child: ListTile(
+              title: Text(context.l10n.receiptAttached),
+              subtitle: Text(context.l10n.tapToView),
+              onTap: onAdd,
+            ),
+          ),
+          IconButton(
+            tooltip: context.l10n.removeReceipt,
+            onPressed: onRemove,
+            icon: const Icon(Icons.delete_outline),
+          ),
+        ],
       ),
     );
   }

@@ -8,6 +8,7 @@ const _privacyVersionKey = 'privacy_policy_version';
 const _privacyAcceptedAtKey = 'privacy_policy_accepted_at';
 const _onboardingCompletedKey = 'onboarding_completed';
 const _localProfileIdKey = 'local_profile_id';
+const _selectedCurrencyKey = 'selected_currency';
 
 final sharedPreferencesProvider = Provider<SharedPreferences>(
   (_) => throw UnimplementedError('SharedPreferences must be initialized'),
@@ -30,8 +31,11 @@ class AppPreferences {
   bool get onboardingCompleted =>
       _preferences.getBool(_onboardingCompletedKey) ?? false;
 
+  String? get localProfileId => _preferences.getString(_localProfileIdKey);
+  String? get selectedCurrency => _preferences.getString(_selectedCurrencyKey);
+
   Future<String> getOrCreateLocalProfileId() async {
-    final existing = _preferences.getString(_localProfileIdKey);
+    final existing = localProfileId;
     if (existing != null && existing.isNotEmpty) return existing;
     final created = const Uuid().v4();
     await _preferences.setString(_localProfileIdKey, created);
@@ -40,6 +44,11 @@ class AppPreferences {
 
   Future<void> setLanguage(String languageCode) =>
       _preferences.setString(_selectedLanguageKey, languageCode);
+
+  Future<void> setCurrency(String currencyCode) async {
+    await _preferences.setString(_selectedCurrencyKey, currencyCode);
+    await _preferences.setBool(_onboardingCompletedKey, true);
+  }
 
   Future<void> acceptPrivacyPolicy({
     required String version,
@@ -51,7 +60,7 @@ class AppPreferences {
       _privacyAcceptedAtKey,
       acceptedAt.toUtc().toIso8601String(),
     );
-    await _preferences.setBool(_onboardingCompletedKey, true);
+    await _preferences.setBool(_onboardingCompletedKey, false);
   }
 
   Future<void> clearOnboardingAndPreferences() async {

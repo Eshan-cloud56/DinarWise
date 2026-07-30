@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:dinarwise/core/database/database_provider.dart';
 import 'package:dinarwise/core/preferences/onboarding_controller.dart';
 import 'package:dinarwise/features/categories/category_localization.dart';
+import 'package:dinarwise/core/currency/gulf_currency.dart';
 import 'package:dinarwise/features/categories/data/category_repository.dart';
 import 'package:dinarwise/features/expenses/data/expense_providers.dart';
 import 'package:dinarwise/features/expenses/data/expense_repository.dart';
@@ -10,13 +11,17 @@ import 'package:dinarwise/features/expenses/data/history_filter.dart';
 import 'package:dinarwise/features/expenses/data/history_preferences_repository.dart';
 import 'package:dinarwise/features/expenses/income_actions.dart';
 import 'package:dinarwise/l10n/l10n_extension.dart';
+import 'package:dinarwise/features/payment_methods/payment_method_providers.dart';
+import 'package:dinarwise/features/payment_methods/payment_method_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 class HistoryScreen extends ConsumerStatefulWidget {
-  const HistoryScreen({super.key});
+  const HistoryScreen({this.initialCategoryId, super.key});
+
+  final String? initialCategoryId;
 
   @override
   ConsumerState<HistoryScreen> createState() => _HistoryScreenState();
@@ -57,7 +62,9 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     final saved = await preferences.load(onboarding.localProfileId);
     if (!mounted) return;
     _profileId = onboarding.localProfileId;
-    _filter = saved;
+    _filter = widget.initialCategoryId == null
+        ? saved
+        : saved.copyWith(categoryId: widget.initialCategoryId);
     _searchController.text = saved.search;
     setState(() => _initializing = false);
     await _load(reset: true);
@@ -197,11 +204,13 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final categories = ref.watch(categoriesProvider).valueOrNull ?? const [];
-    final currency = NumberFormat.currency(
-      name: 'SAR',
-      symbol: '${l10n.currencySar} ',
-      decimalDigits: 2,
-      locale: Localizations.localeOf(context).toLanguageTag(),
+    final paymentMethods =
+        ref.watch(paymentMethodsProvider).valueOrNull ?? const [];
+    final currencySpec = GulfCurrency.fromCode(
+      ref.watch(onboardingControllerProvider).requireValue.currencyCode,
+    );
+    final currency = currencySpec.formatter(
+      Localizations.localeOf(context).toLanguageTag(),
     );
     return Scaffold(
       appBar: AppBar(
@@ -225,6 +234,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                     child: _FilterPanel(
                       filter: _filter,
                       categories: categories,
+                      paymentMethods: paymentMethods,
                       searchController: _searchController,
                       onSearchChanged: _searchChanged,
                       onTypeChanged: (type) =>
@@ -233,6 +243,12 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                         _filter.copyWith(
                           categoryId: id,
                           clearCategory: id == null,
+                        ),
+                      ),
+                      onPaymentMethodChanged: (id) => _apply(
+                        _filter.copyWith(
+                          paymentMethodId: id,
+                          clearPaymentMethod: id == null,
                         ),
                       ),
                       onSortChanged: (sort) =>
@@ -250,7 +266,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                       child: Center(child: Text(l10n.noMatchingTransactions)),
                     )
                   else
-                    ..._groupSlivers(categories, currency),
+                    ..._groupSlivers(categories, currency, currencySpec),
                   if (_loading)
                     const SliverToBoxAdapter(
                       child: Padding(
@@ -268,6 +284,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   List<Widget> _groupSlivers(
     List<CategoryRecord> categories,
     NumberFormat currency,
+    GulfCurrency currencySpec,
   ) {
     final categoryById = {
       for (final category in categories) category.id: category
@@ -288,6 +305,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
             date: entry.key,
             items: entry.value,
             currency: currency,
+            currencySpec: currencySpec,
           ),
         ),
         SliverList.builder(
@@ -315,16 +333,15 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                             : context.l10n.expense,
                   ),
                   subtitle: Text(
-                    category == null
-                        ? context.l10n.other
-                        : localizedCategoryName(context.l10n, category),
+                    '${category == null ? context.l10n.other : localizedCategoryName(context.l10n, category)}'
+                    '${item.receiptAttachmentId == null ? '' : '  •  📎'}',
                   ),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
                         '${item.type == 'income' ? '+' : '-'}'
-                        '${currency.format(item.amountMinor / 100)}',
+                        '${currency.format(currencySpec.toMajor(item.amountMinor))}',
                         style: const TextStyle(fontWeight: FontWeight.w700),
                       ),
                       PopupMenuButton<String>(
@@ -359,10 +376,12 @@ class _FilterPanel extends StatelessWidget {
   const _FilterPanel({
     required this.filter,
     required this.categories,
+    required this.paymentMethods,
     required this.searchController,
     required this.onSearchChanged,
     required this.onTypeChanged,
     required this.onCategoryChanged,
+    required this.onPaymentMethodChanged,
     required this.onSortChanged,
     required this.onChooseDates,
     required this.onClear,
@@ -370,10 +389,12 @@ class _FilterPanel extends StatelessWidget {
 
   final TransactionHistoryFilter filter;
   final List<CategoryRecord> categories;
+  final List<PaymentMethodDetails> paymentMethods;
   final TextEditingController searchController;
   final ValueChanged<String> onSearchChanged;
   final ValueChanged<String> onTypeChanged;
   final ValueChanged<String?> onCategoryChanged;
+  final ValueChanged<String?> onPaymentMethodChanged;
   final ValueChanged<TransactionHistorySort> onSortChanged;
   final VoidCallback onChooseDates;
   final VoidCallback onClear;
@@ -456,6 +477,25 @@ class _FilterPanel extends StatelessWidget {
               ),
             ],
           ),
+          const SizedBox(height: 10),
+          DropdownButtonFormField<String>(
+            initialValue: filter.paymentMethodId ?? '',
+            decoration: InputDecoration(labelText: l10n.paymentMethod),
+            items: [
+              DropdownMenuItem(
+                value: '',
+                child: Text(l10n.allPaymentMethods),
+              ),
+              ...paymentMethods.map(
+                (method) => DropdownMenuItem(
+                  value: method.id,
+                  child: Text(method.name.replaceAll('_', ' ')),
+                ),
+              ),
+            ],
+            onChanged: (value) =>
+                onPaymentMethodChanged(value == '' ? null : value),
+          ),
           const SizedBox(height: 4),
           Row(
             children: [
@@ -487,11 +527,13 @@ class _DailyHeader extends StatelessWidget {
     required this.date,
     required this.items,
     required this.currency,
+    required this.currencySpec,
   });
 
   final DateTime date;
   final List<ExpenseRecord> items;
   final NumberFormat currency;
+  final GulfCurrency currencySpec;
 
   @override
   Widget build(BuildContext context) {
@@ -519,15 +561,15 @@ class _DailyHeader extends StatelessWidget {
             spacing: 12,
             children: [
               Text(
-                '${context.l10n.dailyIncome}: ${currency.format(income / 100)}',
+                '${context.l10n.dailyIncome}: ${currency.format(currencySpec.toMajor(income))}',
               ),
               Text(
                 '${context.l10n.dailyExpense}: '
-                '${currency.format(expenses / 100)}',
+                '${currency.format(currencySpec.toMajor(expenses))}',
               ),
               Text(
                 '${context.l10n.dailyNet}: '
-                '${currency.format((income - expenses) / 100)}',
+                '${currency.format(currencySpec.toMajor(income - expenses))}',
               ),
             ],
           ),

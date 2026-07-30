@@ -1,10 +1,12 @@
 import 'package:dinarwise/features/analytics/analytics_calculator.dart';
+import 'package:dinarwise/core/currency/gulf_currency.dart';
 import 'package:dinarwise/features/categories/category_localization.dart';
 import 'package:dinarwise/features/categories/data/category_repository.dart';
 import 'package:dinarwise/features/expenses/data/expense_providers.dart';
 import 'package:dinarwise/l10n/l10n_extension.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 class AnalyticsScreen extends ConsumerStatefulWidget {
@@ -17,6 +19,7 @@ class AnalyticsScreen extends ConsumerStatefulWidget {
 class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
   DateTime? _from;
   DateTime? _to;
+  String _chartPeriod = 'monthly';
 
   Future<void> _chooseRange() async {
     final now = DateTime.now();
@@ -40,11 +43,9 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
     final l10n = context.l10n;
     final records = ref.watch(expensesProvider);
     final categories = ref.watch(categoriesProvider).valueOrNull ?? const [];
-    final currency = NumberFormat.currency(
-      name: 'SAR',
-      symbol: '${l10n.currencySar} ',
-      locale: Localizations.localeOf(context).toLanguageTag(),
-    );
+    final currency = ref
+        .watch(selectedCurrencyProvider)
+        .formatter(Localizations.localeOf(context).toLanguageTag());
     return Scaffold(
       appBar: AppBar(title: Text(l10n.analytics)),
       body: records.when(
@@ -135,13 +136,45 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
               ),
               const SizedBox(height: 12),
               Text(
-                l10n.monthlySpendingTrend,
+                l10n.incomeVsExpense,
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 8),
-              _BarChart(
-                values: summary.monthlyExpenses,
+              _IncomeExpenseChart(
+                income: summary.totalIncomeMinor,
+                expense: summary.totalExpenseMinor,
                 currency: currency,
+              ),
+              const SizedBox(height: 18),
+              Text(
+                l10n.spendingCharts,
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 8),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: SegmentedButton<String>(
+                  segments: [
+                    ButtonSegment(value: 'daily', label: Text(l10n.daily)),
+                    ButtonSegment(value: 'weekly', label: Text(l10n.weekly)),
+                    ButtonSegment(value: 'monthly', label: Text(l10n.monthly)),
+                    ButtonSegment(value: 'yearly', label: Text(l10n.yearly)),
+                  ],
+                  selected: {_chartPeriod},
+                  onSelectionChanged: (value) =>
+                      setState(() => _chartPeriod = value.first),
+                ),
+              ),
+              const SizedBox(height: 8),
+              _BarChart(
+                values: switch (_chartPeriod) {
+                  'daily' => summary.dailyExpenses,
+                  'weekly' => summary.weeklyExpenses,
+                  'yearly' => summary.yearlyExpenses,
+                  _ => summary.monthlyExpenses,
+                },
+                currency: currency,
+                period: _chartPeriod,
               ),
               const SizedBox(height: 18),
               Text(
@@ -169,6 +202,8 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                               : localizedCategoryName(l10n, category),
                         ),
                         trailing: Text(currency.format(entry.value / 100)),
+                        onTap: () =>
+                            context.push('/history?category=${entry.key}'),
                       ),
                     );
                   },
@@ -286,10 +321,15 @@ class _ComparisonCard extends StatelessWidget {
 }
 
 class _BarChart extends StatelessWidget {
-  const _BarChart({required this.values, required this.currency});
+  const _BarChart({
+    required this.values,
+    required this.currency,
+    required this.period,
+  });
 
   final Map<DateTime, int> values;
   final NumberFormat currency;
+  final String period;
 
   @override
   Widget build(BuildContext context) {
@@ -317,7 +357,14 @@ class _BarChart extends StatelessWidget {
                 children: [
                   SizedBox(
                     width: 58,
-                    child: Text(DateFormat.yMMM().format(entry.key)),
+                    child: Text(
+                      switch (period) {
+                        'daily' => DateFormat.Md().format(entry.key),
+                        'weekly' => DateFormat.MMMd().format(entry.key),
+                        'yearly' => DateFormat.y().format(entry.key),
+                        _ => DateFormat.yMMM().format(entry.key),
+                      },
+                    ),
                   ),
                   Expanded(
                     child: LinearProgressIndicator(value: fraction),
@@ -332,4 +379,81 @@ class _BarChart extends StatelessWidget {
       ),
     );
   }
+}
+
+class _IncomeExpenseChart extends StatelessWidget {
+  const _IncomeExpenseChart({
+    required this.income,
+    required this.expense,
+    required this.currency,
+  });
+
+  final int income;
+  final int expense;
+  final NumberFormat currency;
+
+  @override
+  Widget build(BuildContext context) {
+    final maximum = income > expense ? income : expense;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            _ComparisonBar(
+              label: context.l10n.totalIncome,
+              amount: income,
+              maximum: maximum,
+              color: Colors.green,
+              currency: currency,
+            ),
+            const SizedBox(height: 14),
+            _ComparisonBar(
+              label: context.l10n.totalExpenses,
+              amount: expense,
+              maximum: maximum,
+              color: Colors.red,
+              currency: currency,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ComparisonBar extends StatelessWidget {
+  const _ComparisonBar({
+    required this.label,
+    required this.amount,
+    required this.maximum,
+    required this.color,
+    required this.currency,
+  });
+
+  final String label;
+  final int amount;
+  final int maximum;
+  final Color color;
+  final NumberFormat currency;
+
+  @override
+  Widget build(BuildContext context) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(child: Text(label)),
+              Text(currency.format(amount / 100)),
+            ],
+          ),
+          const SizedBox(height: 5),
+          LinearProgressIndicator(
+            value: maximum == 0 ? 0 : amount / maximum,
+            color: color,
+            minHeight: 14,
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ],
+      );
 }

@@ -1,4 +1,5 @@
 import 'package:dinarwise/core/preferences/onboarding_controller.dart';
+import 'package:dinarwise/core/currency/gulf_currency.dart';
 import 'package:dinarwise/features/expenses/data/expense_providers.dart';
 import 'package:dinarwise/features/expenses/data/expense_repository.dart';
 import 'package:dinarwise/features/expenses/income_dialog.dart';
@@ -11,9 +12,14 @@ Future<void> manageIncome(
   WidgetRef ref, {
   ExpenseRecord? income,
 }) async {
+  final onboarding = await ref.read(onboardingControllerProvider.future);
+  final currency = GulfCurrency.fromCode(onboarding.currencyCode);
+  if (!context.mounted) return;
   final result = await showIncomeDialog(
     context,
-    initialAmount: income == null ? null : income.amountMinor / 100,
+    initialAmount: income == null ? null : currency.toMajor(income.amountMinor),
+    currencyCode: currency.code,
+    decimalDigits: currency.decimalDigits,
   );
   if (result == null || !context.mounted) return;
 
@@ -29,7 +35,7 @@ Future<void> manageIncome(
       return;
     }
 
-    final amountMinor = (result.amount! * 100).round();
+    final amountMinor = currency.toMinor(result.amount!);
     if (income != null) {
       await repository.update(
         ExpenseRecord(
@@ -37,7 +43,7 @@ Future<void> manageIncome(
           profileId: income.profileId,
           type: 'income',
           amountMinor: amountMinor,
-          currency: income.currency,
+          currency: currency.code,
           merchant: income.merchant,
           description: income.description,
           categoryId: income.categoryId,
@@ -45,7 +51,6 @@ Future<void> manageIncome(
         ),
       );
     } else {
-      final onboarding = await ref.read(onboardingControllerProvider.future);
       final categories = await ref.read(categoriesProvider.future);
       final category = categories.firstWhere(
         (item) => item.systemCode == 'other',
@@ -59,6 +64,7 @@ Future<void> manageIncome(
         categoryId: category.id,
         transactedAt: DateTime.now(),
         type: 'income',
+        currency: currency.code,
       );
     }
     if (context.mounted) {

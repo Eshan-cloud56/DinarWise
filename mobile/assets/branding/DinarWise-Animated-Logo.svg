@@ -1,0 +1,125 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1920" viewBox="0 0 1080 1920">
+  <defs>
+    <radialGradient id="bgGlow" cx="50%" cy="40%" r="70%">
+      <stop offset="0" stop-color="#0D3530"/>
+      <stop offset="0.58" stop-color="#082521"/>
+      <stop offset="1" stop-color="#051614"/>
+    </radialGradient>
+    <linearGradient id="handFill" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#49D3B8"/>
+      <stop offset="1" stop-color="#1E9F8D"/>
+    </linearGradient>
+    <linearGradient id="coinFill" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#E8CD72"/>
+      <stop offset="0.44" stop-color="#CDA33A"/>
+      <stop offset="1" stop-color="#94701D"/>
+    </linearGradient>
+    <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="22"/>
+      <feOffset dy="18"/>
+      <feColorMatrix values="0 0 0 0 0 0 0 0 0 0.05 0 0 0 0 0.04 0 0 0 .55 0"/>
+      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="softGlow" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur stdDeviation="12" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <style>
+      .hand { transform-origin: 540px 1120px; animation: handMove 3.6s cubic-bezier(.2,.75,.25,1) both; }
+      .coin-position { animation: coinMove 3.6s cubic-bezier(.2,.65,.28,1) both; }
+      .coin-flip { transform-origin: 540px 610px; animation: coinFlip 3.6s ease-in-out both; }
+      .trail { stroke-dasharray: 310; stroke-dashoffset: 310; animation: trailDraw 3.6s ease-out both; }
+      .brand { opacity: 0; transform-origin: 540px 1360px; animation: brandReveal 3.6s cubic-bezier(.2,.8,.2,1) both; }
+      .spark { opacity: 0; transform-origin: 706px 490px; animation: spark 3.6s ease-out both; }
+      @keyframes handMove {
+        0% { transform: translate(-330px,390px) rotate(-18deg); opacity:0; }
+        12% { opacity:1; }
+        27% { transform: translate(0,0) rotate(0); }
+        42% { transform: translate(0,-22px) rotate(4deg); }
+        62% { transform: translate(290px,430px) rotate(18deg); opacity:0; }
+        100% { transform: translate(290px,430px) rotate(18deg); opacity:0; }
+      }
+      @keyframes coinMove {
+        0%,18% { transform: translate(72px,290px); opacity:0; }
+        23% { opacity:1; }
+        46% { transform: translate(0,-105px); }
+        61% { transform: translate(0,16px); }
+        68% { transform: translate(0,0); }
+        100% { transform: translate(0,0); opacity:1; }
+      }
+      @keyframes coinFlip {
+        0%,18% { transform: scale(.54,.54) rotate(0deg); }
+        28% { transform: scale(.82,.82) rotate(145deg); }
+        39% { transform: scaleX(.12) scaleY(1) rotate(315deg); }
+        50% { transform: scale(1.1,1.1) rotate(540deg); }
+        61% { transform: scale(.94,.94) rotate(700deg); }
+        68%,100% { transform: scale(1,1) rotate(720deg); }
+      }
+      @keyframes trailDraw {
+        0%,22% { stroke-dashoffset:310; opacity:0; }
+        29% { opacity:.9; }
+        50% { stroke-dashoffset:0; opacity:.8; }
+        62%,100% { stroke-dashoffset:-310; opacity:0; }
+      }
+      @keyframes brandReveal {
+        0%,57% { opacity:0; transform:translateY(34px) scale(.97); }
+        76%,100% { opacity:1; transform:translateY(0) scale(1); }
+      }
+      @keyframes spark {
+        0%,64% { opacity:0; transform:scale(.2) rotate(0); }
+        69% { opacity:1; transform:scale(1) rotate(22deg); }
+        79%,100% { opacity:0; transform:scale(1.45) rotate(38deg); }
+      }
+    </style>
+  </defs>
+
+  <rect width="1080" height="1920" fill="url(#bgGlow)"/>
+  <circle cx="540" cy="610" r="310" fill="#32B9A3" opacity=".025"/>
+
+  <path class="trail" d="M640 920 C790 800 795 610 650 500" fill="none" stroke="#F4C95D" stroke-width="14" stroke-linecap="round" opacity=".8"/>
+  <path class="trail" d="M613 925 C735 805 745 660 645 545" fill="none" stroke="#FFE59A" stroke-width="5" stroke-linecap="round" opacity=".7" style="animation-delay:.05s"/>
+
+  <g class="hand" filter="url(#shadow)">
+    <path fill="url(#handFill)" d="M270 1320 C252 1260 274 1193 322 1136 C370 1079 391 1022 404 944 C417 866 432 805 469 797 C506 788 522 818 510 866 L486 978 C528 935 557 880 586 817 C608 768 633 729 669 733 C706 738 714 770 695 811 L626 963 C654 927 685 882 716 845 C746 809 779 798 805 820 C833 844 815 881 787 916 L666 1076 C638 1114 631 1172 656 1215 L688 1270 L402 1430 Z"/>
+    <path fill="#188F80" opacity=".72" d="M469 1044 C519 1007 560 1018 592 1058 C615 1087 632 1120 644 1152 C606 1120 575 1091 544 1080 C516 1070 490 1073 456 1091 Z"/>
+    <path d="M483 985 C526 958 573 962 610 1006" fill="none" stroke="#147D70" stroke-width="15" stroke-linecap="round" opacity=".65"/>
+    <path d="M625 962 C655 938 683 918 713 886" fill="none" stroke="#147D70" stroke-width="12" stroke-linecap="round" opacity=".55"/>
+    <path d="M398 1431 L688 1270" stroke="#5EE0C6" stroke-width="5" opacity=".32"/>
+  </g>
+
+  <g class="coin-position" filter="url(#shadow)">
+    <g class="coin-flip">
+      <path d="M540 754 C492 755 449 742 414 714 C380 686 367 648 371 601 C367 554 382 511 416 477 C451 445 491 435 540 438 C589 434 631 449 664 480 C697 512 712 552 708 596 C712 643 698 685 662 718 C629 744 589 756 540 754Z" fill="#896418"/>
+      <path d="M540 741 C495 744 455 730 423 705 C392 678 380 642 383 599 C380 557 394 519 425 488 C456 459 495 448 540 450 C585 447 624 461 654 490 C684 519 697 556 694 596 C698 638 684 676 653 707 C621 732 584 744 540 741Z" fill="url(#coinFill)" stroke="#F0D77F" stroke-width="9"/>
+      <path d="M540 720 C458 720 411 671 407 599 C411 520 462 473 540 472 C619 473 671 524 674 596 C672 675 620 718 540 720Z" fill="none" stroke="#775415" stroke-width="8" opacity=".88"/>
+      <path d="M540 698 C472 699 433 659 432 598 C434 535 477 494 540 494 C604 494 648 536 650 596 C648 659 606 698 540 698Z" fill="none" stroke="#E7CA6D" stroke-width="4" opacity=".72"/>
+      <g fill="none" stroke="#765313" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" opacity=".9">
+        <path d="M465 526 C489 513 516 507 540 508 C565 508 591 514 615 528"/>
+        <path d="M458 653 C484 670 513 678 541 677 C572 676 600 667 624 650"/>
+        <path d="M441 565 C430 585 430 614 441 635"/>
+        <path d="M639 557 C652 582 653 612 641 637"/>
+      </g>
+      <text x="540" y="625" text-anchor="middle" direction="rtl" font-family="'Noto Naskh Arabic','DejaVu Sans',serif" font-size="96" font-weight="700" fill="#705014">دينار</text>
+      <g fill="#775415">
+        <circle cx="540" cy="487" r="5"/><circle cx="589" cy="499" r="5"/>
+        <circle cx="628" cy="534" r="5"/><circle cx="655" cy="575" r="5"/>
+        <circle cx="656" cy="621" r="5"/><circle cx="626" cy="665" r="5"/>
+        <circle cx="586" cy="695" r="5"/><circle cx="492" cy="695" r="5"/>
+        <circle cx="452" cy="664" r="5"/><circle cx="424" cy="621" r="5"/>
+        <circle cx="425" cy="574" r="5"/><circle cx="453" cy="534" r="5"/><circle cx="492" cy="500" r="5"/>
+      </g>
+      <path d="M445 517 C484 471 573 459 638 514" fill="none" stroke="#F5DF8A" stroke-width="7" stroke-linecap="round" opacity=".64"/>
+    </g>
+  </g>
+
+  <g class="spark" filter="url(#softGlow)" stroke="#FFE59A" stroke-width="9" stroke-linecap="round">
+    <path d="M706 458 V522"/><path d="M674 490 H738"/>
+    <path d="M684 468 L728 512"/><path d="M728 468 L684 512"/>
+  </g>
+
+  <g class="brand">
+    <text x="540" y="1450" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="148" font-weight="800" letter-spacing="-4" fill="#F7F4EA">DinarWise</text>
+    <rect x="357" y="1498" width="366" height="4" rx="2" fill="#38BFA5" opacity=".72"/>
+    <text x="540" y="1578" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="37" font-weight="600" letter-spacing="12" fill="#D9E4DF">EXPENSE MANAGEMENT</text>
+  </g>
+</svg>

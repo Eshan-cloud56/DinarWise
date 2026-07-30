@@ -1,4 +1,5 @@
 import 'package:dinarwise/core/preferences/onboarding_controller.dart';
+import 'package:dinarwise/core/currency/gulf_currency.dart';
 import 'package:dinarwise/features/categories/category_localization.dart';
 import 'package:dinarwise/features/categories/custom_category_dialog.dart';
 import 'package:dinarwise/features/expenses/data/expense_providers.dart';
@@ -132,11 +133,9 @@ class PlanningScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
     final items = ref.watch(planningItemsProvider(section));
-    final currency = NumberFormat.currency(
-      locale: Localizations.localeOf(context).toLanguageTag(),
-      name: 'SAR',
-      symbol: '${l10n.currencySar} ',
-    );
+    final currency = ref
+        .watch(selectedCurrencyProvider)
+        .formatter(Localizations.localeOf(context).toLanguageTag());
     return Scaffold(
       appBar: AppBar(title: Text(_title(context))),
       floatingActionButton: FloatingActionButton.extended(

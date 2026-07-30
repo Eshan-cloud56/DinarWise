@@ -1,7 +1,12 @@
 import 'package:dinarwise/core/preferences/onboarding_controller.dart';
+import 'package:dinarwise/core/quick_actions_lifecycle.dart';
 import 'package:dinarwise/core/router.dart';
 import 'package:dinarwise/core/theme.dart';
 import 'package:dinarwise/features/onboarding/splash_screen.dart';
+import 'package:dinarwise/features/notifications/notification_lifecycle.dart';
+import 'package:dinarwise/features/planning/commitments_lifecycle.dart';
+import 'package:dinarwise/features/receipts/shared_receipt_lifecycle.dart';
+import 'package:dinarwise/features/security/app_lock_lifecycle.dart';
 import 'package:dinarwise/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -46,6 +51,16 @@ class DinarWiseApp extends ConsumerWidget {
       theme: common.theme,
       onGenerateTitle: (context) => AppLocalizations.of(context).appName,
       routerConfig: ref.watch(routerProvider),
+      builder: (context, child) => SharedReceiptLifecycle(
+        child: QuickActionsLifecycle(
+          child: NotificationLifecycle(
+            child: AppLockLifecycle(
+              child:
+                  CommitmentsLifecycle(child: child ?? const SizedBox.shrink()),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

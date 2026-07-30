@@ -40,7 +40,7 @@ class _PrivacyConsentScreenState extends ConsumerState<PrivacyConsentScreen> {
     if (!_accepted || _submitting) return;
     setState(() => _submitting = true);
     await ref.read(onboardingControllerProvider.notifier).acceptPrivacyPolicy();
-    if (mounted) context.go('/');
+    if (mounted) context.go('/currency');
   }
 
   @override

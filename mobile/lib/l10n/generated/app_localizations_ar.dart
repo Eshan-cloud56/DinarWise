@@ -536,4 +536,608 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get showHijriDates => 'عرض التاريخ الهجري';
+
+  @override
+  String get addBudget => 'إضافة ميزانية';
+
+  @override
+  String get editBudget => 'تعديل الميزانية';
+
+  @override
+  String get overallBudget => 'الميزانية الشهرية الإجمالية';
+
+  @override
+  String get rollover => 'ترحيل الميزانية الشهري';
+
+  @override
+  String get noRollover => 'دون ترحيل';
+
+  @override
+  String get carryUnused => 'ترحيل المبلغ غير المستخدم';
+
+  @override
+  String get carryUnusedAndOverspending => 'ترحيل المبلغ غير المستخدم والتجاوز';
+
+  @override
+  String get budgetCycle => 'دورة الميزانية';
+
+  @override
+  String get monthly => 'شهريًا';
+
+  @override
+  String get payday => 'يوم الراتب';
+
+  @override
+  String get fixedCommitments => 'الالتزامات الثابتة';
+
+  @override
+  String get emergencyBuffer => 'احتياطي الطوارئ';
+
+  @override
+  String get budgetHistory => 'سجل الميزانية';
+
+  @override
+  String get noHistory => 'لا يوجد سجل بعد';
+
+  @override
+  String get amountSpent => 'المبلغ المنفق';
+
+  @override
+  String get amountRemaining => 'المبلغ المتبقي';
+
+  @override
+  String get used => 'مستخدم';
+
+  @override
+  String get budgetOverspent => 'تم تجاوز هذه الميزانية.';
+
+  @override
+  String budgetWarning(int percent) {
+    return 'لقد استخدمت $percent% من هذه الميزانية.';
+  }
+
+  @override
+  String daysUntilPayday(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count أيام حتى الراتب',
+      two: 'يومان حتى الراتب',
+      one: 'يوم واحد حتى الراتب',
+      zero: 'موعد الراتب اليوم',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get upcomingBills => 'الفواتير القادمة';
+
+  @override
+  String get upcomingBnpl => 'دفعات الشراء الآجل القادمة';
+
+  @override
+  String get plannedSavings => 'الادخار المخطط';
+
+  @override
+  String get remaining => 'المتبقي';
+
+  @override
+  String get goalCompleted => 'اكتمل الهدف';
+
+  @override
+  String get requiredWeekly => 'المطلوب أسبوعيًا';
+
+  @override
+  String get requiredMonthly => 'المطلوب شهريًا';
+
+  @override
+  String get addContribution => 'إضافة مساهمة';
+
+  @override
+  String get noContributions => 'لا توجد مساهمات بعد';
+
+  @override
+  String get addGoal => 'إضافة هدف ادخار';
+
+  @override
+  String get editGoal => 'تعديل هدف الادخار';
+
+  @override
+  String get goalTemplate => 'قالب الهدف';
+
+  @override
+  String get targetDate => 'التاريخ المستهدف';
+
+  @override
+  String get optional => 'اختياري';
+
+  @override
+  String get emergencyFund => 'صندوق الطوارئ';
+
+  @override
+  String get travel => 'السفر';
+
+  @override
+  String get wedding => 'الزفاف';
+
+  @override
+  String get car => 'السيارة';
+
+  @override
+  String get education => 'التعليم';
+
+  @override
+  String get hajj => 'الحج';
+
+  @override
+  String get umrah => 'العمرة';
+
+  @override
+  String get eid => 'العيد';
+
+  @override
+  String get customGoal => 'هدف مخصص';
+
+  @override
+  String get addBnplPlan => 'إضافة خطة شراء آجل';
+
+  @override
+  String get editBnplPlan => 'تعديل خطة الشراء الآجل';
+
+  @override
+  String get provider => 'مزود الخدمة';
+
+  @override
+  String get customProvider => 'مزود مخصص';
+
+  @override
+  String get providerName => 'اسم المزود';
+
+  @override
+  String get purchaseDate => 'تاريخ الشراء';
+
+  @override
+  String get paidAmount => 'المبلغ المدفوع';
+
+  @override
+  String get totalOutstandingBnpl => 'إجمالي دفعات الشراء الآجل المستحقة';
+
+  @override
+  String get completed => 'مكتمل';
+
+  @override
+  String get latePayment => 'الدفعة متأخرة';
+
+  @override
+  String get paymentHistory => 'سجل الدفعات';
+
+  @override
+  String get markedPaid => 'تم تحديدها كمدفوعة';
+
+  @override
+  String get paymentUndone => 'تم التراجع عن حالة الدفع';
+
+  @override
+  String instalmentNumber(int number) {
+    return 'القسط $number';
+  }
+
+  @override
+  String get instalmentTotalError =>
+      'يجب أن يساوي مجموع الأقساط مبلغ الشراء تمامًا.';
+
+  @override
+  String get addRecurring => 'إضافة فاتورة أو اشتراك';
+
+  @override
+  String get editRecurring => 'تعديل فاتورة أو اشتراك';
+
+  @override
+  String get recurrence => 'التكرار';
+
+  @override
+  String get daily => 'يوميًا';
+
+  @override
+  String get weekly => 'أسبوعيًا';
+
+  @override
+  String get yearly => 'سنويًا';
+
+  @override
+  String get every => 'التكرار كل';
+
+  @override
+  String get isSubscription => 'هذا اشتراك';
+
+  @override
+  String get startDate => 'تاريخ البدء';
+
+  @override
+  String get endDate => 'تاريخ الانتهاء';
+
+  @override
+  String get maxOccurrences => 'عدد مرات التكرار (اختياري)';
+
+  @override
+  String get lifetimePaid => 'إجمالي المدفوع طوال المدة';
+
+  @override
+  String get monthlyEquivalent => 'المعادل الشهري';
+
+  @override
+  String get paid => 'مدفوع';
+
+  @override
+  String get upcoming => 'قادم';
+
+  @override
+  String get markAsPaid => 'تحديد كمدفوع';
+
+  @override
+  String get editOneOccurrence => 'تعديل هذه الدفعة فقط';
+
+  @override
+  String get stopRecurring => 'إيقاف التكرار';
+
+  @override
+  String get ended => 'منتهي';
+
+  @override
+  String get nextBill => 'الفاتورة أو الاشتراك القادم';
+
+  @override
+  String get nextBnplPayment => 'دفعة الشراء الآجل القادمة';
+
+  @override
+  String get incomeVsExpense => 'الدخل مقابل المصروفات';
+
+  @override
+  String get spendingCharts => 'مخططات الإنفاق';
+
+  @override
+  String get paymentMethod => 'طريقة الدفع';
+
+  @override
+  String get paymentMethods => 'طرق الدفع';
+
+  @override
+  String get allPaymentMethods => 'جميع طرق الدفع';
+
+  @override
+  String get cash => 'نقدًا';
+
+  @override
+  String get debitCard => 'بطاقة خصم';
+
+  @override
+  String get creditCard => 'بطاقة ائتمان';
+
+  @override
+  String get bankTransfer => 'تحويل بنكي';
+
+  @override
+  String get paymentMethodDuplicate => 'توجد طريقة دفع بهذا الاسم بالفعل.';
+
+  @override
+  String get reassignPaymentMethod => 'انقل المعاملات قبل الحذف';
+
+  @override
+  String get reassignAndDelete => 'نقل وحذف';
+
+  @override
+  String usageCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'استُخدمت $count مرات',
+      two: 'استُخدمت مرتين',
+      one: 'استُخدمت مرة واحدة',
+      zero: 'غير مستخدمة',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get categoryAppearance => 'الأيقونة واللون';
+
+  @override
+  String get sortCategories => 'ترتيب الفئات';
+
+  @override
+  String get mostUsed => 'الأكثر استخدامًا';
+
+  @override
+  String get recentlyUsed => 'المستخدمة مؤخرًا';
+
+  @override
+  String get alphabetical => 'أبجديًا';
+
+  @override
+  String get reassignCategory => 'انقل السجلات المرتبطة قبل الحذف';
+
+  @override
+  String get defaultPaymentMethod => 'طريقة الدفع الافتراضية';
+
+  @override
+  String get attachReceipt => 'إرفاق إيصال';
+
+  @override
+  String get takeReceiptPhoto => 'التقاط صورة للإيصال';
+
+  @override
+  String get chooseReceiptPhoto => 'اختيار من المعرض';
+
+  @override
+  String get receiptAttached => 'تم إرفاق الإيصال';
+
+  @override
+  String get tapToView => 'اضغط للعرض';
+
+  @override
+  String get removeReceipt => 'إزالة الإيصال';
+
+  @override
+  String get receiptPickError => 'تعذر فتح صورة الإيصال. جرّب صورة أخرى.';
+
+  @override
+  String get receiptStorage => 'مساحة تخزين الإيصالات';
+
+  @override
+  String get storageUsed => 'المساحة المستخدمة';
+
+  @override
+  String get clearAllReceipts => 'مسح جميع صور الإيصالات';
+
+  @override
+  String get clearAllReceiptsMessage =>
+      'سيؤدي هذا إلى حذف جميع صور الإيصالات المحفوظة نهائيًا مع الاحتفاظ بالمعاملات.';
+
+  @override
+  String get noReceipts => 'لا توجد صور إيصالات محفوظة';
+
+  @override
+  String get enableNotifications => 'تفعيل التذكيرات المحلية';
+
+  @override
+  String get notificationPermissionHint =>
+      'الفواتير والاشتراكات والشراء الآجل والميزانيات والأهداف';
+
+  @override
+  String get notificationsEnabled => 'تم تفعيل التذكيرات المحلية.';
+
+  @override
+  String get notificationsDenied => 'لم يتم منح إذن الإشعارات.';
+
+  @override
+  String get backupAndExport => 'النسخ الاحتياطي والاستيراد والتصدير';
+
+  @override
+  String get exportCsv => 'تصدير المعاملات بصيغة CSV';
+
+  @override
+  String get importCsv => 'استيراد المعاملات من CSV';
+
+  @override
+  String get monthlyPdf => 'مشاركة التقرير الشهري PDF';
+
+  @override
+  String get encryptedBackup => 'إنشاء نسخة احتياطية مشفرة';
+
+  @override
+  String get restoreBackup => 'استعادة نسخة احتياطية مشفرة';
+
+  @override
+  String get backupPassword => 'كلمة مرور النسخة الاحتياطية';
+
+  @override
+  String get minimumSixCharacters => 'ستة أحرف على الأقل';
+
+  @override
+  String get restore => 'استعادة';
+
+  @override
+  String get continueLabel => 'متابعة';
+
+  @override
+  String get operationFailed => 'تعذر إكمال العملية';
+
+  @override
+  String get importPreview => 'معاينة الاستيراد';
+
+  @override
+  String get importLabel => 'استيراد';
+
+  @override
+  String importPreviewCounts(int valid, int invalid, int duplicates) {
+    return '$valid صالح، $invalid غير صالح، $duplicates مكرر';
+  }
+
+  @override
+  String get restoreReplacesData =>
+      'ستستبدل الاستعادة جميع البيانات المالية المحلية الحالية. إذا فشل التحقق فستبقى بياناتك الحالية دون تغيير.';
+
+  @override
+  String get applicationSecurity => 'أمان التطبيق';
+
+  @override
+  String get applicationPin => 'رمز PIN للتطبيق';
+
+  @override
+  String get pinStoredSecurely =>
+      'يتم تمليح رمز PIN وتجزئته بأمان ولا يُحفظ كنص صريح.';
+
+  @override
+  String get createPin => 'إنشاء رمز PIN';
+
+  @override
+  String get verifyCurrentPin => 'التحقق من رمز PIN الحالي';
+
+  @override
+  String get pinRequirements => 'استخدم رمز PIN رقميًا من 4 إلى 8 أرقام.';
+
+  @override
+  String get changePin => 'تغيير رمز PIN';
+
+  @override
+  String get useBiometrics => 'استخدام البصمة أو الوجه';
+
+  @override
+  String get fingerprintOrFace =>
+      'استخدام المصادقة الحيوية في أندرويد عند دعمها';
+
+  @override
+  String get biometricsUnavailable =>
+      'المصادقة الحيوية غير متاحة على هذا الجهاز.';
+
+  @override
+  String get lockInBackground => 'قفل التطبيق عند بقائه في الخلفية';
+
+  @override
+  String get autoLockTimeout => 'مهلة القفل التلقائي';
+
+  @override
+  String get immediately => 'فورًا';
+
+  @override
+  String get seconds30 => '30 ثانية';
+
+  @override
+  String get minute1 => 'دقيقة واحدة';
+
+  @override
+  String get minutes5 => '5 دقائق';
+
+  @override
+  String get appLocked => 'DinarWise مقفل';
+
+  @override
+  String get incorrectPin => 'رمز PIN غير صحيح';
+
+  @override
+  String get unlockDinarWise => 'فتح DinarWise';
+
+  @override
+  String get unlock => 'فتح';
+
+  @override
+  String get offlineCalculators => 'حاسبات مالية دون اتصال';
+
+  @override
+  String get calculator => 'الحاسبة';
+
+  @override
+  String get budgetCalculator => 'حاسبة ميزانية 50/30/20';
+
+  @override
+  String get emergencyCalculator => 'حاسبة صندوق الطوارئ';
+
+  @override
+  String get travelCalculator => 'حاسبة ميزانية السفر';
+
+  @override
+  String get debtCalculator => 'حاسبة سداد الدين';
+
+  @override
+  String get goalCalculator => 'حاسبة هدف الادخار';
+
+  @override
+  String get compoundCalculator => 'حاسبة الفائدة المركبة';
+
+  @override
+  String get needs => 'الاحتياجات (50٪)';
+
+  @override
+  String get wants => 'الرغبات (30٪)';
+
+  @override
+  String get savings => 'الادخار (20٪)';
+
+  @override
+  String get monthlyEssentials => 'التكاليف الأساسية الشهرية';
+
+  @override
+  String get monthlyIncome => 'الدخل الشهري';
+
+  @override
+  String get currentSaved => 'المبلغ المدخر حاليًا';
+
+  @override
+  String get months => 'الأشهر';
+
+  @override
+  String get transport => 'النقل';
+
+  @override
+  String get lodging => 'السكن';
+
+  @override
+  String get dailyCost => 'التكلفة اليومية';
+
+  @override
+  String get days => 'الأيام';
+
+  @override
+  String get bufferPercent => 'الهامش (٪)';
+
+  @override
+  String get debtBalance => 'رصيد الدين';
+
+  @override
+  String get annualRate => 'نسبة الفائدة السنوية (٪)';
+
+  @override
+  String get monthlyPayment => 'الدفعة الشهرية';
+
+  @override
+  String get paymentTooLow => 'الدفعة منخفضة جدًا لسداد هذا الدين.';
+
+  @override
+  String monthCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count أشهر',
+      two: 'شهران',
+      one: 'شهر واحد',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get startingAmount => 'المبلغ الابتدائي';
+
+  @override
+  String get years => 'السنوات';
+
+  @override
+  String get monthlyContribution => 'المساهمة الشهرية';
+
+  @override
+  String get calculate => 'احسب';
+
+  @override
+  String get result => 'النتيجة';
+
+  @override
+  String get calculatorDoesNotSave => 'نتائج الحاسبة لا تغير سجلاتك المالية.';
+
+  @override
+  String get chooseCurrency => 'اختر عملتك';
+
+  @override
+  String get chooseCurrencyDescription =>
+      'سيستخدم DinarWise هذه العملة للدخل والمصروفات والميزانيات والتقارير.';
+
+  @override
+  String decimalPlaces(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count منازل عشرية',
+      two: 'منزلتان عشريتان',
+      one: 'منزلة عشرية واحدة',
+    );
+    return '$_temp0';
+  }
 }

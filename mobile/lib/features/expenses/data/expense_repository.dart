@@ -11,6 +11,8 @@ class ExpenseRecord {
     required this.description,
     required this.categoryId,
     required this.transactedAt,
+    this.paymentMethodId,
+    this.receiptAttachmentId,
   });
 
   final String id;
@@ -22,6 +24,8 @@ class ExpenseRecord {
   final String? description;
   final String categoryId;
   final DateTime transactedAt;
+  final String? paymentMethodId;
+  final String? receiptAttachmentId;
 }
 
 enum TransactionValidationFailure {
@@ -63,7 +67,7 @@ abstract interface class ExpenseRepository {
     int offset = 0,
   });
   Future<void> duplicate(ExpenseRecord transaction);
-  Future<void> create({
+  Future<String> create({
     required String profileId,
     required int amountMinor,
     required String merchant,
@@ -72,6 +76,7 @@ abstract interface class ExpenseRepository {
     required DateTime transactedAt,
     String type = 'expense',
     String currency = 'SAR',
+    String? paymentMethodId,
   });
   Future<void> update(ExpenseRecord expense);
   Future<void> delete(String expenseId);

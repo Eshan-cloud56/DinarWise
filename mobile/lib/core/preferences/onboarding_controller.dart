@@ -1,9 +1,11 @@
+import 'dart:async';
+
 import 'package:dinarwise/core/constants.dart';
 import 'package:dinarwise/core/preferences/app_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-enum StartupDestination { language, privacy, dashboard }
+enum StartupDestination { language, privacy, currency, dashboard }
 
 class OnboardingState {
   const OnboardingState({
@@ -12,6 +14,7 @@ class OnboardingState {
     required this.privacyVersion,
     required this.onboardingCompleted,
     required this.localProfileId,
+    this.currencyCode,
   });
 
   final Locale? locale;
@@ -19,15 +22,17 @@ class OnboardingState {
   final String? privacyVersion;
   final bool onboardingCompleted;
   final String localProfileId;
+  final String? currencyCode;
 
   bool get hasCurrentConsent =>
-      privacyAccepted &&
-      onboardingCompleted &&
-      privacyVersion == currentPrivacyPolicyVersion;
+      privacyAccepted && privacyVersion == currentPrivacyPolicyVersion;
 
   StartupDestination get destination {
     if (locale == null) return StartupDestination.language;
     if (!hasCurrentConsent) return StartupDestination.privacy;
+    if (currencyCode == null || !onboardingCompleted) {
+      return StartupDestination.currency;
+    }
     return StartupDestination.dashboard;
   }
 
@@ -37,6 +42,7 @@ class OnboardingState {
     String? privacyVersion,
     bool? onboardingCompleted,
     String? localProfileId,
+    String? currencyCode,
   }) {
     return OnboardingState(
       locale: locale ?? this.locale,
@@ -44,6 +50,7 @@ class OnboardingState {
       privacyVersion: privacyVersion ?? this.privacyVersion,
       onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
       localProfileId: localProfileId ?? this.localProfileId,
+      currencyCode: currencyCode ?? this.currencyCode,
     );
   }
 }
@@ -55,16 +62,32 @@ final onboardingControllerProvider =
 
 class OnboardingController extends AsyncNotifier<OnboardingState> {
   @override
-  Future<OnboardingState> build() async {
+  FutureOr<OnboardingState> build() {
     final preferences = ref.read(appPreferencesProvider);
-    final languageCode = preferences.selectedLanguage;
+    final existingProfileId = preferences.localProfileId;
+    if (existingProfileId != null && existingProfileId.isNotEmpty) {
+      return _stateFromPreferences(preferences, existingProfileId);
+    }
+    return _buildFirstLaunch(preferences);
+  }
+
+  Future<OnboardingState> _buildFirstLaunch(AppPreferences preferences) async {
     final profileId = await preferences.getOrCreateLocalProfileId();
+    return _stateFromPreferences(preferences, profileId);
+  }
+
+  OnboardingState _stateFromPreferences(
+    AppPreferences preferences,
+    String profileId,
+  ) {
+    final languageCode = preferences.selectedLanguage;
     return OnboardingState(
       locale: languageCode == null ? null : Locale(languageCode),
       privacyAccepted: preferences.privacyAccepted,
       privacyVersion: preferences.privacyVersion,
       onboardingCompleted: preferences.onboardingCompleted,
       localProfileId: profileId,
+      currencyCode: preferences.selectedCurrency,
     );
   }
 
@@ -85,6 +108,17 @@ class OnboardingController extends AsyncNotifier<OnboardingState> {
       current.copyWith(
         privacyAccepted: true,
         privacyVersion: currentPrivacyPolicyVersion,
+        onboardingCompleted: false,
+      ),
+    );
+  }
+
+  Future<void> selectCurrency(String currencyCode) async {
+    await ref.read(appPreferencesProvider).setCurrency(currencyCode);
+    final current = state.requireValue;
+    state = AsyncData(
+      current.copyWith(
+        currencyCode: currencyCode,
         onboardingCompleted: true,
       ),
     );
