@@ -1,3 +1,5 @@
+import 'package:dinarwise/core/analytics/analytics_service.dart';
+import 'package:dinarwise/core/diagnostics/crash_reporting_service.dart';
 import 'package:dinarwise/core/preferences/onboarding_controller.dart';
 import 'package:dinarwise/core/currency/gulf_currency.dart';
 import 'package:dinarwise/features/expenses/data/expense_providers.dart';
@@ -13,6 +15,9 @@ Future<void> manageIncome(
   ExpenseRecord? income,
 }) async {
   final onboarding = await ref.read(onboardingControllerProvider.future);
+  final analytics = ref.read(analyticsServiceProvider);
+  analytics.screen(income == null ? 'add_income' : 'edit_income');
+  if (income == null) analytics.incomeAddStarted();
   final currency = GulfCurrency.fromCode(onboarding.currencyCode);
   if (!context.mounted) return;
   final result = await showIncomeDialog(
@@ -27,6 +32,7 @@ Future<void> manageIncome(
   try {
     if (result.delete) {
       await repository.delete(income!.id);
+      analytics.incomeDeleted(currency.code);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(context.l10n.incomeDeleted)),
@@ -50,6 +56,7 @@ Future<void> manageIncome(
           transactedAt: income.transactedAt,
         ),
       );
+      analytics.incomeEdited(currency.code);
     } else {
       final categories = await ref.read(categoriesProvider.future);
       final category = categories.firstWhere(
@@ -66,6 +73,7 @@ Future<void> manageIncome(
         type: 'income',
         currency: currency.code,
       );
+      analytics.incomeAdded(currency.code);
     }
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -73,6 +81,16 @@ Future<void> manageIncome(
       );
     }
   } on TransactionValidationException catch (exception) {
+    analytics.incomeFailed(
+      result.delete ? 'delete' : (income == null ? 'add' : 'edit'),
+      switch (exception.failure) {
+        TransactionValidationFailure.amountMustBePositive => 'invalid_amount',
+        TransactionValidationFailure.incomeReductionWouldOverdraw =>
+          'negative_balance',
+        TransactionValidationFailure.insufficientBalance => 'negative_balance',
+        TransactionValidationFailure.notFound => 'database_error',
+      },
+    );
     if (!context.mounted) return;
     final message = switch (exception.failure) {
       TransactionValidationFailure.incomeReductionWouldOverdraw =>
@@ -86,7 +104,28 @@ Future<void> manageIncome(
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );
-  } catch (_) {
+  } catch (_, stack) {
+    analytics.incomeFailed(
+      result.delete ? 'delete' : (income == null ? 'add' : 'edit'),
+      'database_error',
+    );
+    ref.read(crashReportingServiceProvider)
+      ..setSafeContext(
+        screen: income == null ? 'add_income' : 'edit_income',
+        operation: result.delete
+            ? 'income_delete'
+            : (income == null ? 'income_create' : 'income_update'),
+      )
+      ..recordUnexpected(
+        StateError(
+          result.delete
+              ? 'income_delete_failed'
+              : (income == null
+                  ? 'income_create_failed'
+                  : 'income_update_failed'),
+        ),
+        stack,
+      );
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(context.l10n.databaseError)),

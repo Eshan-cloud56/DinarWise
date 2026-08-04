@@ -9,6 +9,8 @@ const _privacyAcceptedAtKey = 'privacy_policy_accepted_at';
 const _onboardingCompletedKey = 'onboarding_completed';
 const _localProfileIdKey = 'local_profile_id';
 const _selectedCurrencyKey = 'selected_currency';
+const _analyticsAllowedKey = 'analytics_allowed';
+const _diagnosticsAllowedKey = 'diagnostics_allowed';
 
 final sharedPreferencesProvider = Provider<SharedPreferences>(
   (_) => throw UnimplementedError('SharedPreferences must be initialized'),
@@ -33,6 +35,10 @@ class AppPreferences {
 
   String? get localProfileId => _preferences.getString(_localProfileIdKey);
   String? get selectedCurrency => _preferences.getString(_selectedCurrencyKey);
+  bool get analyticsAllowed =>
+      _preferences.getBool(_analyticsAllowedKey) ?? false;
+  bool get diagnosticsAllowed =>
+      _preferences.getBool(_diagnosticsAllowedKey) ?? false;
 
   Future<String> getOrCreateLocalProfileId() async {
     final existing = localProfileId;
@@ -50,9 +56,17 @@ class AppPreferences {
     await _preferences.setBool(_onboardingCompletedKey, true);
   }
 
+  Future<void> setAnalyticsAllowed(bool allowed) =>
+      _preferences.setBool(_analyticsAllowedKey, allowed);
+
+  Future<void> setDiagnosticsAllowed(bool allowed) =>
+      _preferences.setBool(_diagnosticsAllowedKey, allowed);
+
   Future<void> acceptPrivacyPolicy({
     required String version,
     required DateTime acceptedAt,
+    bool analyticsAllowed = false,
+    bool diagnosticsAllowed = false,
   }) async {
     await _preferences.setBool(_privacyAcceptedKey, true);
     await _preferences.setString(_privacyVersionKey, version);
@@ -61,6 +75,8 @@ class AppPreferences {
       acceptedAt.toUtc().toIso8601String(),
     );
     await _preferences.setBool(_onboardingCompletedKey, false);
+    await setAnalyticsAllowed(analyticsAllowed);
+    await setDiagnosticsAllowed(diagnosticsAllowed);
   }
 
   Future<void> clearOnboardingAndPreferences() async {

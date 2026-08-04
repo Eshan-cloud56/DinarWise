@@ -1,8 +1,10 @@
 import 'dart:io';
 
+import 'package:dinarwise/core/analytics/analytics_service.dart';
 import 'package:dinarwise/core/android_file_share.dart';
 import 'package:dinarwise/core/android_file_picker.dart';
 import 'package:dinarwise/core/preferences/onboarding_controller.dart';
+import 'package:dinarwise/core/performance/performance_service.dart';
 import 'package:dinarwise/features/data_tools/data_tools_providers.dart';
 import 'package:dinarwise/features/expenses/data/expense_providers.dart';
 import 'package:dinarwise/features/expenses/data/history_filter.dart';
@@ -76,24 +78,44 @@ class _DataToolsScreenState extends ConsumerState<DataToolsScreen> {
       );
 
   Future<void> _exportCsv() async {
+    final analytics = ref.read(analyticsServiceProvider);
+    analytics.exportStarted('csv');
     final profile =
         (await ref.read(onboardingControllerProvider.future)).localProfileId;
     final file = await _working(
-      () => ref.read(dataExportServiceProvider).exportCsv(profile),
+      () => ref.read(performanceServiceProvider).trace(
+            PerformanceTraces.dataExport,
+            () => ref.read(dataExportServiceProvider).exportCsv(profile),
+          ),
     );
-    if (file != null) await _share(file, 'DinarWise CSV');
+    if (file != null) {
+      analytics.exportSucceeded('csv');
+      await _share(file, 'DinarWise CSV');
+    } else {
+      analytics.exportFailed('csv', 'export_error');
+    }
   }
 
   Future<void> _exportPdf() async {
+    final analytics = ref.read(analyticsServiceProvider);
+    analytics.exportStarted('pdf');
     final state = await ref.read(onboardingControllerProvider.future);
     final file = await _working(
-      () => ref.read(dataExportServiceProvider).monthlyPdf(
-            profileId: state.localProfileId,
-            month: DateTime.now(),
-            locale: state.locale?.languageCode ?? 'en',
+      () => ref.read(performanceServiceProvider).trace(
+            PerformanceTraces.dataExport,
+            () => ref.read(dataExportServiceProvider).monthlyPdf(
+                  profileId: state.localProfileId,
+                  month: DateTime.now(),
+                  locale: state.locale?.languageCode ?? 'en',
+                ),
           ),
     );
-    if (file != null) await _share(file, 'DinarWise PDF');
+    if (file != null) {
+      analytics.exportSucceeded('pdf');
+      await _share(file, 'DinarWise PDF');
+    } else {
+      analytics.exportFailed('pdf', 'export_error');
+    }
   }
 
   Future<void> _importCsv() async {

@@ -1,4 +1,7 @@
 import 'package:dinarwise/core/constants.dart';
+import 'package:dinarwise/core/analytics/analytics_service.dart';
+import 'package:dinarwise/core/diagnostics/crash_reporting_service.dart';
+import 'package:dinarwise/core/performance/performance_service.dart';
 import 'package:dinarwise/core/preferences/onboarding_controller.dart';
 import 'package:dinarwise/l10n/l10n_extension.dart';
 import 'package:flutter/gestures.dart';
@@ -17,6 +20,8 @@ class PrivacyConsentScreen extends ConsumerStatefulWidget {
 
 class _PrivacyConsentScreenState extends ConsumerState<PrivacyConsentScreen> {
   bool _accepted = false;
+  bool _analyticsAllowed = false;
+  bool _diagnosticsAllowed = false;
   bool _submitting = false;
 
   Future<void> _openPolicy() async {
@@ -39,7 +44,20 @@ class _PrivacyConsentScreenState extends ConsumerState<PrivacyConsentScreen> {
   Future<void> _continue() async {
     if (!_accepted || _submitting) return;
     setState(() => _submitting = true);
-    await ref.read(onboardingControllerProvider.notifier).acceptPrivacyPolicy();
+    await ref.read(onboardingControllerProvider.notifier).acceptPrivacyPolicy(
+          analyticsAllowed: _analyticsAllowed,
+          diagnosticsAllowed: _diagnosticsAllowed,
+        );
+    final analytics = ref.read(analyticsServiceProvider);
+    await analytics.setEnabled(_analyticsAllowed);
+    await ref
+        .read(crashReportingServiceProvider)
+        .setEnabled(_diagnosticsAllowed);
+    await ref.read(performanceServiceProvider).setEnabled(_diagnosticsAllowed);
+    analytics.privacyConsentUpdated(
+      analyticsAllowed: _analyticsAllowed,
+      diagnosticsAllowed: _diagnosticsAllowed,
+    );
     if (mounted) context.go('/currency');
   }
 
@@ -110,6 +128,22 @@ class _PrivacyConsentScreenState extends ConsumerState<PrivacyConsentScreen> {
                         key: const ValueKey('privacyPolicyConsentText'),
                       ),
                     ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(l10n.firebasePrivacyExplanation),
+                  SwitchListTile(
+                    value: _analyticsAllowed,
+                    onChanged: (value) =>
+                        setState(() => _analyticsAllowed = value),
+                    title: Text(l10n.allowAnonymousAnalytics),
+                    subtitle: Text(l10n.allowAnonymousAnalyticsHint),
+                  ),
+                  SwitchListTile(
+                    value: _diagnosticsAllowed,
+                    onChanged: (value) =>
+                        setState(() => _diagnosticsAllowed = value),
+                    title: Text(l10n.allowDiagnostics),
+                    subtitle: Text(l10n.allowDiagnosticsHint),
                   ),
                   const SizedBox(height: 10),
                   Text(

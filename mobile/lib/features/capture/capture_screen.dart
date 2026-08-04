@@ -1,6 +1,8 @@
 import 'dart:io';
 
+import 'package:dinarwise/core/analytics/analytics_service.dart';
 import 'package:dinarwise/core/currency/gulf_currency.dart';
+import 'package:dinarwise/core/diagnostics/crash_reporting_service.dart';
 import 'package:dinarwise/core/preferences/onboarding_controller.dart';
 import 'package:dinarwise/features/categories/category_localization.dart';
 import 'package:dinarwise/features/categories/custom_category_dialog.dart';
@@ -85,6 +87,9 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
     _paymentMethodId = expense?.paymentMethodId;
     _date = expense?.transactedAt ?? DateTime.now();
     _pendingReceiptPath = widget.sharedReceiptPath;
+    final analytics = ref.read(analyticsServiceProvider);
+    analytics.screen(_editing ? 'edit_expense' : 'add_expense');
+    if (!_editing) analytics.expenseAddStarted();
     if (expense != null) {
       Future<void>(() async {
         final receipt = await ref
@@ -151,19 +156,52 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
               sourcePath: _pendingReceiptPath!,
             );
       }
+      final category = (await ref.read(categoriesProvider.future))
+          .firstWhere((item) => item.id == _categoryId);
+      ref.read(analyticsServiceProvider).expenseSaved(
+            edited: _editing,
+            categoryType:
+                category.isSystem ? (category.systemCode ?? 'other') : 'custom',
+            currency: _currency.code,
+          );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(context.l10n.transactionSaved)),
       );
       context.pop(true);
     } on TransactionValidationException catch (exception) {
+      ref.read(analyticsServiceProvider).expenseFailed(
+            _editing ? 'edit' : 'add',
+            switch (exception.failure) {
+              TransactionValidationFailure.amountMustBePositive =>
+                'invalid_amount',
+              TransactionValidationFailure.insufficientBalance =>
+                'insufficient_balance',
+              TransactionValidationFailure.incomeReductionWouldOverdraw =>
+                'insufficient_balance',
+              TransactionValidationFailure.notFound => 'database_error',
+            },
+          );
       if (mounted) {
         setState(() {
           _saving = false;
           _error = _validationMessage(exception);
         });
       }
-    } catch (_) {
+    } catch (_, stack) {
+      ref
+          .read(analyticsServiceProvider)
+          .expenseFailed(_editing ? 'edit' : 'add', 'database_error');
+      ref.read(crashReportingServiceProvider)
+        ..setSafeContext(
+          screen: _editing ? 'edit_expense' : 'add_expense',
+          operation: _editing ? 'expense_update' : 'expense_create',
+        )
+        ..recordUnexpected(
+          StateError(
+              _editing ? 'expense_update_failed' : 'expense_create_failed'),
+          stack,
+        );
       if (mounted) {
         setState(() {
           _saving = false;
@@ -250,12 +288,28 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
     if (confirmed != true) return;
     try {
       await ref.read(expenseRepositoryProvider).delete(widget.expense!.id);
+      final categories = await ref.read(categoriesProvider.future);
+      final category = categories
+          .where((item) => item.id == widget.expense!.categoryId)
+          .firstOrNull;
+      ref.read(analyticsServiceProvider).expenseDeleted(
+            category?.isSystem == true
+                ? (category?.systemCode ?? 'other')
+                : 'custom',
+            _currency.code,
+          );
       if (mounted) context.pop(true);
     } on TransactionValidationException catch (exception) {
       if (mounted) {
         setState(() => _error = _validationMessage(exception));
       }
-    } catch (_) {
+    } catch (_, stack) {
+      ref
+          .read(analyticsServiceProvider)
+          .expenseFailed('delete', 'database_error');
+      ref.read(crashReportingServiceProvider)
+        ..setSafeContext(screen: 'edit_expense', operation: 'expense_delete')
+        ..recordUnexpected(StateError('expense_delete_failed'), stack);
       if (mounted) setState(() => _error = context.l10n.databaseError);
     }
   }

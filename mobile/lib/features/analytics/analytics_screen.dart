@@ -1,4 +1,6 @@
 import 'package:dinarwise/features/analytics/analytics_calculator.dart';
+import 'package:dinarwise/core/analytics/analytics_service.dart';
+import 'package:dinarwise/core/performance/performance_service.dart';
 import 'package:dinarwise/core/currency/gulf_currency.dart';
 import 'package:dinarwise/features/categories/category_localization.dart';
 import 'package:dinarwise/features/categories/data/category_repository.dart';
@@ -21,6 +23,14 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
   DateTime? _to;
   String _chartPeriod = 'monthly';
 
+  @override
+  void initState() {
+    super.initState();
+    final analytics = ref.read(analyticsServiceProvider);
+    analytics.screen('analytics');
+    analytics.analyticsViewed(_chartPeriod);
+  }
+
   Future<void> _chooseRange() async {
     final now = DateTime.now();
     final range = await showDateRangePicker(
@@ -35,6 +45,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
         _from = range.start;
         _to = range.end;
       });
+      ref.read(analyticsServiceProvider).analyticsViewed('custom');
     }
   }
 
@@ -52,11 +63,14 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (_, __) => Center(child: Text(l10n.unknownError)),
         data: (items) {
-          final summary = const AnalyticsCalculator().calculate(
-            items,
-            from: _from,
-            to: _to,
-          );
+          final summary = ref.read(performanceServiceProvider).traceSync(
+                PerformanceTraces.analyticsCalculation,
+                () => const AnalyticsCalculator().calculate(
+                  items,
+                  from: _from,
+                  to: _to,
+                ),
+              );
           final categoryById = {
             for (final category in categories) category.id: category,
           };
@@ -161,8 +175,12 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                     ButtonSegment(value: 'yearly', label: Text(l10n.yearly)),
                   ],
                   selected: {_chartPeriod},
-                  onSelectionChanged: (value) =>
-                      setState(() => _chartPeriod = value.first),
+                  onSelectionChanged: (value) {
+                    setState(() => _chartPeriod = value.first);
+                    ref
+                        .read(analyticsServiceProvider)
+                        .analyticsViewed(_chartPeriod);
+                  },
                 ),
               ),
               const SizedBox(height: 8),

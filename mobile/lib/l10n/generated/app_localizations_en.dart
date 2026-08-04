@@ -9,7 +9,7 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get appName => 'DinarWise';
+  String get appName => 'Dinar Wise: Expense AI Manager';
 
   @override
   String get loading => 'Loading…';
@@ -1145,4 +1145,22 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get firebasePrivacyExplanation =>
+      'Your financial records remain on this device. If you opt in, anonymous usage or diagnostic information may be sent to Firebase/Google when an internet connection is available. DinarWise never sends amounts, balances, merchants, notes, receipts, or identifying information.';
+
+  @override
+  String get allowAnonymousAnalytics => 'Allow anonymous analytics';
+
+  @override
+  String get allowAnonymousAnalyticsHint =>
+      'Help improve DinarWise by sharing privacy-safe feature usage.';
+
+  @override
+  String get allowDiagnostics => 'Allow diagnostic data';
+
+  @override
+  String get allowDiagnosticsHint =>
+      'Share privacy-safe crash and performance information.';
 }

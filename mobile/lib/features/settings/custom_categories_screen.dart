@@ -1,4 +1,5 @@
 import 'package:dinarwise/features/categories/custom_category_dialog.dart';
+import 'package:dinarwise/core/analytics/analytics_service.dart';
 import 'package:dinarwise/core/currency/gulf_currency.dart';
 import 'package:dinarwise/features/categories/data/category_repository.dart';
 import 'package:dinarwise/features/expenses/data/expense_providers.dart';
@@ -44,6 +45,9 @@ class _CustomCategoriesScreenState
     if (confirmed != true) return;
     final result =
         await ref.read(categoryRepositoryProvider).deleteCustom(category.id);
+    if (result == DeleteCategoryResult.deleted) {
+      ref.read(analyticsServiceProvider).customCategoryDeleted();
+    }
     if (result == DeleteCategoryResult.inUse && context.mounted) {
       final categories = ref.read(categoriesProvider).valueOrNull ?? const [];
       String? replacement =
@@ -84,6 +88,7 @@ class _CustomCategoriesScreenState
         await ref
             .read(categoryRepositoryProvider)
             .reassignAndDelete(category.id, replacement!);
+        ref.read(analyticsServiceProvider).customCategoryDeleted();
       }
     }
   }

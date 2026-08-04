@@ -101,7 +101,7 @@ abstract class AppLocalizations {
   /// No description provided for @appName.
   ///
   /// In en, this message translates to:
-  /// **'DinarWise'**
+  /// **'Dinar Wise: Expense AI Manager'**
   String get appName;
 
   /// No description provided for @loading.
@@ -2203,6 +2203,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =1{1 decimal place} other{{count} decimal places}}'**
   String decimalPlaces(int count);
+
+  /// No description provided for @firebasePrivacyExplanation.
+  ///
+  /// In en, this message translates to:
+  /// **'Your financial records remain on this device. If you opt in, anonymous usage or diagnostic information may be sent to Firebase/Google when an internet connection is available. DinarWise never sends amounts, balances, merchants, notes, receipts, or identifying information.'**
+  String get firebasePrivacyExplanation;
+
+  /// No description provided for @allowAnonymousAnalytics.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow anonymous analytics'**
+  String get allowAnonymousAnalytics;
+
+  /// No description provided for @allowAnonymousAnalyticsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Help improve DinarWise by sharing privacy-safe feature usage.'**
+  String get allowAnonymousAnalyticsHint;
+
+  /// No description provided for @allowDiagnostics.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow diagnostic data'**
+  String get allowDiagnostics;
+
+  /// No description provided for @allowDiagnosticsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Share privacy-safe crash and performance information.'**
+  String get allowDiagnosticsHint;
 }
 
 class _AppLocalizationsDelegate

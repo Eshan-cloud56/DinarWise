@@ -1,4 +1,4 @@
-package com.dinarwise.app.dinarwise
+package com.sl.dinarwise.expensemanager
 
 import android.content.Intent
 import android.net.Uri

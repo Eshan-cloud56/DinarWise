@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "509992270139",
+    "project_id": "dinnar-wise",
+    "storage_bucket": "dinnar-wise.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:509992270139:android:56312d911ef3acfaf19f1e",
+        "android_client_info": {
+          "package_name": "com.sl.dinarwise.expensemanager"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCzGlRC2FpGwzTUHvEJnp6P1kzWVcMMGqs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

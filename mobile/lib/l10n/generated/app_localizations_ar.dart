@@ -9,7 +9,7 @@ class AppLocalizationsAr extends AppLocalizations {
   AppLocalizationsAr([String locale = 'ar']) : super(locale);
 
   @override
-  String get appName => 'دينار وايز';
+  String get appName => 'دينار وايز: مدير المصروفات بالذكاء الاصطناعي';
 
   @override
   String get loading => 'جارٍ التحميل…';
@@ -1140,4 +1140,22 @@ class AppLocalizationsAr extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get firebasePrivacyExplanation =>
+      'تبقى سجلاتك المالية على هذا الجهاز. إذا وافقت، قد تُرسل معلومات استخدام أو تشخيص مجهولة إلى Firebase/Google عند توفر اتصال بالإنترنت. لا يرسل دينار وايز المبالغ أو الأرصدة أو أسماء المتاجر أو الملاحظات أو الإيصالات أو معلومات التعريف.';
+
+  @override
+  String get allowAnonymousAnalytics => 'السماح بالتحليلات المجهولة';
+
+  @override
+  String get allowAnonymousAnalyticsHint =>
+      'ساعد في تحسين دينار وايز عبر مشاركة استخدام آمن للميزات يحافظ على الخصوصية.';
+
+  @override
+  String get allowDiagnostics => 'السماح ببيانات التشخيص';
+
+  @override
+  String get allowDiagnosticsHint =>
+      'مشاركة معلومات الأعطال والأداء الآمنة التي تحافظ على الخصوصية.';
 }

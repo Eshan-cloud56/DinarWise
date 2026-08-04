@@ -1,6 +1,6 @@
 {
   "@@locale": "ar",
-  "appName": "دينار وايز",
+  "appName": "دينار وايز: مدير المصروفات بالذكاء الاصطناعي",
   "loading": "جارٍ التحميل…",
   "languageSelectionTitle": "اختر لغتك",
   "languageSelectionSubtitle": "يمكنك تغيير اللغة لاحقًا من الإعدادات.",
@@ -399,5 +399,10 @@
   "chooseCurrency": "اختر عملتك",
   "chooseCurrencyDescription": "سيستخدم DinarWise هذه العملة للدخل والمصروفات والميزانيات والتقارير.",
   "decimalPlaces": "{count, plural, =1{منزلة عشرية واحدة} =2{منزلتان عشريتان} other{{count} منازل عشرية}}",
-  "@decimalPlaces": {"placeholders": {"count": {"type": "int"}}}
+  "@decimalPlaces": {"placeholders": {"count": {"type": "int"}}},
+  "firebasePrivacyExplanation": "تبقى سجلاتك المالية على هذا الجهاز. إذا وافقت، قد تُرسل معلومات استخدام أو تشخيص مجهولة إلى Firebase/Google عند توفر اتصال بالإنترنت. لا يرسل دينار وايز المبالغ أو الأرصدة أو أسماء المتاجر أو الملاحظات أو الإيصالات أو معلومات التعريف.",
+  "allowAnonymousAnalytics": "السماح بالتحليلات المجهولة",
+  "allowAnonymousAnalyticsHint": "ساعد في تحسين دينار وايز عبر مشاركة استخدام آمن للميزات يحافظ على الخصوصية.",
+  "allowDiagnostics": "السماح ببيانات التشخيص",
+  "allowDiagnosticsHint": "مشاركة معلومات الأعطال والأداء الآمنة التي تحافظ على الخصوصية."
 }

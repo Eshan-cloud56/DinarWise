@@ -1,7 +1,9 @@
 import 'dart:async';
 
+import 'package:dinarwise/core/analytics/analytics_service.dart';
 import 'package:dinarwise/core/database/database_provider.dart';
 import 'package:dinarwise/core/preferences/onboarding_controller.dart';
+import 'package:dinarwise/core/performance/performance_service.dart';
 import 'package:dinarwise/features/categories/category_localization.dart';
 import 'package:dinarwise/core/currency/gulf_currency.dart';
 import 'package:dinarwise/features/categories/data/category_repository.dart';
@@ -43,6 +45,9 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   @override
   void initState() {
     super.initState();
+    ref.read(analyticsServiceProvider)
+      ..screen('transactions')
+      ..transactionsViewed();
     _scrollController.addListener(_onScroll);
     Future<void>.microtask(_initialize);
   }
@@ -95,12 +100,17 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
             .map((category) => category.id)
             .toSet();
     try {
-      final result = await ref.read(expenseRepositoryProvider).search(
-            profileId: profileId,
-            filter: _filter,
-            categorySearchIds: matchingCategoryIds,
-            limit: _pageSize,
-            offset: reset ? 0 : _items.length,
+      final result = await ref.read(performanceServiceProvider).trace(
+            _filter.search.trim().isEmpty
+                ? PerformanceTraces.transactionsLoad
+                : PerformanceTraces.transactionSearch,
+            () => ref.read(expenseRepositoryProvider).search(
+                  profileId: profileId,
+                  filter: _filter,
+                  categorySearchIds: matchingCategoryIds,
+                  limit: _pageSize,
+                  offset: reset ? 0 : _items.length,
+                ),
           );
       if (!mounted) return;
       setState(() {
@@ -126,7 +136,12 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     _debounce?.cancel();
     _debounce = Timer(
       const Duration(milliseconds: 300),
-      () => _apply(_filter.copyWith(search: value)),
+      () {
+        if (value.trim().isNotEmpty) {
+          ref.read(analyticsServiceProvider).transactionSearchUsed();
+        }
+        _apply(_filter.copyWith(search: value));
+      },
     );
   }
 
@@ -141,6 +156,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
           : null,
     );
     if (range != null) {
+      ref.read(analyticsServiceProvider).transactionFilterApplied('date');
       await _apply(_filter.copyWith(from: range.start, to: range.end));
     }
   }
@@ -182,8 +198,28 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     if (confirmed != true) return;
     try {
       await ref.read(expenseRepositoryProvider).delete(item.id);
+      final analytics = ref.read(analyticsServiceProvider);
+      if (item.type == 'income') {
+        analytics.incomeDeleted(item.currency);
+      } else {
+        final category = (ref.read(categoriesProvider).valueOrNull ?? const [])
+            .where((value) => value.id == item.categoryId)
+            .firstOrNull;
+        analytics.expenseDeleted(
+          category?.isSystem == true
+              ? (category?.systemCode ?? 'other')
+              : 'custom',
+          item.currency,
+        );
+      }
       await _load(reset: true);
     } on TransactionValidationException {
+      final analytics = ref.read(analyticsServiceProvider);
+      if (item.type == 'income') {
+        analytics.incomeFailed('delete', 'negative_balance');
+      } else {
+        analytics.expenseFailed('delete', 'unknown');
+      }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(context.l10n.incomeReductionBlocked)),
@@ -237,14 +273,23 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                       paymentMethods: paymentMethods,
                       searchController: _searchController,
                       onSearchChanged: _searchChanged,
-                      onTypeChanged: (type) =>
-                          _apply(_filter.copyWith(type: type)),
-                      onCategoryChanged: (id) => _apply(
-                        _filter.copyWith(
-                          categoryId: id,
-                          clearCategory: id == null,
-                        ),
-                      ),
+                      onTypeChanged: (type) {
+                        ref
+                            .read(analyticsServiceProvider)
+                            .transactionFilterApplied('transaction_type');
+                        _apply(_filter.copyWith(type: type));
+                      },
+                      onCategoryChanged: (id) {
+                        ref
+                            .read(analyticsServiceProvider)
+                            .transactionFilterApplied('category');
+                        _apply(
+                          _filter.copyWith(
+                            categoryId: id,
+                            clearCategory: id == null,
+                          ),
+                        );
+                      },
                       onPaymentMethodChanged: (id) => _apply(
                         _filter.copyWith(
                           paymentMethodId: id,

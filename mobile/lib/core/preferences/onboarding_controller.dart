@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:dinarwise/core/analytics/analytics_service.dart';
 import 'package:dinarwise/core/constants.dart';
 import 'package:dinarwise/core/preferences/app_preferences.dart';
 import 'package:flutter/material.dart';
@@ -92,16 +93,27 @@ class OnboardingController extends AsyncNotifier<OnboardingState> {
   }
 
   Future<void> selectLanguage(String languageCode) async {
+    final previous = state.requireValue.locale?.languageCode;
     await ref.read(appPreferencesProvider).setLanguage(languageCode);
     final current = state.requireValue;
     state = AsyncData(current.copyWith(locale: Locale(languageCode)));
+    final analytics = ref.read(analyticsServiceProvider);
+    if (previous != null && previous != languageCode) {
+      analytics.languageChanged(previous, languageCode);
+    }
+    analytics.setAppLanguage(languageCode);
   }
 
-  Future<void> acceptPrivacyPolicy() async {
+  Future<void> acceptPrivacyPolicy({
+    bool analyticsAllowed = false,
+    bool diagnosticsAllowed = false,
+  }) async {
     final acceptedAt = DateTime.now().toUtc();
     await ref.read(appPreferencesProvider).acceptPrivacyPolicy(
           version: currentPrivacyPolicyVersion,
           acceptedAt: acceptedAt,
+          analyticsAllowed: analyticsAllowed,
+          diagnosticsAllowed: diagnosticsAllowed,
         );
     final current = state.requireValue;
     state = AsyncData(
@@ -114,14 +126,22 @@ class OnboardingController extends AsyncNotifier<OnboardingState> {
   }
 
   Future<void> selectCurrency(String currencyCode) async {
-    await ref.read(appPreferencesProvider).setCurrency(currencyCode);
     final current = state.requireValue;
+    final previous = current.currencyCode;
+    await ref.read(appPreferencesProvider).setCurrency(currencyCode);
     state = AsyncData(
       current.copyWith(
         currencyCode: currencyCode,
         onboardingCompleted: true,
       ),
     );
+    final analytics = ref.read(analyticsServiceProvider);
+    if (previous != null && previous != currencyCode) {
+      analytics.currencyChanged(previous, currencyCode);
+    }
+    analytics.setSelectedCurrency(currencyCode);
+    analytics.setOnboardingStatus(true);
+    analytics.onboardingCompleted(current.locale?.languageCode ?? 'en');
   }
 
   Future<void> resetPreferences() async {

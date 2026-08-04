@@ -1,6 +1,10 @@
 import 'package:dinarwise/core/currency/gulf_currency.dart';
+import 'package:dinarwise/core/analytics/analytics_service.dart';
 import 'package:dinarwise/core/database/app_database.dart';
 import 'package:dinarwise/core/database/database_provider.dart';
+import 'package:dinarwise/core/diagnostics/crash_reporting_service.dart';
+import 'package:dinarwise/core/performance/performance_service.dart';
+import 'package:dinarwise/core/preferences/app_preferences.dart';
 import 'package:dinarwise/core/preferences/onboarding_controller.dart';
 import 'package:dinarwise/features/notifications/notification_providers.dart';
 import 'package:dinarwise/l10n/l10n_extension.dart';
@@ -57,6 +61,9 @@ class SettingsScreen extends ConsumerWidget {
       ),
     );
     if (confirmed != true) return;
+    await ref.read(analyticsServiceProvider).setEnabled(false);
+    await ref.read(crashReportingServiceProvider).setEnabled(false);
+    await ref.read(performanceServiceProvider).setEnabled(false);
     await ref.read(databaseProvider).clearAllFinancialData();
     await ref.read(onboardingControllerProvider.notifier).resetPreferences();
     if (context.mounted) context.go('/language');
@@ -64,8 +71,12 @@ class SettingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.read(analyticsServiceProvider)
+      ..screen('settings')
+      ..settingsViewed();
     final l10n = context.l10n;
     final state = ref.watch(onboardingControllerProvider).requireValue;
+    final preferences = ref.watch(appPreferencesProvider);
     return Scaffold(
       appBar: AppBar(title: Text(l10n.settings)),
       body: SingleChildScrollView(
@@ -116,6 +127,49 @@ class SettingsScreen extends ConsumerWidget {
                         }
                       },
                     ),
+                  ),
+                  const Divider(height: 1),
+                  SwitchListTile(
+                    secondary: const Icon(Icons.insights_outlined),
+                    title: Text(l10n.allowAnonymousAnalytics),
+                    subtitle: Text(l10n.allowAnonymousAnalyticsHint),
+                    value: preferences.analyticsAllowed,
+                    onChanged: (value) async {
+                      final analytics = ref.read(analyticsServiceProvider);
+                      if (value) await analytics.setEnabled(true);
+                      analytics.privacyConsentUpdated(
+                        analyticsAllowed: value,
+                        diagnosticsAllowed: preferences.diagnosticsAllowed,
+                      );
+                      await preferences.setAnalyticsAllowed(value);
+                      if (!value) await analytics.setEnabled(false);
+                      if (context.mounted) {
+                        (context as Element).markNeedsBuild();
+                      }
+                    },
+                  ),
+                  const Divider(height: 1),
+                  SwitchListTile(
+                    secondary: const Icon(Icons.bug_report_outlined),
+                    title: Text(l10n.allowDiagnostics),
+                    subtitle: Text(l10n.allowDiagnosticsHint),
+                    value: preferences.diagnosticsAllowed,
+                    onChanged: (value) async {
+                      ref.read(analyticsServiceProvider).privacyConsentUpdated(
+                            analyticsAllowed: preferences.analyticsAllowed,
+                            diagnosticsAllowed: value,
+                          );
+                      await preferences.setDiagnosticsAllowed(value);
+                      await ref
+                          .read(crashReportingServiceProvider)
+                          .setEnabled(value);
+                      await ref
+                          .read(performanceServiceProvider)
+                          .setEnabled(value);
+                      if (context.mounted) {
+                        (context as Element).markNeedsBuild();
+                      }
+                    },
                   ),
                   const Divider(height: 1),
                   ListTile(

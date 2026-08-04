@@ -1,3 +1,5 @@
+import 'package:dinarwise/core/analytics/analytics_service.dart';
+import 'package:dinarwise/core/analytics/analytics_observer.dart';
 import 'package:dinarwise/core/preferences/onboarding_controller.dart';
 import 'package:dinarwise/features/analytics/analytics_screen.dart';
 import 'package:dinarwise/features/capture/capture_screen.dart';
@@ -37,6 +39,9 @@ final routerProvider = Provider<GoRouter>((ref) {
   };
   return GoRouter(
     initialLocation: initialLocation,
+    observers: [
+      AnalyticsNavigationObserver(ref.watch(analyticsServiceProvider)),
+    ],
     redirect: (_, route) {
       final location = route.matchedLocation;
       if (destination == StartupDestination.language) {
@@ -58,39 +63,50 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(
         path: '/language',
+        name: 'onboarding',
         builder: (_, __) => const LanguageSelectionScreen(),
       ),
       GoRoute(
         path: '/privacy',
+        name: 'privacy_consent',
         builder: (_, __) => const PrivacyConsentScreen(),
       ),
       GoRoute(
         path: '/currency',
+        name: 'currency_settings',
         builder: (_, __) => const CurrencySelectionScreen(),
       ),
       GoRoute(
         path: '/',
+        name: 'dashboard',
         builder: (_, state) => DashboardScreen(
           openIncome: state.uri.queryParameters['action'] == 'income',
         ),
       ),
       GoRoute(
         path: '/history',
+        name: 'transactions',
         builder: (_, state) => HistoryScreen(
           initialCategoryId: state.uri.queryParameters['category'],
         ),
       ),
       GoRoute(
         path: '/history/calendar',
+        name: 'transaction_details',
         builder: (_, __) => const SpendingCalendarScreen(),
       ),
-      GoRoute(path: '/analytics', builder: (_, __) => const AnalyticsScreen()),
+      GoRoute(
+        path: '/analytics',
+        name: 'analytics',
+        builder: (_, __) => const AnalyticsScreen(),
+      ),
       GoRoute(
         path: '/calculators',
         builder: (_, __) => const CalculatorsScreen(),
       ),
       GoRoute(
         path: '/capture',
+        name: 'add_expense',
         builder: (_, state) {
           final extra = state.extra;
           if (extra is CaptureLaunchArgs) {
@@ -102,9 +118,14 @@ final routerProvider = Provider<GoRouter>((ref) {
           return CaptureScreen(expense: extra as ExpenseRecord?);
         },
       ),
-      GoRoute(path: '/settings', builder: (_, __) => const SettingsScreen()),
+      GoRoute(
+        path: '/settings',
+        name: 'settings',
+        builder: (_, __) => const SettingsScreen(),
+      ),
       GoRoute(
         path: '/settings/categories',
+        name: 'categories',
         builder: (_, __) => const CustomCategoriesScreen(),
       ),
       GoRoute(

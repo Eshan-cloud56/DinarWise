@@ -1,3 +1,4 @@
+import 'package:dinarwise/core/analytics/analytics_service.dart';
 import 'package:dinarwise/core/preferences/onboarding_controller.dart';
 import 'package:dinarwise/features/categories/data/category_repository.dart';
 import 'package:dinarwise/features/expenses/data/expense_providers.dart';
@@ -55,9 +56,13 @@ Future<CategoryRecord?> showCustomCategoryDialog(
                       onboarding.localProfileId,
                       name,
                     );
+                    ref.read(analyticsServiceProvider)
+                      ..customCategoryCreated()
+                      ..setCustomCategoriesUsed(true);
                     if (context.mounted) Navigator.pop(context, created);
                   } else {
                     await repository.renameCustom(existing.id, name);
+                    ref.read(analyticsServiceProvider).customCategoryEdited();
                     if (context.mounted) {
                       Navigator.pop(
                         context,

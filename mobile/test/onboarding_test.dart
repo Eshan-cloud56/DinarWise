@@ -107,6 +107,7 @@ void main() {
       find.widgetWithText(FilledButton, 'Get Started'),
     );
     expect(button.onPressed, isNotNull);
+    await tester.ensureVisible(find.text('Get Started'));
     await tester.tap(find.text('Get Started'));
     await tester.pumpAndSettle();
     expect(find.text('Choose your currency'), findsOneWidget);

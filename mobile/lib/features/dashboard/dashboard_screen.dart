@@ -1,4 +1,6 @@
 import 'package:dinarwise/features/categories/category_localization.dart';
+import 'package:dinarwise/core/analytics/analytics_service.dart';
+import 'package:dinarwise/core/performance/performance_service.dart';
 import 'package:dinarwise/core/currency/gulf_currency.dart';
 import 'package:dinarwise/core/preferences/onboarding_controller.dart';
 import 'package:dinarwise/features/capture/offline_ai_notice.dart';
@@ -21,9 +23,19 @@ class DashboardScreen extends ConsumerStatefulWidget {
 }
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
+  bool _summaryLogged = false;
   @override
   void initState() {
     super.initState();
+    Future<void>.microtask(
+      () => ref.read(performanceServiceProvider).trace(
+        PerformanceTraces.dashboardLoad,
+        () async {
+          await ref.read(financialSummaryProvider.future);
+          await ref.read(recentTransactionsProvider.future);
+        },
+      ),
+    );
     if (widget.openIncome) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) manageIncome(context, ref);
@@ -33,6 +45,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final analytics = ref.read(analyticsServiceProvider);
+    analytics.screen('dashboard');
     final l10n = context.l10n;
     final expenses = ref.watch(recentTransactionsProvider);
     final summary = ref.watch(financialSummaryProvider).valueOrNull ??
@@ -52,6 +66,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final currency = currencySpec.formatter(
       Localizations.localeOf(context).toLanguageTag(),
     );
+    if (!_summaryLogged && ref.watch(financialSummaryProvider).hasValue) {
+      _summaryLogged = true;
+      analytics.dashboardSummaryViewed();
+    }
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.appName),
@@ -63,7 +81,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ),
           IconButton(
             tooltip: l10n.aiFeature,
-            onPressed: () => showOfflineAiNotice(context),
+            onPressed: () => showOfflineAiNotice(context, ref),
             icon: const Icon(Icons.auto_awesome_outlined),
           ),
           IconButton(

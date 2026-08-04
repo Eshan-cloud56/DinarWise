@@ -1,8 +1,13 @@
+import 'package:dinarwise/core/analytics/analytics_service.dart';
 import 'package:dinarwise/l10n/l10n_extension.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-Future<void> showOfflineAiNotice(BuildContext context) {
+Future<void> showOfflineAiNotice(BuildContext context, WidgetRef ref) {
+  final analytics = ref.read(analyticsServiceProvider);
+  analytics.screen('ai_information');
+  analytics.aiInformationViewed();
   return showModalBottomSheet<void>(
     context: context,
     showDragHandle: true,

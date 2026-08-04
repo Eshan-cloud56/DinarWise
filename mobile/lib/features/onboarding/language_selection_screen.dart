@@ -1,3 +1,4 @@
+import 'package:dinarwise/core/analytics/analytics_service.dart';
 import 'package:dinarwise/core/preferences/onboarding_controller.dart';
 import 'package:dinarwise/l10n/l10n_extension.dart';
 import 'package:flutter/material.dart';
@@ -12,6 +13,7 @@ class LanguageSelectionScreen extends ConsumerWidget {
     WidgetRef ref,
     String languageCode,
   ) async {
+    ref.read(analyticsServiceProvider).onboardingStarted(languageCode);
     await ref
         .read(onboardingControllerProvider.notifier)
         .selectLanguage(languageCode);
