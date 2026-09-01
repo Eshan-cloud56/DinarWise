@@ -5,7 +5,12 @@
 abstract final class AnalyticsEvents {
   static const onboardingStarted = 'onboarding_started';
   static const onboardingCompleted = 'onboarding_completed';
-  static const privacyConsentUpdated = 'privacy_consent_updated';
+  static const privacyPolicyAccepted = 'privacy_policy_accepted';
+  static const tutorialStarted = 'tutorial_started';
+  static const tutorialStepViewed = 'tutorial_step_viewed';
+  static const tutorialSkipped = 'tutorial_skipped';
+  static const tutorialCompleted = 'tutorial_completed';
+  static const tutorialReplayed = 'tutorial_replayed';
   static const languageChanged = 'language_changed';
   static const currencyChanged = 'currency_changed';
   static const incomeAddStarted = 'income_add_started';
@@ -38,8 +43,8 @@ abstract final class AnalyticsParameters {
   static const appLanguage = 'app_language';
   static const selectedLanguage = 'selected_language';
   static const selectedCurrency = 'selected_currency';
-  static const analyticsAllowed = 'analytics_allowed';
-  static const diagnosticsAllowed = 'diagnostics_allowed';
+  static const tutorialVersion = 'tutorial_version';
+  static const stepId = 'step_id';
   static const fromLanguage = 'from_language';
   static const toLanguage = 'to_language';
   static const fromCurrency = 'from_currency';

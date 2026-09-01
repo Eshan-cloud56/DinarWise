@@ -104,16 +104,11 @@ class OnboardingController extends AsyncNotifier<OnboardingState> {
     analytics.setAppLanguage(languageCode);
   }
 
-  Future<void> acceptPrivacyPolicy({
-    bool analyticsAllowed = false,
-    bool diagnosticsAllowed = false,
-  }) async {
+  Future<void> acceptPrivacyPolicy() async {
     final acceptedAt = DateTime.now().toUtc();
     await ref.read(appPreferencesProvider).acceptPrivacyPolicy(
           version: currentPrivacyPolicyVersion,
           acceptedAt: acceptedAt,
-          analyticsAllowed: analyticsAllowed,
-          diagnosticsAllowed: diagnosticsAllowed,
         );
     final current = state.requireValue;
     state = AsyncData(

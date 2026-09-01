@@ -11,6 +11,7 @@ const _localProfileIdKey = 'local_profile_id';
 const _selectedCurrencyKey = 'selected_currency';
 const _analyticsAllowedKey = 'analytics_allowed';
 const _diagnosticsAllowedKey = 'diagnostics_allowed';
+const _dashboardTutorialCompletedV1Key = 'dashboard_tutorial_completed_v1';
 
 final sharedPreferencesProvider = Provider<SharedPreferences>(
   (_) => throw UnimplementedError('SharedPreferences must be initialized'),
@@ -35,10 +36,8 @@ class AppPreferences {
 
   String? get localProfileId => _preferences.getString(_localProfileIdKey);
   String? get selectedCurrency => _preferences.getString(_selectedCurrencyKey);
-  bool get analyticsAllowed =>
-      _preferences.getBool(_analyticsAllowedKey) ?? false;
-  bool get diagnosticsAllowed =>
-      _preferences.getBool(_diagnosticsAllowedKey) ?? false;
+  bool get dashboardTutorialCompletedV1 =>
+      _preferences.getBool(_dashboardTutorialCompletedV1Key) ?? false;
 
   Future<String> getOrCreateLocalProfileId() async {
     final existing = localProfileId;
@@ -56,17 +55,21 @@ class AppPreferences {
     await _preferences.setBool(_onboardingCompletedKey, true);
   }
 
-  Future<void> setAnalyticsAllowed(bool allowed) =>
-      _preferences.setBool(_analyticsAllowedKey, allowed);
+  Future<void> setDashboardTutorialCompletedV1(bool completed) =>
+      _preferences.setBool(_dashboardTutorialCompletedV1Key, completed);
 
-  Future<void> setDiagnosticsAllowed(bool allowed) =>
-      _preferences.setBool(_diagnosticsAllowedKey, allowed);
+  /// Removes retired telemetry consent preferences.
+  ///
+  /// Analytics is automatic from privacy disclosure version 1.2 onward. An
+  /// old stored `false` value must not disable collection after an update.
+  Future<void> migrateAutomaticTelemetryPreferences() async {
+    await _preferences.remove(_analyticsAllowedKey);
+    await _preferences.remove(_diagnosticsAllowedKey);
+  }
 
   Future<void> acceptPrivacyPolicy({
     required String version,
     required DateTime acceptedAt,
-    bool analyticsAllowed = false,
-    bool diagnosticsAllowed = false,
   }) async {
     await _preferences.setBool(_privacyAcceptedKey, true);
     await _preferences.setString(_privacyVersionKey, version);
@@ -75,8 +78,6 @@ class AppPreferences {
       acceptedAt.toUtc().toIso8601String(),
     );
     await _preferences.setBool(_onboardingCompletedKey, false);
-    await setAnalyticsAllowed(analyticsAllowed);
-    await setDiagnosticsAllowed(diagnosticsAllowed);
   }
 
   Future<void> clearOnboardingAndPreferences() async {

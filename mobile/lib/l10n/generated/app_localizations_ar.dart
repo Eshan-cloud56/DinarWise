@@ -34,13 +34,14 @@ class AppLocalizationsAr extends AppLocalizations {
   String get welcomeSubtitle => 'إرشادات مالية يومية مصممة لحياتك.';
 
   @override
-  String get privacyConsentPrefix => 'لقد قرأت ';
-
-  @override
   String get privacyPolicy => 'سياسة الخصوصية';
 
   @override
-  String get privacyConsentSuffix => ' وأوافق عليها.';
+  String get privacyAcknowledgementPrefix =>
+      'بالنقر على \"ابدأ\"، فإنك تقر بأنك قرأت ';
+
+  @override
+  String get privacyAcknowledgementSuffix => ' ووافقت عليها.';
 
   @override
   String get getStarted => 'ابدأ الآن';
@@ -1142,20 +1143,87 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String get privacyAtGlance => 'خصوصيتك في لمحة';
+
+  @override
+  String get privacyLocalRecords => 'تبقى السجلات المالية على هذا الجهاز.';
+
+  @override
+  String get privacySafeTelemetry =>
+      'تساعد معلومات الاستخدام والتشخيص الآمنة في تحسين دينار وايز.';
+
+  @override
+  String get privacyNeverSent =>
+      'لا تُرسل المبالغ الدقيقة أو أسماء المتاجر أو الملاحظات أو الإيصالات إلى Firebase.';
+
+  @override
+  String get readFullPrivacyPolicy => 'قراءة سياسة الخصوصية كاملة';
+
+  @override
   String get firebasePrivacyExplanation =>
-      'تبقى سجلاتك المالية على هذا الجهاز. إذا وافقت، قد تُرسل معلومات استخدام أو تشخيص مجهولة إلى Firebase/Google عند توفر اتصال بالإنترنت. لا يرسل دينار وايز المبالغ أو الأرصدة أو أسماء المتاجر أو الملاحظات أو الإيصالات أو معلومات التعريف.';
+      'يستخدم دينار وايز Firebase Analytics تلقائيًا لفهم فتح التطبيق والجلسات والشاشات والتفاعل الآمن مع الميزات. ويجمع Firebase Crashlytics ومراقبة الأداء تلقائيًا معلومات آمنة عن الأعطال والأخطاء والأداء. قد تُرسل بيانات القياس إلى Firebase/Google عند توفر الإنترنت. تبقى السجلات المالية والمبالغ الدقيقة والأرصدة وأسماء المتاجر والملاحظات والإيصالات محلية ولا تُرسل. لا يستخدم دينار وايز مصادقة Firebase أو المزامنة السحابية. تم تعطيل معرّفات الإعلانات وتخصيصها.';
 
   @override
-  String get allowAnonymousAnalytics => 'السماح بالتحليلات المجهولة';
+  String get replayAppTutorial => 'إعادة عرض دليل التطبيق';
 
   @override
-  String get allowAnonymousAnalyticsHint =>
-      'ساعد في تحسين دينار وايز عبر مشاركة استخدام آمن للميزات يحافظ على الخصوصية.';
+  String get tutorialDashboardTitle => 'ملخص لوحة التحكم';
 
   @override
-  String get allowDiagnostics => 'السماح ببيانات التشخيص';
+  String get tutorialDashboardDescription =>
+      'اطّلع بسرعة على الرصيد المتبقي وإجمالي الدخل وإجمالي المصروفات.';
 
   @override
-  String get allowDiagnosticsHint =>
-      'مشاركة معلومات الأعطال والأداء الآمنة التي تحافظ على الخصوصية.';
+  String get tutorialIncomeTitle => 'إضافة دخل';
+
+  @override
+  String get tutorialIncomeDescription =>
+      'أضف دخل الأسرة قبل تسجيل المصروفات ليتمكن دينار وايز من حماية رصيدك المتبقي.';
+
+  @override
+  String get tutorialExpenseTitle => 'إضافة مصروف';
+
+  @override
+  String get tutorialExpenseDescription =>
+      'سجّل المتجر والفئة والتاريخ والملاحظات الاختيارية لكل مصروف.';
+
+  @override
+  String get tutorialTransactionsTitle => 'المعاملات الأخيرة';
+
+  @override
+  String get tutorialTransactionsDescription =>
+      'استخدم عرض الكل لمراجعة سجل المعاملات وتعديله وحذفه والبحث فيه وتصفيته.';
+
+  @override
+  String get tutorialAnalyticsTitle => 'التحليلات';
+
+  @override
+  String get tutorialAnalyticsDescription =>
+      'استكشف رؤى الإنفاق والاتجاهات وملخصات الفئات المحسوبة من سجلاتك المحلية.';
+
+  @override
+  String get tutorialCategoriesTitle => 'الفئات';
+
+  @override
+  String get tutorialCategoriesDescription =>
+      'افتح الإعدادات لإدارة الفئات المضمنة وإنشاء فئاتك المخصصة.';
+
+  @override
+  String get tutorialSettingsTitle => 'الإعدادات';
+
+  @override
+  String get tutorialSettingsDescription =>
+      'أدر اللغة والعملة وتفضيلات التطبيق الأخرى، بما في ذلك خيارات المظهر عند دعمها.';
+
+  @override
+  String get tutorialNext => 'التالي';
+
+  @override
+  String get tutorialBack => 'السابق';
+
+  @override
+  String get tutorialSkip => 'تخطي';
+
+  @override
+  String get tutorialFinish => 'إنهاء';
 }

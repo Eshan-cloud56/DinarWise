@@ -13,8 +13,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 Future<AppDatabase> pumpApp(
   WidgetTester tester, {
   Map<String, Object> preferences = const {},
+  bool tutorialCompleted = true,
 }) async {
-  SharedPreferences.setMockInitialValues(preferences);
+  SharedPreferences.setMockInitialValues({
+    'dashboard_tutorial_completed_v1': tutorialCompleted,
+    ...preferences,
+  });
   final sharedPreferences = await SharedPreferences.getInstance();
   final database = AppDatabase(NativeDatabase.memory());
   await tester.pumpWidget(
@@ -49,25 +53,27 @@ void main() {
     await tester.tap(find.text('English').first);
     await tester.pumpAndSettle();
     expect(find.text('Welcome to DinarWise'), findsOneWidget);
-    expect(
-        find.byKey(const ValueKey('privacyPolicyConsentText')), findsOneWidget);
+    expect(find.byKey(const ValueKey('privacyPolicyAcknowledgementText')),
+        findsOneWidget);
     expect(find.text('Get Started'), findsOneWidget);
-    expect(tester.widget<Checkbox>(find.byType(Checkbox)).value, isFalse);
+    expect(find.text('Allow anonymous analytics'), findsNothing);
+    expect(find.text('Allow diagnostic data'), findsNothing);
+    expect(find.byType(Checkbox), findsNothing);
     final button = tester.widget<FilledButton>(
       find.widgetWithText(FilledButton, 'Get Started'),
     );
-    expect(button.onPressed, isNull);
+    expect(button.onPressed, isNotNull);
 
-    final consentText = tester.widget<Text>(
-      find.byKey(const ValueKey('privacyPolicyConsentText')),
+    final acknowledgementText = tester.widget<Text>(
+      find.byKey(const ValueKey('privacyPolicyAcknowledgementText')),
     );
-    final policyLink = (consentText.textSpan! as TextSpan)
+    final policyLink = (acknowledgementText.textSpan! as TextSpan)
         .children!
         .whereType<TextSpan>()
         .singleWhere((span) => span.recognizer != null);
     (policyLink.recognizer! as TapGestureRecognizer).onTap!();
     await tester.pump();
-    expect(tester.widget<Checkbox>(find.byType(Checkbox)).value, isFalse);
+    expect(find.byType(Checkbox), findsNothing);
     await database.close();
   });
 
@@ -78,9 +84,12 @@ void main() {
     await tester.tap(find.text('العربية'));
     await tester.pumpAndSettle();
     expect(find.text('أهلاً بك في دينار وايز'), findsOneWidget);
-    expect(
-        find.byKey(const ValueKey('privacyPolicyConsentText')), findsOneWidget);
+    expect(find.byKey(const ValueKey('privacyPolicyAcknowledgementText')),
+        findsOneWidget);
     expect(find.text('ابدأ الآن'), findsOneWidget);
+    expect(find.text('السماح بالتحليلات المجهولة'), findsNothing);
+    expect(find.text('السماح ببيانات التشخيص'), findsNothing);
+    expect(find.byType(Checkbox), findsNothing);
     expect(
       tester
           .widget<Directionality>(
@@ -101,8 +110,6 @@ void main() {
     final database = await pumpApp(tester);
     await tester.tap(find.text('English').first);
     await tester.pumpAndSettle();
-    await tester.tap(find.byType(Checkbox));
-    await tester.pump();
     final button = tester.widget<FilledButton>(
       find.widgetWithText(FilledButton, 'Get Started'),
     );
@@ -194,6 +201,8 @@ void main() {
     );
     await tester.tap(find.byIcon(Icons.settings_outlined));
     await tester.pumpAndSettle();
+    expect(find.text('Allow anonymous analytics'), findsNothing);
+    expect(find.text('Allow diagnostic data'), findsNothing);
     await tester.tap(find.byType(DropdownButton<String>).first);
     await tester.pumpAndSettle();
     await tester.tap(find.text('العربية').last);
@@ -202,6 +211,121 @@ void main() {
     final preferences = await SharedPreferences.getInstance();
     expect(preferences.getBool('privacy_policy_accepted'), isTrue);
     expect(preferences.getString('selected_language'), 'ar');
+    await database.close();
+  });
+
+  testWidgets('tutorial appears once and Skip persists completion',
+      (tester) async {
+    final database = await pumpApp(
+      tester,
+      tutorialCompleted: false,
+      preferences: {
+        'selected_language': 'en',
+        'privacy_policy_accepted': true,
+        'privacy_policy_version': currentPrivacyPolicyVersion,
+        'privacy_policy_accepted_at': '2026-08-24T00:00:00.000Z',
+        'onboarding_completed': true,
+        'selected_currency': 'SAR',
+        'local_profile_id': 'stable-test-profile',
+      },
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Dashboard summary'), findsOneWidget);
+    expect(find.text('Skip'), findsOneWidget);
+
+    await tester.tap(find.text('Skip'));
+    await tester.pumpAndSettle();
+
+    final preferences = AppPreferences(await SharedPreferences.getInstance());
+    expect(preferences.dashboardTutorialCompletedV1, isTrue);
+    expect(find.text('Dashboard summary'), findsNothing);
+    await database.close();
+  });
+
+  testWidgets('tutorial Finish persists completion', (tester) async {
+    final database = await pumpApp(
+      tester,
+      tutorialCompleted: false,
+      preferences: {
+        'selected_language': 'en',
+        'privacy_policy_accepted': true,
+        'privacy_policy_version': currentPrivacyPolicyVersion,
+        'privacy_policy_accepted_at': '2026-08-24T00:00:00.000Z',
+        'onboarding_completed': true,
+        'selected_currency': 'SAR',
+        'local_profile_id': 'stable-test-profile',
+      },
+    );
+    await tester.pumpAndSettle();
+    for (var index = 0; index < 6; index++) {
+      expect(find.text('Next'), findsOneWidget);
+      await tester.tap(find.text('Next'));
+      await tester.pumpAndSettle();
+    }
+    expect(find.text('Finish'), findsOneWidget);
+    await tester.tap(find.text('Finish'));
+    await tester.pumpAndSettle();
+
+    final preferences = AppPreferences(await SharedPreferences.getInstance());
+    expect(preferences.dashboardTutorialCompletedV1, isTrue);
+    await database.close();
+  });
+
+  testWidgets('Settings replays tutorial without changing financial data',
+      (tester) async {
+    final database = await pumpApp(
+      tester,
+      preferences: {
+        'selected_language': 'en',
+        'privacy_policy_accepted': true,
+        'privacy_policy_version': currentPrivacyPolicyVersion,
+        'privacy_policy_accepted_at': '2026-08-24T00:00:00.000Z',
+        'onboarding_completed': true,
+        'selected_currency': 'SAR',
+        'local_profile_id': 'stable-test-profile',
+      },
+    );
+    final categoryCountBefore =
+        await database.select(database.expenseCategories).get().then(
+              (rows) => rows.length,
+            );
+    await tester.tap(find.byIcon(Icons.settings_outlined));
+    await tester.pumpAndSettle();
+    expect(find.text('Replay app tutorial'), findsOneWidget);
+    await tester.tap(find.text('Replay app tutorial'));
+    await tester.pumpAndSettle();
+    expect(find.text('Dashboard summary'), findsOneWidget);
+    await tester.tap(find.text('Skip'));
+    await tester.pumpAndSettle();
+
+    final categoryCountAfter =
+        await database.select(database.expenseCategories).get().then(
+              (rows) => rows.length,
+            );
+    expect(categoryCountAfter, categoryCountBefore);
+    await database.close();
+  });
+
+  testWidgets('Arabic tutorial renders RTL without overflow', (tester) async {
+    final database = await pumpApp(
+      tester,
+      tutorialCompleted: false,
+      preferences: {
+        'selected_language': 'ar',
+        'privacy_policy_accepted': true,
+        'privacy_policy_version': currentPrivacyPolicyVersion,
+        'privacy_policy_accepted_at': '2026-08-24T00:00:00.000Z',
+        'onboarding_completed': true,
+        'selected_currency': 'SAR',
+        'local_profile_id': 'stable-test-profile',
+      },
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('ملخص لوحة التحكم'), findsOneWidget);
+    expect(find.text('تخطي'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await tester.tap(find.text('تخطي'));
+    await tester.pumpAndSettle();
     await database.close();
   });
 

@@ -1,7 +1,5 @@
 import 'package:dinarwise/core/constants.dart';
 import 'package:dinarwise/core/analytics/analytics_service.dart';
-import 'package:dinarwise/core/diagnostics/crash_reporting_service.dart';
-import 'package:dinarwise/core/performance/performance_service.dart';
 import 'package:dinarwise/core/preferences/onboarding_controller.dart';
 import 'package:dinarwise/l10n/l10n_extension.dart';
 import 'package:flutter/gestures.dart';
@@ -19,9 +17,6 @@ class PrivacyConsentScreen extends ConsumerStatefulWidget {
 }
 
 class _PrivacyConsentScreenState extends ConsumerState<PrivacyConsentScreen> {
-  bool _accepted = false;
-  bool _analyticsAllowed = false;
-  bool _diagnosticsAllowed = false;
   bool _submitting = false;
 
   Future<void> _openPolicy() async {
@@ -42,22 +37,11 @@ class _PrivacyConsentScreenState extends ConsumerState<PrivacyConsentScreen> {
   }
 
   Future<void> _continue() async {
-    if (!_accepted || _submitting) return;
+    if (_submitting) return;
     setState(() => _submitting = true);
-    await ref.read(onboardingControllerProvider.notifier).acceptPrivacyPolicy(
-          analyticsAllowed: _analyticsAllowed,
-          diagnosticsAllowed: _diagnosticsAllowed,
-        );
+    await ref.read(onboardingControllerProvider.notifier).acceptPrivacyPolicy();
     final analytics = ref.read(analyticsServiceProvider);
-    await analytics.setEnabled(_analyticsAllowed);
-    await ref
-        .read(crashReportingServiceProvider)
-        .setEnabled(_diagnosticsAllowed);
-    await ref.read(performanceServiceProvider).setEnabled(_diagnosticsAllowed);
-    analytics.privacyConsentUpdated(
-      analyticsAllowed: _analyticsAllowed,
-      diagnosticsAllowed: _diagnosticsAllowed,
-    );
+    analytics.privacyPolicyAccepted();
     if (mounted) context.go('/currency');
   }
 
@@ -104,46 +88,62 @@ class _PrivacyConsentScreenState extends ConsumerState<PrivacyConsentScreen> {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 32),
-                  Card(
-                    child: CheckboxListTile(
-                      value: _accepted,
-                      onChanged: (value) =>
-                          setState(() => _accepted = value ?? false),
-                      controlAffinity: ListTileControlAffinity.leading,
-                      contentPadding: const EdgeInsets.all(16),
-                      title: Text.rich(
-                        TextSpan(
-                          style: Theme.of(context).textTheme.bodyLarge,
-                          children: [
-                            TextSpan(text: l10n.privacyConsentPrefix),
-                            TextSpan(
-                              text: l10n.privacyPolicy,
-                              style: linkStyle,
-                              recognizer: TapGestureRecognizer()
-                                ..onTap = _openPolicy,
-                            ),
-                            TextSpan(text: l10n.privacyConsentSuffix),
-                          ],
+                  Text(
+                    l10n.privacyAtGlance,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
                         ),
-                        key: const ValueKey('privacyPolicyConsentText'),
+                  ),
+                  const SizedBox(height: 12),
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        children: [
+                          _PrivacyPoint(
+                            icon: Icons.phone_android_outlined,
+                            text: l10n.privacyLocalRecords,
+                          ),
+                          const SizedBox(height: 14),
+                          _PrivacyPoint(
+                            icon: Icons.insights_outlined,
+                            text: l10n.privacySafeTelemetry,
+                          ),
+                          const SizedBox(height: 14),
+                          _PrivacyPoint(
+                            icon: Icons.lock_outline,
+                            text: l10n.privacyNeverSent,
+                          ),
+                        ],
                       ),
                     ),
                   ),
                   const SizedBox(height: 12),
                   Text(l10n.firebasePrivacyExplanation),
-                  SwitchListTile(
-                    value: _analyticsAllowed,
-                    onChanged: (value) =>
-                        setState(() => _analyticsAllowed = value),
-                    title: Text(l10n.allowAnonymousAnalytics),
-                    subtitle: Text(l10n.allowAnonymousAnalyticsHint),
+                  Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: TextButton.icon(
+                      onPressed: _openPolicy,
+                      icon: const Icon(Icons.open_in_new, size: 18),
+                      label: Text(l10n.readFullPrivacyPolicy),
+                    ),
                   ),
-                  SwitchListTile(
-                    value: _diagnosticsAllowed,
-                    onChanged: (value) =>
-                        setState(() => _diagnosticsAllowed = value),
-                    title: Text(l10n.allowDiagnostics),
-                    subtitle: Text(l10n.allowDiagnosticsHint),
+                  const SizedBox(height: 8),
+                  Text.rich(
+                    TextSpan(
+                      style: Theme.of(context).textTheme.bodyMedium,
+                      children: [
+                        TextSpan(text: l10n.privacyAcknowledgementPrefix),
+                        TextSpan(
+                          text: l10n.privacyPolicy,
+                          style: linkStyle,
+                          recognizer: TapGestureRecognizer()
+                            ..onTap = _openPolicy,
+                        ),
+                        TextSpan(text: l10n.privacyAcknowledgementSuffix),
+                      ],
+                    ),
+                    key: const ValueKey('privacyPolicyAcknowledgementText'),
                   ),
                   const SizedBox(height: 10),
                   Text(
@@ -153,7 +153,7 @@ class _PrivacyConsentScreenState extends ConsumerState<PrivacyConsentScreen> {
                   ),
                   const SizedBox(height: 24),
                   FilledButton(
-                    onPressed: _accepted && !_submitting ? _continue : null,
+                    onPressed: !_submitting ? _continue : null,
                     child: Padding(
                       padding: const EdgeInsets.all(14),
                       child: _submitting
@@ -170,6 +170,25 @@ class _PrivacyConsentScreenState extends ConsumerState<PrivacyConsentScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _PrivacyPoint extends StatelessWidget {
+  const _PrivacyPoint({required this.icon, required this.text});
+
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 22, color: Theme.of(context).colorScheme.primary),
+        const SizedBox(width: 12),
+        Expanded(child: Text(text)),
+      ],
     );
   }
 }

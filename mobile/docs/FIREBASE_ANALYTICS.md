@@ -13,20 +13,19 @@ Packages:
 - `firebase_performance`
 
 Android is configured through `android/app/google-services.json` and
-`lib/firebase_options.dart`. Collection is disabled in `AndroidManifest.xml`
-until local consent is applied. To add iOS, download `GoogleService-Info.plist`
-for bundle ID `com.dinarwise.app.dinarwise`, then run:
-
-```bash
-flutterfire configure --project=dinnar-wise --platforms=android,ios
-```
+`lib/firebase_options.dart`. Privacy-safe Analytics collection starts
+automatically after Firebase initializes. This project is configured for
+Android only.
 
 ## Consent and privacy
 
-Analytics and diagnostics are separate, optional choices during privacy
-onboarding and in Settings. Both default to off and can be withdrawn. Analytics
-controls Firebase Analytics. Diagnostics controls Crashlytics and Performance.
-Firebase initialization failure never blocks the offline application.
+Privacy-safe Analytics, Crashlytics, and Performance collection is automatic and
+has no separate application toggle. Firebase initialization failure is observable
+to tests and debug/profile logs but never blocks local financial functionality.
+
+The updated English and Arabic disclosure wording is marked for final
+owner/legal review. Financial records remain local, but privacy-safe usage and
+diagnostic telemetry may use an internet connection.
 
 Financial records remain exclusively in Drift/SQLite. Never send amounts,
 balances, merchant names, descriptions, notes, receipts, contact details,
@@ -50,7 +49,12 @@ advertising product or personalization is enabled.
 |---|---|---|
 | `onboarding_started` | `app_language` | Onboarding began |
 | `onboarding_completed` | `selected_language` | Onboarding completed |
-| `privacy_consent_updated` | `analytics_allowed`, `diagnostics_allowed` | Optional consent changed |
+| `privacy_policy_accepted` | none | Current policy disclosure acknowledged |
+| `tutorial_started` | `tutorial_version` | First automatic tutorial began |
+| `tutorial_step_viewed` | `tutorial_version`, `step_id` | Stable tutorial step shown |
+| `tutorial_skipped` | `tutorial_version`, `step_id` | Tutorial skipped |
+| `tutorial_completed` | `tutorial_version` | Tutorial finished |
+| `tutorial_replayed` | `tutorial_version` | Tutorial replayed from Settings |
 | `language_changed` | `from_language`, `to_language` | Locale changed |
 | `currency_changed` | `from_currency`, `to_currency` | Display currency changed |
 | `income_add_started` | none | Manual income flow opened |
@@ -78,8 +82,10 @@ advertising product or personalization is enabled.
 | `data_export_succeeded` | `format` | Existing export succeeded |
 | `data_export_failed` | `format`, `reason` | Existing export failed |
 
-Firebase automatically supplies `first_open`, `app_open`, `session_start`, and
-`app_update`; DinarWise does not duplicate them.
+Firebase automatically supplies supported lifecycle events including
+`first_open`, `app_open`, `session_start`, `user_engagement`, and `app_update`;
+DinarWise does not duplicate them. Historical missing `first_open` events cannot
+be recovered after an application update.
 
 ## Performance traces
 
@@ -97,8 +103,9 @@ adb shell am force-stop com.sl.dinarwise.expensemanager
 adb shell monkey -p com.sl.dinarwise.expensemanager 1
 ```
 
-Open Firebase Console → Analytics → DebugView. Enable Analytics in DinarWise
-Settings, then perform a test action. Disable DebugView afterward:
+Open Firebase Console → Analytics → DebugView, then perform a test action.
+No Analytics permission or application toggle is required. Disable DebugView
+afterward:
 
 ```bash
 adb shell setprop debug.firebase.analytics.app .none.

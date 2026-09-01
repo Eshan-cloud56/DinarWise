@@ -1,7 +1,7 @@
 name: dinarwise
 description: Localized household finance for Saudi Arabia and the GCC.
 publish_to: none
-version: 0.1.0+1
+version: 1.0.1+3
 
 environment:
   sdk: ">=3.5.0 <4.0.0"

@@ -16,18 +16,17 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final sharedPreferences = await SharedPreferences.getInstance();
   final preferences = AppPreferences(sharedPreferences);
-  final firebase = await FirebaseBootstrap.initialize(preferences);
+  await preferences.migrateAutomaticTelemetryPreferences();
+  final firebase = await FirebaseBootstrap.initialize();
   await firebase.performance.trace(PerformanceTraces.appInitialization,
       () async {
-    if (preferences.analyticsAllowed) {
-      final analytics = firebase.analytics;
-      analytics.setAppLanguage(preferences.selectedLanguage ?? 'en');
-      if (preferences.selectedCurrency case final currency?) {
-        analytics.setSelectedCurrency(currency);
-      }
-      analytics.setOnboardingStatus(preferences.onboardingCompleted);
-      analytics.setAppTheme('light');
+    final analytics = firebase.analytics;
+    analytics.setAppLanguage(preferences.selectedLanguage ?? 'en');
+    if (preferences.selectedCurrency case final currency?) {
+      analytics.setSelectedCurrency(currency);
     }
+    analytics.setOnboardingStatus(preferences.onboardingCompleted);
+    analytics.setAppTheme('light');
   });
   runApp(
     _DinarWiseBootstrap(

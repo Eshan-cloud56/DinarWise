@@ -16,7 +16,7 @@
 
 Dinar Wise is a single-user, offline-first household finance application for Android. It helps one person record and manage household income, expenses, budgets, savings goals, bills, subscriptions, and buy-now-pay-later plans. Financial records remain in the private Drift/SQLite database on the device.
 
-The application supports English and Arabic, including right-to-left layouts, and supports SAR, AED, KWD, BHD, QAR, and OMR. Firebase Analytics, Crashlytics, and Performance Monitoring are optional. Collection remains disabled until the user explicitly enables the applicable consent setting.
+The application supports English and Arabic, including right-to-left layouts, and supports SAR, AED, KWD, BHD, QAR, and OMR. Privacy-safe Firebase Analytics, Crashlytics, and Performance Monitoring collection is automatic.
 
 The application does not require login, registration, email, phone number, OTP, social login, or a cloud account.
 
@@ -26,12 +26,11 @@ The application does not require login, registration, email, phone number, OTP, 
 
 1. Branded animated launch screen.
 2. Language selection: English or العربية.
-3. Privacy Policy consent.
-4. Optional anonymous Analytics and diagnostic-data choices.
+3. Privacy Policy acknowledgement and automatic privacy-safe telemetry disclosure.
 5. Currency selection.
 6. Dashboard.
 
-The Privacy Policy checkbox is mandatory before continuing. Analytics and diagnostic consent are separate and optional.
+Tapping Get Started acknowledges the linked Privacy Policy; no fake or pre-checked checkbox is shown. Privacy-safe Analytics, Crashlytics, and Performance collection is automatic and disclosed. This wording requires final owner/legal review.
 
 ### Returning user
 
@@ -210,9 +209,7 @@ No Firebase Authentication, Firestore, Realtime Database, or Cloud Storage is us
 ### Consent behavior
 
 - Anonymous Analytics defaults to disabled.
-- Diagnostics, Crashlytics, and Performance default to disabled.
-- The user may opt in during privacy onboarding or later in Settings.
-- The user may withdraw either consent at any time.
+- Analytics, Crashlytics, and Performance start automatically after Firebase initialization and have no in-app telemetry switches.
 - Firebase initialization or reporting failure never blocks the offline application.
 
 ### Data that must never be transmitted to Firebase
@@ -248,7 +245,7 @@ Performance traces cover application initialization, database initialization, Da
 - **Money:** integer minor units.
 - **Notifications:** local, timezone-aware Android notifications.
 - **Receipts:** private application file storage.
-- **Telemetry:** optional Firebase services for Android only.
+- **Telemetry:** automatic privacy-safe Firebase services for Android only.
 
 The schema includes transactions, categories, budgets, budget-category links, budget history, savings goals, contributions, BNPL plans and instalments, recurring payments and occurrences, payment histories, subscription price history, payment methods, receipt attachments, notification schedules, exchange rates, security preferences, financial preferences, and UI preferences.
 
@@ -272,7 +269,7 @@ Before Play Store publication, complete all of the following:
 4. Build and test a signed release Android App Bundle (`.aab`).
 5. Confirm the final app icon, adaptive icon, feature graphic, phone screenshots, descriptions, support email, and privacy-policy URL.
 6. Complete Play Console App content declarations, including Data safety, content rating, target audience, ads declaration, and app access.
-7. Declare optional Firebase Analytics, Crashlytics, and Performance collection accurately, including third-party SDK handling.
+7. Declare automatic Firebase Analytics, Crashlytics, and Performance collection accurately, including third-party SDK handling.
 8. Test through the Play Console internal track before production.
 9. Confirm Google Play target API requirements at submission time.
 10. Review the current Privacy Policy and Play Store disclosure with qualified legal/privacy counsel for target countries.
@@ -349,11 +346,11 @@ Google Play requires Android App Bundles for new applications and uses the bundl
 - Public Privacy Policy URL: `https://sites.google.com/view/silvesterstudio-privacy-policy/home`.
 - Release notes for English and Arabic.
 
-Avoid claims such as “completely offline” without qualification. Core financial data and operations are offline; optional Firebase usage and diagnostic information may be transmitted after consent when internet is available.
+Avoid claims such as “completely offline” without qualification. Core financial data and operations are offline; privacy-safe Firebase usage and diagnostic information may be transmitted when internet is available.
 
 ## 26. Data safety guidance
 
-The Play Console Data safety form must reflect the exact behavior of the submitted build and every embedded SDK. Firebase collection is optional and consent-controlled, but it still requires accurate disclosure when enabled. Review Firebase’s current SDK data-disclosure documentation while completing the form.
+The Play Console Data safety form must reflect the exact behavior of the submitted build and every embedded SDK. Firebase collection is automatic and requires accurate disclosure. Review Firebase’s current SDK data-disclosure documentation while completing the form.
 
 Do not mechanically copy a generic declaration. The publisher is responsible for confirming collection, sharing, purposes, optionality, encryption in transit, deletion behavior, and retention based on the final build and current policies.
 
@@ -362,8 +359,8 @@ Do not mechanically copy a generic declaration. The publisher is responsible for
 ### Onboarding and privacy
 
 - Fresh install follows Language → Privacy → Currency → Dashboard.
-- Mandatory Privacy Policy checkbox gates continuation.
-- Optional Analytics and Diagnostics choices default off.
+- Get Started clearly acknowledges the linked, versioned Privacy Policy without a fake checkbox.
+- No Analytics or diagnostic-data switches are shown.
 - Returning user opens Dashboard directly.
 - Updated policy version requests consent again.
 
@@ -388,9 +385,8 @@ Do not mechanically copy a generic declaration. The publisher is responsible for
 ### Android and Firebase
 
 - Camera, gallery, notification, biometric, and shared-image behaviors are tested on supported devices.
-- Analytics remains silent before consent and stops after withdrawal.
-- DebugView receives privacy-safe events after consent.
-- Crashlytics and Performance respect diagnostic consent.
+- Analytics, Crashlytics, and Performance initialize automatically.
+- DebugView receives privacy-safe events without an in-app telemetry switch.
 - No amount, merchant, note, receipt, record ID, or local profile ID appears in Firebase.
 - Release build installs through Play internal testing.
 - App startup, ANR, crash-free users, and performance traces are monitored.

@@ -2,19 +2,24 @@ import 'package:dinarwise/features/categories/category_localization.dart';
 import 'package:dinarwise/core/analytics/analytics_service.dart';
 import 'package:dinarwise/core/performance/performance_service.dart';
 import 'package:dinarwise/core/currency/gulf_currency.dart';
+import 'package:dinarwise/core/preferences/app_preferences.dart';
 import 'package:dinarwise/core/preferences/onboarding_controller.dart';
 import 'package:dinarwise/features/capture/offline_ai_notice.dart';
 import 'package:dinarwise/features/expenses/data/expense_providers.dart';
 import 'package:dinarwise/features/expenses/data/expense_repository.dart';
 import 'package:dinarwise/features/expenses/income_actions.dart';
 import 'package:dinarwise/features/planning/data/planning_providers.dart';
+import 'package:dinarwise/features/tutorial/dashboard_tutorial.dart';
 import 'package:dinarwise/l10n/l10n_extension.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
-  const DashboardScreen({this.openIncome = false, super.key});
+  const DashboardScreen({
+    this.openIncome = false,
+    super.key,
+  });
 
   final bool openIncome;
 
@@ -24,6 +29,23 @@ class DashboardScreen extends ConsumerStatefulWidget {
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   bool _summaryLogged = false;
+  bool _tutorialScheduled = false;
+  final _summaryKey = GlobalKey();
+  final _addIncomeKey = GlobalKey();
+  final _addExpenseKey = GlobalKey();
+  final _transactionsKey = GlobalKey();
+  final _analyticsKey = GlobalKey();
+  final _settingsKey = GlobalKey();
+
+  DashboardTutorialAnchors get _tutorialAnchors => DashboardTutorialAnchors(
+        dashboardSummary: _summaryKey,
+        addIncome: _addIncomeKey,
+        addExpense: _addExpenseKey,
+        transactions: _transactionsKey,
+        analytics: _analyticsKey,
+        settings: _settingsKey,
+      );
+
   @override
   void initState() {
     super.initState();
@@ -41,10 +63,41 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         if (mounted) manageIncome(context, ref);
       });
     }
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => _showTutorialIfNeeded());
+  }
+
+  Future<void> _showTutorialIfNeeded() async {
+    if (!mounted || _tutorialScheduled || widget.openIncome) return;
+    final preferences = ref.read(appPreferencesProvider);
+    final replayRequest = ref.read(tutorialReplayRequestProvider);
+    final replayed = replayRequest > 0;
+    if (!replayed && preferences.dashboardTutorialCompletedV1) {
+      return;
+    }
+    if (replayed) {
+      ref.read(tutorialReplayRequestProvider.notifier).state = 0;
+    }
+    _tutorialScheduled = true;
+    await showDashboardTutorial(
+      context: context,
+      anchors: _tutorialAnchors,
+      preferences: preferences,
+      analytics: ref.read(analyticsServiceProvider),
+      replayed: replayed,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<int>(tutorialReplayRequestProvider, (previous, next) {
+      if (next > 0 && next != previous) {
+        _tutorialScheduled = false;
+        WidgetsBinding.instance.addPostFrameCallback(
+          (_) => _showTutorialIfNeeded(),
+        );
+      }
+    });
     final analytics = ref.read(analyticsServiceProvider);
     analytics.screen('dashboard');
     final l10n = context.l10n;
@@ -75,11 +128,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         title: Text(l10n.appName),
         actions: [
           IconButton(
+            key: _analyticsKey,
             tooltip: l10n.analytics,
             onPressed: () => context.push('/analytics'),
             icon: const Icon(Icons.analytics_outlined),
           ),
           IconButton(
+            key: _settingsKey,
             tooltip: l10n.aiFeature,
             onPressed: () => showOfflineAiNotice(context, ref),
             icon: const Icon(Icons.auto_awesome_outlined),
@@ -92,6 +147,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
+        key: _addExpenseKey,
         onPressed: () => context.push('/capture'),
         icon: const Icon(Icons.add),
         label: Text(l10n.addExpense),
@@ -102,6 +158,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           padding: const EdgeInsets.all(20),
           children: [
             Card(
+              key: _summaryKey,
               color: Theme.of(context).colorScheme.primary,
               child: Padding(
                 padding: const EdgeInsets.all(24),
@@ -252,17 +309,21 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 ),
             ],
             const SizedBox(height: 12),
-            FilledButton.tonalIcon(
-              key: const ValueKey('dashboardAddIncome'),
-              onPressed: () => manageIncome(context, ref),
-              icon: const Icon(Icons.add_card_rounded),
-              label: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                child: Text(l10n.addIncome),
+            KeyedSubtree(
+              key: _addIncomeKey,
+              child: FilledButton.tonalIcon(
+                key: const ValueKey('dashboardAddIncome'),
+                onPressed: () => manageIncome(context, ref),
+                icon: const Icon(Icons.add_card_rounded),
+                label: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  child: Text(l10n.addIncome),
+                ),
               ),
             ),
             const SizedBox(height: 24),
             Row(
+              key: _transactionsKey,
               children: [
                 Expanded(
                   child: Text(

@@ -34,13 +34,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get welcomeSubtitle => 'Everyday money guidance, built for your life.';
 
   @override
-  String get privacyConsentPrefix => 'I have read and agree to the ';
-
-  @override
   String get privacyPolicy => 'Privacy Policy';
 
   @override
-  String get privacyConsentSuffix => '.';
+  String get privacyAcknowledgementPrefix =>
+      'By tapping Get Started, you acknowledge that you have read and agree to the ';
+
+  @override
+  String get privacyAcknowledgementSuffix => '.';
 
   @override
   String get getStarted => 'Get Started';
@@ -1147,20 +1148,87 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get privacyAtGlance => 'Your privacy at a glance';
+
+  @override
+  String get privacyLocalRecords => 'Financial records stay on this device.';
+
+  @override
+  String get privacySafeTelemetry =>
+      'Privacy-safe usage and diagnostic information helps improve DinarWise.';
+
+  @override
+  String get privacyNeverSent =>
+      'Exact amounts, merchants, notes and receipts are never sent to Firebase.';
+
+  @override
+  String get readFullPrivacyPolicy => 'Read full Privacy Policy';
+
+  @override
   String get firebasePrivacyExplanation =>
-      'Your financial records remain on this device. If you opt in, anonymous usage or diagnostic information may be sent to Firebase/Google when an internet connection is available. DinarWise never sends amounts, balances, merchants, notes, receipts, or identifying information.';
+      'DinarWise automatically uses Firebase Analytics for app opens, sessions, screens and privacy-safe feature interactions. Firebase Crashlytics and Performance Monitoring automatically collect privacy-safe crash, error and performance information. Telemetry may be transmitted to Firebase/Google when internet is available. Exact financial records, amounts, balances, merchants, notes and receipts remain local and are not sent. DinarWise does not use Firebase Authentication or cloud synchronization. Advertising identification and personalization are disabled.';
 
   @override
-  String get allowAnonymousAnalytics => 'Allow anonymous analytics';
+  String get replayAppTutorial => 'Replay app tutorial';
 
   @override
-  String get allowAnonymousAnalyticsHint =>
-      'Help improve DinarWise by sharing privacy-safe feature usage.';
+  String get tutorialDashboardTitle => 'Dashboard summary';
 
   @override
-  String get allowDiagnostics => 'Allow diagnostic data';
+  String get tutorialDashboardDescription =>
+      'See your remaining balance, total income and total expenses at a glance.';
 
   @override
-  String get allowDiagnosticsHint =>
-      'Share privacy-safe crash and performance information.';
+  String get tutorialIncomeTitle => 'Add income';
+
+  @override
+  String get tutorialIncomeDescription =>
+      'Add household income before recording expenses so DinarWise can protect your remaining balance.';
+
+  @override
+  String get tutorialExpenseTitle => 'Add an expense';
+
+  @override
+  String get tutorialExpenseDescription =>
+      'Record the merchant, category, date and optional notes for each expense.';
+
+  @override
+  String get tutorialTransactionsTitle => 'Recent transactions';
+
+  @override
+  String get tutorialTransactionsDescription =>
+      'Use View All to review, edit, delete, search and filter your transaction history.';
+
+  @override
+  String get tutorialAnalyticsTitle => 'Analytics';
+
+  @override
+  String get tutorialAnalyticsDescription =>
+      'Explore spending insights, trends and category summaries calculated from your local records.';
+
+  @override
+  String get tutorialCategoriesTitle => 'Categories';
+
+  @override
+  String get tutorialCategoriesDescription =>
+      'Open Settings to manage built-in categories and create your own custom categories.';
+
+  @override
+  String get tutorialSettingsTitle => 'Settings';
+
+  @override
+  String get tutorialSettingsDescription =>
+      'Manage language, currency and other app preferences, including theme options when supported.';
+
+  @override
+  String get tutorialNext => 'Next';
+
+  @override
+  String get tutorialBack => 'Back';
+
+  @override
+  String get tutorialSkip => 'Skip';
+
+  @override
+  String get tutorialFinish => 'Finish';
 }

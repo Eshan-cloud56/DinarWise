@@ -146,23 +146,23 @@ abstract class AppLocalizations {
   /// **'Everyday money guidance, built for your life.'**
   String get welcomeSubtitle;
 
-  /// No description provided for @privacyConsentPrefix.
-  ///
-  /// In en, this message translates to:
-  /// **'I have read and agree to the '**
-  String get privacyConsentPrefix;
-
   /// No description provided for @privacyPolicy.
   ///
   /// In en, this message translates to:
   /// **'Privacy Policy'**
   String get privacyPolicy;
 
-  /// No description provided for @privacyConsentSuffix.
+  /// No description provided for @privacyAcknowledgementPrefix.
+  ///
+  /// In en, this message translates to:
+  /// **'By tapping Get Started, you acknowledge that you have read and agree to the '**
+  String get privacyAcknowledgementPrefix;
+
+  /// No description provided for @privacyAcknowledgementSuffix.
   ///
   /// In en, this message translates to:
   /// **'.'**
-  String get privacyConsentSuffix;
+  String get privacyAcknowledgementSuffix;
 
   /// No description provided for @getStarted.
   ///
@@ -2204,35 +2204,155 @@ abstract class AppLocalizations {
   /// **'{count, plural, =1{1 decimal place} other{{count} decimal places}}'**
   String decimalPlaces(int count);
 
-  /// No description provided for @firebasePrivacyExplanation.
+  /// No description provided for @privacyAtGlance.
   ///
   /// In en, this message translates to:
-  /// **'Your financial records remain on this device. If you opt in, anonymous usage or diagnostic information may be sent to Firebase/Google when an internet connection is available. DinarWise never sends amounts, balances, merchants, notes, receipts, or identifying information.'**
+  /// **'Your privacy at a glance'**
+  String get privacyAtGlance;
+
+  /// No description provided for @privacyLocalRecords.
+  ///
+  /// In en, this message translates to:
+  /// **'Financial records stay on this device.'**
+  String get privacyLocalRecords;
+
+  /// No description provided for @privacySafeTelemetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy-safe usage and diagnostic information helps improve DinarWise.'**
+  String get privacySafeTelemetry;
+
+  /// No description provided for @privacyNeverSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Exact amounts, merchants, notes and receipts are never sent to Firebase.'**
+  String get privacyNeverSent;
+
+  /// No description provided for @readFullPrivacyPolicy.
+  ///
+  /// In en, this message translates to:
+  /// **'Read full Privacy Policy'**
+  String get readFullPrivacyPolicy;
+
+  /// Requires final owner/legal review before production release.
+  ///
+  /// In en, this message translates to:
+  /// **'DinarWise automatically uses Firebase Analytics for app opens, sessions, screens and privacy-safe feature interactions. Firebase Crashlytics and Performance Monitoring automatically collect privacy-safe crash, error and performance information. Telemetry may be transmitted to Firebase/Google when internet is available. Exact financial records, amounts, balances, merchants, notes and receipts remain local and are not sent. DinarWise does not use Firebase Authentication or cloud synchronization. Advertising identification and personalization are disabled.'**
   String get firebasePrivacyExplanation;
 
-  /// No description provided for @allowAnonymousAnalytics.
+  /// No description provided for @replayAppTutorial.
   ///
   /// In en, this message translates to:
-  /// **'Allow anonymous analytics'**
-  String get allowAnonymousAnalytics;
+  /// **'Replay app tutorial'**
+  String get replayAppTutorial;
 
-  /// No description provided for @allowAnonymousAnalyticsHint.
+  /// No description provided for @tutorialDashboardTitle.
   ///
   /// In en, this message translates to:
-  /// **'Help improve DinarWise by sharing privacy-safe feature usage.'**
-  String get allowAnonymousAnalyticsHint;
+  /// **'Dashboard summary'**
+  String get tutorialDashboardTitle;
 
-  /// No description provided for @allowDiagnostics.
+  /// No description provided for @tutorialDashboardDescription.
   ///
   /// In en, this message translates to:
-  /// **'Allow diagnostic data'**
-  String get allowDiagnostics;
+  /// **'See your remaining balance, total income and total expenses at a glance.'**
+  String get tutorialDashboardDescription;
 
-  /// No description provided for @allowDiagnosticsHint.
+  /// No description provided for @tutorialIncomeTitle.
   ///
   /// In en, this message translates to:
-  /// **'Share privacy-safe crash and performance information.'**
-  String get allowDiagnosticsHint;
+  /// **'Add income'**
+  String get tutorialIncomeTitle;
+
+  /// No description provided for @tutorialIncomeDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Add household income before recording expenses so DinarWise can protect your remaining balance.'**
+  String get tutorialIncomeDescription;
+
+  /// No description provided for @tutorialExpenseTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add an expense'**
+  String get tutorialExpenseTitle;
+
+  /// No description provided for @tutorialExpenseDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Record the merchant, category, date and optional notes for each expense.'**
+  String get tutorialExpenseDescription;
+
+  /// No description provided for @tutorialTransactionsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent transactions'**
+  String get tutorialTransactionsTitle;
+
+  /// No description provided for @tutorialTransactionsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Use View All to review, edit, delete, search and filter your transaction history.'**
+  String get tutorialTransactionsDescription;
+
+  /// No description provided for @tutorialAnalyticsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Analytics'**
+  String get tutorialAnalyticsTitle;
+
+  /// No description provided for @tutorialAnalyticsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Explore spending insights, trends and category summaries calculated from your local records.'**
+  String get tutorialAnalyticsDescription;
+
+  /// No description provided for @tutorialCategoriesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Categories'**
+  String get tutorialCategoriesTitle;
+
+  /// No description provided for @tutorialCategoriesDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Settings to manage built-in categories and create your own custom categories.'**
+  String get tutorialCategoriesDescription;
+
+  /// No description provided for @tutorialSettingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get tutorialSettingsTitle;
+
+  /// No description provided for @tutorialSettingsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage language, currency and other app preferences, including theme options when supported.'**
+  String get tutorialSettingsDescription;
+
+  /// No description provided for @tutorialNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get tutorialNext;
+
+  /// No description provided for @tutorialBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get tutorialBack;
+
+  /// No description provided for @tutorialSkip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get tutorialSkip;
+
+  /// No description provided for @tutorialFinish.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish'**
+  String get tutorialFinish;
 }
 
 class _AppLocalizationsDelegate

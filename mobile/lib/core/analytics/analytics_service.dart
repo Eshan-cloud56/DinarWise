@@ -52,13 +52,32 @@ class AnalyticsService {
   bool _enabled;
   String? _lastScreen;
   final Set<String> _screenEvents = {};
+  final Set<String> _tutorialStepsViewed = {};
+  bool _tutorialEnded = false;
+
+  static const _safeBuiltInCategoryTypes = {
+    'restaurants',
+    'groceries',
+    'fuel',
+    'transportation',
+    'shopping',
+    'healthcare',
+    'utilities',
+    'subscriptions',
+    'bnpl',
+    'other',
+  };
 
   bool get enabled => _enabled;
-  Future<void> setEnabled(bool value) async {
-    _enabled = value;
+  Future<bool> setEnabled(bool value) async {
     try {
       await _backend.setCollectionEnabled(value);
-    } catch (_) {}
+      _enabled = value;
+      return true;
+    } catch (_) {
+      _enabled = false;
+      return false;
+    }
   }
 
   void _event(String name, [Map<String, Object>? parameters]) {
@@ -108,14 +127,43 @@ class AnalyticsService {
         AnalyticsEvents.onboardingCompleted,
         {AnalyticsParameters.selectedLanguage: language},
       );
-  void privacyConsentUpdated({
-    required bool analyticsAllowed,
-    required bool diagnosticsAllowed,
-  }) =>
-      _event(AnalyticsEvents.privacyConsentUpdated, {
-        AnalyticsParameters.analyticsAllowed: analyticsAllowed ? 1 : 0,
-        AnalyticsParameters.diagnosticsAllowed: diagnosticsAllowed ? 1 : 0,
-      });
+  void privacyPolicyAccepted() => _event(AnalyticsEvents.privacyPolicyAccepted);
+  void tutorialStarted(int version, {required bool replayed}) {
+    _tutorialStepsViewed.clear();
+    _tutorialEnded = false;
+    _event(
+      replayed
+          ? AnalyticsEvents.tutorialReplayed
+          : AnalyticsEvents.tutorialStarted,
+      {AnalyticsParameters.tutorialVersion: version},
+    );
+  }
+
+  void tutorialStepViewed(int version, String stepId) {
+    if (!_tutorialStepsViewed.add(stepId)) return;
+    _event(AnalyticsEvents.tutorialStepViewed, {
+      AnalyticsParameters.tutorialVersion: version,
+      AnalyticsParameters.stepId: stepId,
+    });
+  }
+
+  void tutorialSkipped(int version, String stepId) {
+    if (_tutorialEnded) return;
+    _tutorialEnded = true;
+    _event(AnalyticsEvents.tutorialSkipped, {
+      AnalyticsParameters.tutorialVersion: version,
+      AnalyticsParameters.stepId: stepId,
+    });
+  }
+
+  void tutorialCompleted(int version) {
+    if (_tutorialEnded) return;
+    _tutorialEnded = true;
+    _event(AnalyticsEvents.tutorialCompleted, {
+      AnalyticsParameters.tutorialVersion: version,
+    });
+  }
+
   void languageChanged(String from, String to) =>
       _event(AnalyticsEvents.languageChanged, {
         AnalyticsParameters.fromLanguage: from,
@@ -151,16 +199,19 @@ class AnalyticsService {
       _event(
         edited ? AnalyticsEvents.expenseEdited : AnalyticsEvents.expenseAdded,
         {
-          AnalyticsParameters.categoryType: categoryType,
+          AnalyticsParameters.categoryType: _safeCategoryType(categoryType),
           AnalyticsParameters.currency: currency,
           if (!edited) AnalyticsParameters.entrySource: 'manual',
         },
       );
   void expenseDeleted(String categoryType, String currency) =>
       _event(AnalyticsEvents.expenseDeleted, {
-        AnalyticsParameters.categoryType: categoryType,
+        AnalyticsParameters.categoryType: _safeCategoryType(categoryType),
         AnalyticsParameters.currency: currency,
       });
+
+  String _safeCategoryType(String value) =>
+      _safeBuiltInCategoryTypes.contains(value) ? value : 'custom';
   void expenseFailed(String action, String reason) =>
       _event(AnalyticsEvents.expenseActionFailed, {
         AnalyticsParameters.action: action,
