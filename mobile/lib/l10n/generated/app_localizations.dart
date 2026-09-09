@@ -113,7 +113,7 @@ abstract class AppLocalizations {
   /// No description provided for @transactionsLabel.
   ///
   /// In en, this message translates to:
-  /// **'Transactions'**
+  /// **'Expenses'**
   String get transactionsLabel;
 
   /// No description provided for @planningLabel.
@@ -203,7 +203,7 @@ abstract class AppLocalizations {
   /// No description provided for @recentActivity.
   ///
   /// In en, this message translates to:
-  /// **'Recent activity'**
+  /// **'Recent expenses'**
   String get recentActivity;
 
   /// No description provided for @insightsLabel.
@@ -263,7 +263,7 @@ abstract class AppLocalizations {
   /// No description provided for @manageBnplHint.
   ///
   /// In en, this message translates to:
-  /// **'Manage instalments in BNPL planning. This does not split the current transaction.'**
+  /// **'Manage instalments in BNPL planning. This does not split the current expense.'**
   String get manageBnplHint;
 
   /// No description provided for @thisMonthLabel.
@@ -437,7 +437,7 @@ abstract class AppLocalizations {
   /// No description provided for @recentTransactions.
   ///
   /// In en, this message translates to:
-  /// **'Recent transactions'**
+  /// **'Recent expenses'**
   String get recentTransactions;
 
   /// No description provided for @addExpense.
@@ -449,7 +449,7 @@ abstract class AppLocalizations {
   /// No description provided for @addTransaction.
   ///
   /// In en, this message translates to:
-  /// **'Add transaction'**
+  /// **'Add expense'**
   String get addTransaction;
 
   /// No description provided for @expense.
@@ -479,13 +479,13 @@ abstract class AppLocalizations {
   /// No description provided for @noTransactions.
   ///
   /// In en, this message translates to:
-  /// **'No transactions yet'**
+  /// **'No expenses yet'**
   String get noTransactions;
 
   /// No description provided for @noTransactionsDescription.
   ///
   /// In en, this message translates to:
-  /// **'Add income first, then record your household expenses.'**
+  /// **'Your saved expenses will appear here.'**
   String get noTransactionsDescription;
 
   /// No description provided for @merchant.
@@ -539,7 +539,7 @@ abstract class AppLocalizations {
   /// No description provided for @transactionSaved.
   ///
   /// In en, this message translates to:
-  /// **'Transaction saved successfully'**
+  /// **'Expense saved successfully'**
   String get transactionSaved;
 
   /// No description provided for @enterExpenseDetails.
@@ -551,7 +551,7 @@ abstract class AppLocalizations {
   /// No description provided for @enterTransactionDetails.
   ///
   /// In en, this message translates to:
-  /// **'Enter transaction details'**
+  /// **'Enter expense details'**
   String get enterTransactionDetails;
 
   /// No description provided for @manualExpenseHint.
@@ -587,7 +587,7 @@ abstract class AppLocalizations {
   /// No description provided for @transactionNotFound.
   ///
   /// In en, this message translates to:
-  /// **'This transaction no longer exists.'**
+  /// **'This expense no longer exists.'**
   String get transactionNotFound;
 
   /// No description provided for @restaurants.
@@ -725,19 +725,19 @@ abstract class AppLocalizations {
   /// No description provided for @deleteTransactionTitle.
   ///
   /// In en, this message translates to:
-  /// **'Delete transaction?'**
+  /// **'Delete expense?'**
   String get deleteTransactionTitle;
 
   /// No description provided for @deleteTransactionMessage.
   ///
   /// In en, this message translates to:
-  /// **'This transaction will be permanently deleted.'**
+  /// **'This expense will be permanently deleted.'**
   String get deleteTransactionMessage;
 
   /// No description provided for @editTransaction.
   ///
   /// In en, this message translates to:
-  /// **'Edit transaction'**
+  /// **'Edit expense'**
   String get editTransaction;
 
   /// No description provided for @rename.
@@ -1043,7 +1043,7 @@ abstract class AppLocalizations {
   /// No description provided for @history.
   ///
   /// In en, this message translates to:
-  /// **'Transaction history'**
+  /// **'Expense history'**
   String get history;
 
   /// No description provided for @viewAll.
@@ -1133,13 +1133,13 @@ abstract class AppLocalizations {
   /// No description provided for @transactionDuplicated.
   ///
   /// In en, this message translates to:
-  /// **'Transaction duplicated'**
+  /// **'Expense duplicated'**
   String get transactionDuplicated;
 
   /// No description provided for @noMatchingTransactions.
   ///
   /// In en, this message translates to:
-  /// **'No transactions match these filters'**
+  /// **'No expenses match these filters'**
   String get noMatchingTransactions;
 
   /// No description provided for @selectDateRange.
@@ -2471,13 +2471,13 @@ abstract class AppLocalizations {
   /// No description provided for @tutorialTransactionsTitle.
   ///
   /// In en, this message translates to:
-  /// **'Recent transactions'**
+  /// **'Recent expenses'**
   String get tutorialTransactionsTitle;
 
   /// No description provided for @tutorialTransactionsDescription.
   ///
   /// In en, this message translates to:
-  /// **'Use View All to review, edit, delete, search and filter your transaction history.'**
+  /// **'Use View All to review, edit, delete, search and filter your expenses.'**
   String get tutorialTransactionsDescription;
 
   /// No description provided for @tutorialAnalyticsTitle.

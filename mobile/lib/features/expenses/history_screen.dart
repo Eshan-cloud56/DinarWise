@@ -70,9 +70,10 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     final saved = await preferences.load(onboarding.localProfileId);
     if (!mounted) return;
     _profileId = onboarding.localProfileId;
-    _filter = widget.initialCategoryId == null
-        ? saved
-        : saved.copyWith(categoryId: widget.initialCategoryId);
+    _filter = (widget.initialCategoryId == null
+            ? saved
+            : saved.copyWith(categoryId: widget.initialCategoryId))
+        .copyWith(type: 'expense');
     _searchController.text = saved.search;
     setState(() => _initializing = false);
     await _load(reset: true);
@@ -109,7 +110,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                 : PerformanceTraces.transactionSearch,
             () => ref.read(expenseRepositoryProvider).search(
                   profileId: profileId,
-                  filter: _filter,
+                  filter: _filter.copyWith(type: 'expense'),
                   categorySearchIds: matchingCategoryIds,
                   limit: _pageSize,
                   offset: reset ? 0 : _items.length,
@@ -255,13 +256,6 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
       bottomNavigationBar: const DinarBottomNav(selected: 1),
       appBar: DinarHeader(
         subtitle: l10n.history,
-        actions: [
-          IconButton(
-            tooltip: l10n.calendarView,
-            onPressed: () => context.go('/history/calendar'),
-            icon: const Icon(Icons.calendar_month_outlined),
-          ),
-        ],
       ),
       body: _initializing
           ? const Center(child: CircularProgressIndicator())
@@ -449,9 +443,7 @@ class _FilterPanel extends StatelessWidget {
               scrollDirection: Axis.horizontal,
               child: Row(children: [
                 for (final option in [
-                  ('all', l10n.allTransactions),
                   ('expense', l10n.expense),
-                  ('income', l10n.income)
                 ])
                   Padding(
                       padding: const EdgeInsetsDirectional.only(end: 8),

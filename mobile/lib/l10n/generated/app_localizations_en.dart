@@ -15,7 +15,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get brandTitle => 'DinarWise';
 
   @override
-  String get transactionsLabel => 'Transactions';
+  String get transactionsLabel => 'Expenses';
 
   @override
   String get planningLabel => 'Planning';
@@ -61,7 +61,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get spendingBreakdown => 'Spending breakdown';
 
   @override
-  String get recentActivity => 'Recent activity';
+  String get recentActivity => 'Recent expenses';
 
   @override
   String get insightsLabel => 'Insights';
@@ -93,7 +93,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get manageBnplHint =>
-      'Manage instalments in BNPL planning. This does not split the current transaction.';
+      'Manage instalments in BNPL planning. This does not split the current expense.';
 
   @override
   String get thisMonthLabel => 'This month';
@@ -192,13 +192,13 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get recentTransactions => 'Recent transactions';
+  String get recentTransactions => 'Recent expenses';
 
   @override
   String get addExpense => 'Add expense';
 
   @override
-  String get addTransaction => 'Add transaction';
+  String get addTransaction => 'Add expense';
 
   @override
   String get expense => 'Expense';
@@ -214,11 +214,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'Tap “Add expense” to record your first one.';
 
   @override
-  String get noTransactions => 'No transactions yet';
+  String get noTransactions => 'No expenses yet';
 
   @override
   String get noTransactionsDescription =>
-      'Add income first, then record your household expenses.';
+      'Your saved expenses will appear here.';
 
   @override
   String get merchant => 'Merchant';
@@ -245,13 +245,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get expenseSaved => 'Expense saved successfully';
 
   @override
-  String get transactionSaved => 'Transaction saved successfully';
+  String get transactionSaved => 'Expense saved successfully';
 
   @override
   String get enterExpenseDetails => 'Enter expense details';
 
   @override
-  String get enterTransactionDetails => 'Enter transaction details';
+  String get enterTransactionDetails => 'Enter expense details';
 
   @override
   String get manualExpenseHint =>
@@ -272,7 +272,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'This income cannot be reduced or deleted because it would make your remaining balance negative.';
 
   @override
-  String get transactionNotFound => 'This transaction no longer exists.';
+  String get transactionNotFound => 'This expense no longer exists.';
 
   @override
   String get restaurants => 'Restaurants & cafés';
@@ -344,14 +344,14 @@ class AppLocalizationsEn extends AppLocalizations {
       'This expense will be permanently deleted.';
 
   @override
-  String get deleteTransactionTitle => 'Delete transaction?';
+  String get deleteTransactionTitle => 'Delete expense?';
 
   @override
   String get deleteTransactionMessage =>
-      'This transaction will be permanently deleted.';
+      'This expense will be permanently deleted.';
 
   @override
-  String get editTransaction => 'Edit transaction';
+  String get editTransaction => 'Edit expense';
 
   @override
   String get rename => 'Rename';
@@ -511,7 +511,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get history => 'Transaction history';
+  String get history => 'Expense history';
 
   @override
   String get viewAll => 'View all';
@@ -557,10 +557,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get duplicate => 'Duplicate';
 
   @override
-  String get transactionDuplicated => 'Transaction duplicated';
+  String get transactionDuplicated => 'Expense duplicated';
 
   @override
-  String get noMatchingTransactions => 'No transactions match these filters';
+  String get noMatchingTransactions => 'No expenses match these filters';
 
   @override
   String get selectDateRange => 'Select date range';
@@ -1289,11 +1289,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'Record the merchant, category, date and optional notes for each expense.';
 
   @override
-  String get tutorialTransactionsTitle => 'Recent transactions';
+  String get tutorialTransactionsTitle => 'Recent expenses';
 
   @override
   String get tutorialTransactionsDescription =>
-      'Use View All to review, edit, delete, search and filter your transaction history.';
+      'Use View All to review, edit, delete, search and filter your expenses.';
 
   @override
   String get tutorialAnalyticsTitle => 'Analytics';

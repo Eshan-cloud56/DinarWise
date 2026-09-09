@@ -131,7 +131,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Continue'));
     await tester.pumpAndSettle();
-    expect(find.text('Recent activity'), findsOneWidget);
+    expect(find.text('Recent expenses'), findsOneWidget);
     final preferences = await SharedPreferences.getInstance();
     expect(preferences.getBool('privacy_policy_accepted'), isTrue);
     expect(
@@ -159,7 +159,7 @@ void main() {
         'local_profile_id': 'stable-test-profile',
       },
     );
-    expect(find.text('Recent activity'), findsOneWidget);
+    expect(find.text('Recent expenses'), findsOneWidget);
     expect(find.text('Total income'), findsOneWidget);
     expect(find.text('Total expenses'), findsOneWidget);
     expect(find.text('Available to spend'), findsOneWidget);
@@ -370,18 +370,18 @@ void main() {
         'local_profile_id': 'stable-test-profile',
       },
     );
-    expect(find.text('النشاط الأخير'), findsOneWidget);
+    expect(find.text('المصروفات الأخيرة'), findsOneWidget);
     expect(find.text('إجمالي الدخل'), findsOneWidget);
     expect(find.text('إجمالي المصروفات'), findsOneWidget);
     expect(find.text('المتاح للإنفاق'), findsOneWidget);
     expect(find.text('إضافة دخل'), findsOneWidget);
-    expect(find.text('Recent activity'), findsNothing);
+    expect(find.text('Recent expenses'), findsNothing);
     expect(
       tester
           .widget<Directionality>(
             find
                 .ancestor(
-                  of: find.text('النشاط الأخير'),
+                  of: find.text('المصروفات الأخيرة'),
                   matching: find.byType(Directionality),
                 )
                 .first,
@@ -409,7 +409,7 @@ void main() {
     );
     await tester.tap(find.text('إضافة يدويًا'));
     await tester.pumpAndSettle();
-    expect(find.text('إضافة معاملة'), findsWidgets);
+    expect(find.text('إضافة مصروف'), findsWidgets);
     await tester.scrollUntilVisible(
         find.byKey(const ValueKey('expenseMerchantField')), 150,
         scrollable: find
@@ -418,7 +418,7 @@ void main() {
                 matching: find.byType(Scrollable))
             .first);
     await tester.pumpAndSettle();
-    expect(find.text('المتجر'), findsOneWidget);
+    expect(find.text('المتجر *'), findsOneWidget);
     await tester.scrollUntilVisible(find.text('الفئة'), -100,
         scrollable: find
             .descendant(

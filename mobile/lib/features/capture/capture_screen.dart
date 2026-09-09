@@ -2,7 +2,6 @@ import 'dart:io';
 import 'dart:async';
 import 'package:dinarwise/core/theme.dart';
 import 'package:dinarwise/core/widgets/dinar_widgets.dart';
-import 'package:dinarwise/features/expenses/income_actions.dart';
 
 import 'package:dinarwise/core/analytics/analytics_service.dart';
 import 'package:dinarwise/core/currency/gulf_currency.dart';
@@ -54,6 +53,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
   String? _categoryId;
   String? _paymentMethodId;
   late DateTime _date;
+  bool _customDateSelected = false;
   bool _saving = false;
   String? _error;
   late final GulfCurrency _currency;
@@ -582,14 +582,35 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
   }
 
   Future<void> _chooseDate() async {
+    FocusManager.instance.primaryFocus?.unfocus();
     final selected = await showDatePicker(
       context: context,
       initialDate: _date,
       firstDate: DateTime(2020),
       lastDate: DateTime.now(),
     );
-    if (selected != null && mounted) setState(() => _date = selected);
+    if (!mounted) return;
+    FocusManager.instance.primaryFocus?.unfocus();
+    if (selected != null) {
+      setState(() {
+        _date = selected;
+        _customDateSelected = true;
+      });
+    }
   }
+
+  void _setQuickDate(DateTime date) {
+    FocusManager.instance.primaryFocus?.unfocus();
+    setState(() {
+      _date = date;
+      _customDateSelected = false;
+    });
+  }
+
+  ButtonStyle _dateStyle(bool selected) => OutlinedButton.styleFrom(
+        backgroundColor: selected ? DinarColors.green : null,
+        foregroundColor: selected ? Colors.white : DinarColors.green,
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -626,14 +647,6 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
                         selected: true,
                         avatar: const Icon(Icons.south),
                         onSelected: (_) {}),
-                    ActionChip(
-                        label: Text(l10n.income),
-                        avatar: const Icon(Icons.north),
-                        onPressed: () => manageIncome(context, ref)),
-                    ActionChip(
-                        label: Text(l10n.transferLabel),
-                        avatar: const Icon(Icons.sync_alt),
-                        onPressed: () => showTransferUnavailable(context)),
                   ]),
                 ),
               DinarCard(
@@ -774,7 +787,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
                   controller: _merchantController,
                   textInputAction: TextInputAction.next,
                   decoration: InputDecoration(
-                      labelText: l10n.merchant,
+                      labelText: '${l10n.merchant} *',
                       prefixIcon: const Icon(Icons.storefront_outlined)),
                   validator: (value) => (value?.trim().isEmpty ?? true)
                       ? l10n.enterMerchant
@@ -801,13 +814,29 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
                 ),
                 Wrap(spacing: 8, runSpacing: 8, children: [
                   OutlinedButton(
-                      onPressed: () => setState(() => _date = DateTime.now()),
+                      key: const ValueKey('date-today'),
+                      style: _dateStyle(!_customDateSelected &&
+                          DateUtils.isSameDay(_date, DateTime.now())),
+                      onPressed: () => _setQuickDate(DateTime.now()),
                       child: Text(l10n.today)),
                   OutlinedButton(
-                      onPressed: () => setState(() => _date =
+                      key: const ValueKey('date-yesterday'),
+                      style: _dateStyle(!_customDateSelected &&
+                          DateUtils.isSameDay(
+                              _date,
+                              DateTime.now()
+                                  .subtract(const Duration(days: 1)))),
+                      onPressed: () => _setQuickDate(
                           DateTime.now().subtract(const Duration(days: 1))),
                       child: Text(l10n.yesterday)),
                   OutlinedButton.icon(
+                      key: const ValueKey('date-custom'),
+                      style: _dateStyle(_customDateSelected ||
+                          (!DateUtils.isSameDay(_date, DateTime.now()) &&
+                              !DateUtils.isSameDay(
+                                  _date,
+                                  DateTime.now()
+                                      .subtract(const Duration(days: 1))))),
                       onPressed: _chooseDate,
                       icon: const Icon(Icons.calendar_month_outlined, size: 18),
                       label: Text(l10n.date)),

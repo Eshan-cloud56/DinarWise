@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:dinarwise/app.dart';
 import 'package:dinarwise/core/constants.dart';
+import 'package:dinarwise/core/theme.dart';
 import 'package:dinarwise/core/database/app_database.dart';
 import 'package:dinarwise/core/database/database_provider.dart';
 import 'package:dinarwise/core/preferences/app_preferences.dart';
@@ -13,6 +14,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:intl/intl.dart';
 
 const _previewKey = ValueKey('preview');
 Future<AppDatabase> _start(WidgetTester tester, String language,
@@ -86,6 +88,74 @@ void main() {
     }
   });
   for (final language in ['en', 'ar']) {
+    testWidgets('Expense date selection and required merchant in $language',
+        (tester) async {
+      final db = await _start(tester, language);
+      expect(find.byKey(const ValueKey('nav-1')), findsNothing);
+      await tester.tap(find.byKey(const ValueKey('nav-2')));
+      await tester.pumpAndSettle();
+      final merchant = find.byKey(const ValueKey('expenseMerchantField'));
+      await tester.scrollUntilVisible(merchant, 180,
+          scrollable: find
+              .descendant(
+                  of: find.byType(ListView).first,
+                  matching: find.byType(Scrollable))
+              .first);
+      await tester.enterText(merchant, '   ');
+      tester.state<FormState>(find.byType(Form).first).validate();
+      await tester.pumpAndSettle();
+      expect(
+          find.text(
+              language == 'en' ? 'Enter the merchant' : 'أدخل اسم المتجر'),
+          findsOneWidget);
+      for (final id in ['yesterday', 'today', 'custom']) {
+        final button = find.byKey(ValueKey('date-$id'));
+        await tester.ensureVisible(button);
+        await tester.pumpAndSettle();
+        await tester.tap(button);
+        await tester.pumpAndSettle();
+        if (id == 'custom') {
+          final dialog = find.byType(DatePickerDialog);
+          final day =
+              MaterialLocalizations.of(tester.element(dialog)).formatDecimal(1);
+          await tester
+              .tap(find.descendant(of: dialog, matching: find.text(day)).last);
+          await tester.pumpAndSettle();
+          final label =
+              MaterialLocalizations.of(tester.element(dialog)).okButtonLabel;
+          await tester.tap(find.widgetWithText(TextButton, label));
+          await tester.pumpAndSettle();
+          final now = DateTime.now();
+          expect(
+              find.text(DateFormat.yMMMEd(language)
+                  .format(DateTime(now.year, now.month, 1))),
+              findsOneWidget);
+        }
+        expect(
+            tester
+                .widget<OutlinedButton>(button)
+                .style!
+                .backgroundColor!
+                .resolve({}),
+            DinarColors.green);
+        for (final other
+            in ['today', 'yesterday', 'custom'].where((value) => value != id)) {
+          expect(
+              tester
+                  .widget<OutlinedButton>(find.byKey(ValueKey('date-$other')))
+                  .style!
+                  .backgroundColor
+                  ?.resolve({}),
+              isNot(DinarColors.green));
+        }
+        expect(tester.testTextInput.isVisible, isFalse);
+        expect(button.hitTestable(), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      }
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+      await tester.runAsync(db.close);
+    });
     testWidgets(
         'Expense keypad is immediately visible on small $language phone',
         (tester) async {
@@ -131,15 +201,13 @@ void main() {
                   find.descendant(of: amount, matching: find.byType(TextField)))
               .keyboardType,
           TextInputType.none);
-      await tester.tap(
-          find.widgetWithText(ActionChip, language == 'en' ? 'Income' : 'دخل'));
-      await tester.pumpAndSettle();
-      expect(find.byKey(const ValueKey('incomeAmountField')), findsOneWidget);
-      await tester.binding.handlePopRoute();
-      await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(
-          ActionChip, language == 'en' ? 'Transfer' : 'تحويل'));
-      await tester.pumpAndSettle();
+      expect(
+          find.widgetWithText(ActionChip, language == 'en' ? 'Income' : 'دخل'),
+          findsNothing);
+      expect(
+          find.widgetWithText(
+              ActionChip, language == 'en' ? 'Transfer' : 'تحويل'),
+          findsNothing);
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pumpAndSettle();
@@ -209,7 +277,15 @@ void main() {
           (await container.read(financialSummaryProvider.future))
               .remainingBalanceMinor,
           75000);
-      await tester.tap(find.byKey(const ValueKey('nav-1')));
+      await tester.scrollUntilVisible(
+          find.byKey(const ValueKey('viewAllExpenses')), 300,
+          scrollable: find
+              .descendant(
+                  of: find.byType(ListView).first,
+                  matching: find.byType(Scrollable))
+              .first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('viewAllExpenses')));
       await tester.pumpAndSettle();
       expect(find.text(language == 'en' ? 'Local Supermarket' : 'السوق المحلي'),
           findsOneWidget);
@@ -239,7 +315,15 @@ void main() {
       expect(tester.takeException(), isNull);
       await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey('nav-1')));
+      await tester.scrollUntilVisible(
+          find.byKey(const ValueKey('viewAllExpenses')), 300,
+          scrollable: find
+              .descendant(
+                  of: find.byType(ListView).first,
+                  matching: find.byType(Scrollable))
+              .first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('viewAllExpenses')));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
       await tester.tap(find.byType(ExpansionTile));

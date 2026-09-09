@@ -159,6 +159,7 @@ class DinarBottomNav extends StatelessWidget {
               child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: List.generate(5, (i) {
+                    if (i == 1) return const SizedBox.shrink();
                     return Expanded(
                         child: Semantics(
                             selected: selected == i,

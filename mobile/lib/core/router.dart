@@ -7,7 +7,6 @@ import 'package:dinarwise/features/calculators/calculators_screen.dart';
 import 'package:dinarwise/features/dashboard/dashboard_screen.dart';
 import 'package:dinarwise/features/expenses/data/expense_repository.dart';
 import 'package:dinarwise/features/expenses/history_screen.dart';
-import 'package:dinarwise/features/expenses/spending_calendar_screen.dart';
 import 'package:dinarwise/features/onboarding/language_selection_screen.dart';
 import 'package:dinarwise/features/onboarding/currency_selection_screen.dart';
 import 'package:dinarwise/features/onboarding/privacy_consent_screen.dart';
@@ -94,7 +93,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/history/calendar',
         name: 'transaction_details',
-        builder: (_, __) => const SpendingCalendarScreen(),
+        redirect: (_, __) => '/history',
       ),
       GoRoute(
         path: '/analytics',

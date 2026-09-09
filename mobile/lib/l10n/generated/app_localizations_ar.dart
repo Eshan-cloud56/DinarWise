@@ -15,7 +15,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get brandTitle => 'دينار وايز';
 
   @override
-  String get transactionsLabel => 'المعاملات';
+  String get transactionsLabel => 'المصروفات';
 
   @override
   String get planningLabel => 'التخطيط';
@@ -61,7 +61,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get spendingBreakdown => 'توزيع الإنفاق';
 
   @override
-  String get recentActivity => 'النشاط الأخير';
+  String get recentActivity => 'المصروفات الأخيرة';
 
   @override
   String get insightsLabel => 'الرؤى';
@@ -93,7 +93,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get manageBnplHint =>
-      'أدر الأقساط ضمن خطط الدفع الآجل. لن يؤدي ذلك إلى تقسيم المعاملة الحالية.';
+      'أدر الأقساط ضمن تخطيط الشراء الآن والدفع لاحقًا. لا يؤدي ذلك إلى تقسيم المصروف الحالي.';
 
   @override
   String get thisMonthLabel => 'هذا الشهر';
@@ -195,13 +195,13 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get recentTransactions => 'المعاملات الأخيرة';
+  String get recentTransactions => 'المصروفات الأخيرة';
 
   @override
   String get addExpense => 'إضافة مصروف';
 
   @override
-  String get addTransaction => 'إضافة معاملة';
+  String get addTransaction => 'إضافة مصروف';
 
   @override
   String get expense => 'مصروف';
@@ -216,11 +216,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get noExpensesDescription => 'اضغط «إضافة مصروف» لتسجيل أول مصروف.';
 
   @override
-  String get noTransactions => 'لا توجد معاملات بعد';
+  String get noTransactions => 'لا توجد مصروفات بعد';
 
   @override
-  String get noTransactionsDescription =>
-      'أضف الدخل أولاً، ثم سجّل مصروفات المنزل.';
+  String get noTransactionsDescription => 'ستظهر مصروفاتك المحفوظة هنا.';
 
   @override
   String get merchant => 'المتجر';
@@ -247,13 +246,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get expenseSaved => 'تم حفظ المصروف بنجاح';
 
   @override
-  String get transactionSaved => 'تم حفظ المعاملة بنجاح';
+  String get transactionSaved => 'تم حفظ المصروف بنجاح';
 
   @override
   String get enterExpenseDetails => 'أدخل تفاصيل المصروف';
 
   @override
-  String get enterTransactionDetails => 'أدخل تفاصيل المعاملة';
+  String get enterTransactionDetails => 'أدخل تفاصيل المصروف';
 
   @override
   String get manualExpenseHint => 'يعمل التتبع اليدوي دون اتصال بالإنترنت.';
@@ -273,7 +272,7 @@ class AppLocalizationsAr extends AppLocalizations {
       'لا يمكن تقليل هذا الدخل أو حذفه لأن ذلك سيجعل الرصيد المتبقي سالبًا.';
 
   @override
-  String get transactionNotFound => 'لم تعد هذه المعاملة موجودة.';
+  String get transactionNotFound => 'هذا المصروف لم يعد موجودًا.';
 
   @override
   String get restaurants => 'المطاعم والمقاهي';
@@ -342,13 +341,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get deleteExpenseMessage => 'سيتم حذف هذا المصروف نهائيًا.';
 
   @override
-  String get deleteTransactionTitle => 'حذف المعاملة؟';
+  String get deleteTransactionTitle => 'حذف المصروف؟';
 
   @override
-  String get deleteTransactionMessage => 'سيتم حذف هذه المعاملة نهائيًا.';
+  String get deleteTransactionMessage => 'سيتم حذف هذا المصروف نهائيًا.';
 
   @override
-  String get editTransaction => 'تعديل المعاملة';
+  String get editTransaction => 'تعديل المصروف';
 
   @override
   String get rename => 'إعادة تسمية';
@@ -506,7 +505,7 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get history => 'سجل المعاملات';
+  String get history => 'سجل المصروفات';
 
   @override
   String get viewAll => 'عرض الكل';
@@ -552,10 +551,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get duplicate => 'تكرار';
 
   @override
-  String get transactionDuplicated => 'تم تكرار المعاملة';
+  String get transactionDuplicated => 'تم تكرار المصروف';
 
   @override
-  String get noMatchingTransactions => 'لا توجد معاملات تطابق عوامل التصفية';
+  String get noMatchingTransactions => 'لا توجد مصروفات تطابق عوامل التصفية';
 
   @override
   String get selectDateRange => 'اختر نطاق التاريخ';
@@ -1284,11 +1283,11 @@ class AppLocalizationsAr extends AppLocalizations {
       'سجّل المتجر والفئة والتاريخ والملاحظات الاختيارية لكل مصروف.';
 
   @override
-  String get tutorialTransactionsTitle => 'المعاملات الأخيرة';
+  String get tutorialTransactionsTitle => 'المصروفات الأخيرة';
 
   @override
   String get tutorialTransactionsDescription =>
-      'استخدم عرض الكل لمراجعة سجل المعاملات وتعديله وحذفه والبحث فيه وتصفيته.';
+      'استخدم عرض الكل لمراجعة مصروفاتك وتعديلها وحذفها والبحث فيها وتصفيتها.';
 
   @override
   String get tutorialAnalyticsTitle => 'التحليلات';

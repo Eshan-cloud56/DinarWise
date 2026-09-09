@@ -107,7 +107,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final analytics = ref.read(analyticsServiceProvider);
     analytics.screen('dashboard');
     final l = context.l10n;
-    final expenses = ref.watch(recentTransactionsProvider);
+    final expenses = ref.watch(expensesProvider).whenData((items) =>
+        items.where((item) => item.type == 'expense').take(7).toList());
     final summary = ref.watch(financialSummaryProvider).valueOrNull ??
         const FinancialSummary(totalIncomeMinor: 0, totalExpensesMinor: 0);
     final categories = ref.watch(categoriesProvider).valueOrNull ?? [];
@@ -150,7 +151,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       bottomNavigationBar:
           DinarBottomNav(selected: 0, analyticsKey: _analyticsKey),
       body: RefreshIndicator(
-        onRefresh: () async => ref.invalidate(recentTransactionsProvider),
+        onRefresh: () async => ref.invalidate(expensesProvider),
         child: ListView(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
             children: [
@@ -197,36 +198,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         Text(l.localRecordsLabel,
                             style: const TextStyle(
                                 color: DinarColors.mint, fontSize: 11)),
-                        const SizedBox(height: 20),
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                              color: Colors.white.withAlpha(18),
-                              borderRadius: BorderRadius.circular(12)),
-                          child: Column(children: [
-                            Row(children: [
-                              Expanded(
-                                  child: Text(l.monthPace,
-                                      style: const TextStyle(
-                                          color: DinarColors.mint,
-                                          fontSize: 11))),
-                              Text(
-                                  '${now.day} / ${DateTime(now.year, now.month + 1, 0).day}',
-                                  style: const TextStyle(
-                                      color: DinarColors.gold, fontSize: 11))
-                            ]),
-                            const SizedBox(height: 8),
-                            ClipRRect(
-                                borderRadius: BorderRadius.circular(6),
-                                child: LinearProgressIndicator(
-                                    value: now.day /
-                                        DateTime(now.year, now.month + 1, 0)
-                                            .day,
-                                    color: DinarColors.gold,
-                                    backgroundColor: Colors.white12,
-                                    minHeight: 6)),
-                          ]),
-                        ),
                         const SizedBox(height: 16),
                         LayoutBuilder(builder: (context, constraints) {
                           final metrics = [
@@ -325,12 +296,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           icon: Icons.document_scanner_outlined,
                           label: l.scanBill,
                           onTap: () => context.push('/capture'))),
-                  const SizedBox(width: 8),
-                  Expanded(
-                      child: _QuickAction(
-                          icon: Icons.sync_alt,
-                          label: l.transferLabel,
-                          onTap: () => showTransferUnavailable(context))),
                 ]),
                 const SizedBox(height: 22),
                 Row(children: [
@@ -459,6 +424,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       child: Text(l.recentActivity,
                           style: Theme.of(context).textTheme.titleMedium)),
                   TextButton(
+                      key: const ValueKey('viewAllExpenses'),
                       onPressed: () => context.push('/history'),
                       child: Text(l.viewAll))
                 ]),
@@ -469,8 +435,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       child: Column(children: [
                     Text(l.unknownError),
                     TextButton(
-                        onPressed: () =>
-                            ref.invalidate(recentTransactionsProvider),
+                        onPressed: () => ref.invalidate(expensesProvider),
                         child: Text(l.tryAgain))
                   ])),
                   data: (items) => items.isEmpty
