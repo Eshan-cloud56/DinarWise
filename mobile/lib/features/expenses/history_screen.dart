@@ -1,4 +1,7 @@
 import 'dart:async';
+import 'package:dinarwise/core/widgets/dinar_widgets.dart';
+import 'package:dinarwise/core/theme.dart';
+import 'package:dinarwise/features/analytics/analytics_calculator.dart';
 
 import 'package:dinarwise/core/analytics/analytics_service.dart';
 import 'package:dinarwise/core/database/database_provider.dart';
@@ -249,8 +252,9 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
       Localizations.localeOf(context).toLanguageTag(),
     );
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.history),
+      bottomNavigationBar: const DinarBottomNav(selected: 1),
+      appBar: DinarHeader(
+        subtitle: l10n.history,
         actions: [
           IconButton(
             tooltip: l10n.calendarView,
@@ -305,6 +309,14 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                       },
                     ),
                   ),
+                  SliverToBoxAdapter(
+                      child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 8),
+                          child: _CashFlowCard(
+                              records:
+                                  ref.watch(expensesProvider).valueOrNull ??
+                                      const []))),
                   if (_items.isEmpty && !_loading)
                     SliverFillRemaining(
                       hasScrollBody: false,
@@ -360,53 +372,26 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
             final category = categoryById[item.categoryId];
             return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              child: Card(
-                child: ListTile(
-                  onTap: () => _open(item),
-                  leading: CircleAvatar(
-                    child: Icon(
-                      item.type == 'income'
-                          ? Icons.south_west_rounded
-                          : Icons.north_east_rounded,
-                    ),
-                  ),
-                  title: Text(
-                    item.merchant?.trim().isNotEmpty == true
-                        ? item.merchant!
-                        : item.type == 'income'
-                            ? context.l10n.income
-                            : context.l10n.expense,
-                  ),
-                  subtitle: Text(
-                    '${category == null ? context.l10n.other : localizedCategoryName(context.l10n, category)}'
-                    '${item.receiptAttachmentId == null ? '' : '  •  📎'}',
-                  ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        '${item.type == 'income' ? '+' : '-'}'
-                        '${currency.format(currencySpec.toMajor(item.amountMinor))}',
-                        style: const TextStyle(fontWeight: FontWeight.w700),
-                      ),
-                      PopupMenuButton<String>(
-                        onSelected: (action) {
-                          if (action == 'duplicate') _duplicate(item);
-                          if (action == 'delete') _delete(item);
-                        },
-                        itemBuilder: (_) => [
-                          PopupMenuItem(
-                            value: 'duplicate',
-                            child: Text(context.l10n.duplicate),
-                          ),
-                          PopupMenuItem(
-                            value: 'delete',
-                            child: Text(context.l10n.delete),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+              child: DinarTransactionTile(
+                item: item,
+                category: category,
+                method:
+                    (ref.watch(paymentMethodsProvider).valueOrNull ?? const [])
+                        .where((m) => m.id == item.paymentMethodId)
+                        .firstOrNull,
+                onTap: () => _open(item),
+                menu: PopupMenuButton<String>(
+                  onSelected: (action) {
+                    if (action == 'duplicate') _duplicate(item);
+                    if (action == 'delete') _delete(item);
+                  },
+                  itemBuilder: (_) => [
+                    PopupMenuItem(
+                        value: 'duplicate',
+                        child: Text(context.l10n.duplicate)),
+                    PopupMenuItem(
+                        value: 'delete', child: Text(context.l10n.delete)),
+                  ],
                 ),
               ),
             );
@@ -460,104 +445,127 @@ class _FilterPanel extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 10),
-          SegmentedButton<String>(
-            segments: [
-              ButtonSegment(value: 'all', label: Text(l10n.allTransactions)),
-              ButtonSegment(value: 'expense', label: Text(l10n.expense)),
-              ButtonSegment(value: 'income', label: Text(l10n.income)),
-            ],
-            selected: {filter.type},
-            onSelectionChanged: (value) => onTypeChanged(value.first),
-          ),
-          const SizedBox(height: 10),
-          Row(
+          SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(children: [
+                for (final option in [
+                  ('all', l10n.allTransactions),
+                  ('expense', l10n.expense),
+                  ('income', l10n.income)
+                ])
+                  Padding(
+                      padding: const EdgeInsetsDirectional.only(end: 8),
+                      child: ChoiceChip(
+                        label: Text(option.$2),
+                        selected: filter.type == option.$1,
+                        selectedColor: DinarColors.green,
+                        labelStyle: TextStyle(
+                            color: filter.type == option.$1
+                                ? Colors.white
+                                : DinarColors.ink),
+                        onSelected: (_) => onTypeChanged(option.$1),
+                      )),
+              ])),
+          ExpansionTile(
+            tilePadding: EdgeInsets.zero,
+            title: Text(l10n.filter),
             children: [
-              Expanded(
-                child: DropdownButtonFormField<String>(
-                  initialValue: filter.categoryId ?? '',
-                  decoration: InputDecoration(labelText: l10n.category),
-                  items: [
-                    DropdownMenuItem(
-                      value: '',
-                      child: Text(l10n.allCategories),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      isExpanded: true,
+                      initialValue: filter.categoryId ?? '',
+                      decoration: InputDecoration(labelText: l10n.category),
+                      items: [
+                        DropdownMenuItem(
+                          value: '',
+                          child: Text(l10n.allCategories),
+                        ),
+                        ...categories.map(
+                          (category) => DropdownMenuItem(
+                            value: category.id,
+                            child: Text(localizedCategoryName(l10n, category)),
+                          ),
+                        ),
+                      ],
+                      onChanged: (value) =>
+                          onCategoryChanged(value == '' ? null : value),
                     ),
-                    ...categories.map(
-                      (category) => DropdownMenuItem(
-                        value: category.id,
-                        child: Text(localizedCategoryName(l10n, category)),
-                      ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: DropdownButtonFormField<TransactionHistorySort>(
+                      isExpanded: true,
+                      initialValue: filter.sort,
+                      decoration: InputDecoration(labelText: l10n.filter),
+                      items: [
+                        DropdownMenuItem(
+                          value: TransactionHistorySort.newest,
+                          child: Text(l10n.newestFirst),
+                        ),
+                        DropdownMenuItem(
+                          value: TransactionHistorySort.oldest,
+                          child: Text(l10n.oldestFirst),
+                        ),
+                        DropdownMenuItem(
+                          value: TransactionHistorySort.highestAmount,
+                          child: Text(l10n.highestAmountFirst),
+                        ),
+                        DropdownMenuItem(
+                          value: TransactionHistorySort.lowestAmount,
+                          child: Text(l10n.lowestAmountFirst),
+                        ),
+                      ],
+                      onChanged: (value) {
+                        if (value != null) onSortChanged(value);
+                      },
                     ),
-                  ],
-                  onChanged: (value) =>
-                      onCategoryChanged(value == '' ? null : value),
-                ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: DropdownButtonFormField<TransactionHistorySort>(
-                  initialValue: filter.sort,
-                  decoration: InputDecoration(labelText: l10n.filter),
-                  items: [
-                    DropdownMenuItem(
-                      value: TransactionHistorySort.newest,
-                      child: Text(l10n.newestFirst),
+              const SizedBox(height: 10),
+              DropdownButtonFormField<String>(
+                isExpanded: true,
+                initialValue: filter.paymentMethodId ?? '',
+                decoration: InputDecoration(labelText: l10n.paymentMethod),
+                items: [
+                  DropdownMenuItem(
+                    value: '',
+                    child: Text(l10n.allPaymentMethods,
+                        maxLines: 1, overflow: TextOverflow.ellipsis),
+                  ),
+                  ...paymentMethods.map(
+                    (method) => DropdownMenuItem(
+                      value: method.id,
+                      child: Text(paymentLabel(context, method),
+                          maxLines: 1, overflow: TextOverflow.ellipsis),
                     ),
-                    DropdownMenuItem(
-                      value: TransactionHistorySort.oldest,
-                      child: Text(l10n.oldestFirst),
+                  ),
+                ],
+                onChanged: (value) =>
+                    onPaymentMethodChanged(value == '' ? null : value),
+              ),
+              const SizedBox(height: 4),
+              Wrap(
+                spacing: 12,
+                children: [
+                  TextButton.icon(
+                    onPressed: onChooseDates,
+                    icon: const Icon(Icons.date_range_outlined),
+                    label: Text(
+                      filter.from == null
+                          ? l10n.dateRange
+                          : '${DateFormat.yMd(Localizations.localeOf(context).toLanguageTag()).format(filter.from!)} – '
+                              '${DateFormat.yMd(Localizations.localeOf(context).toLanguageTag()).format(filter.to!)}',
                     ),
-                    DropdownMenuItem(
-                      value: TransactionHistorySort.highestAmount,
-                      child: Text(l10n.highestAmountFirst),
-                    ),
-                    DropdownMenuItem(
-                      value: TransactionHistorySort.lowestAmount,
-                      child: Text(l10n.lowestAmountFirst),
-                    ),
-                  ],
-                  onChanged: (value) {
-                    if (value != null) onSortChanged(value);
-                  },
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          DropdownButtonFormField<String>(
-            initialValue: filter.paymentMethodId ?? '',
-            decoration: InputDecoration(labelText: l10n.paymentMethod),
-            items: [
-              DropdownMenuItem(
-                value: '',
-                child: Text(l10n.allPaymentMethods),
-              ),
-              ...paymentMethods.map(
-                (method) => DropdownMenuItem(
-                  value: method.id,
-                  child: Text(method.name.replaceAll('_', ' ')),
-                ),
-              ),
-            ],
-            onChanged: (value) =>
-                onPaymentMethodChanged(value == '' ? null : value),
-          ),
-          const SizedBox(height: 4),
-          Row(
-            children: [
-              TextButton.icon(
-                onPressed: onChooseDates,
-                icon: const Icon(Icons.date_range_outlined),
-                label: Text(
-                  filter.from == null
-                      ? l10n.dateRange
-                      : '${DateFormat.yMd().format(filter.from!)} – '
-                          '${DateFormat.yMd().format(filter.to!)}',
-                ),
-              ),
-              const Spacer(),
-              TextButton(
-                onPressed: onClear,
-                child: Text(l10n.clearFilters),
+                  ),
+                  TextButton(
+                    onPressed: onClear,
+                    child: Text(l10n.clearFilters),
+                  ),
+                ],
               ),
             ],
           ),
@@ -621,5 +629,64 @@ class _DailyHeader extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+class _CashFlowCard extends StatelessWidget {
+  const _CashFlowCard({required this.records});
+  final List<ExpenseRecord> records;
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final summary = const AnalyticsCalculator().calculate(records,
+        from: DateTime(now.year, now.month),
+        to: DateTime(now.year, now.month + 1, 0));
+    final l = context.l10n;
+    final metrics = [
+      (l.totalIncome, summary.totalIncomeMinor, DinarColors.green),
+      (l.totalExpenses, summary.totalExpenseMinor, const Color(0xFFBA1A1A)),
+      (
+        l.netSavings,
+        summary.totalIncomeMinor - summary.totalExpenseMinor,
+        DinarColors.green
+      )
+    ];
+    return DinarCard(
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Row(children: [
+        const Icon(Icons.circle, size: 8, color: DinarColors.gold),
+        const SizedBox(width: 8),
+        Expanded(
+            child:
+                Text(l.cashFlow, style: Theme.of(context).textTheme.titleSmall))
+      ]),
+      const SizedBox(height: 6),
+      Text(
+          DateFormat.yMMMM(Localizations.localeOf(context).toLanguageTag())
+              .format(now),
+          style: const TextStyle(fontSize: 12, color: DinarColors.muted)),
+      const SizedBox(height: 16),
+      Wrap(spacing: 22, runSpacing: 14, children: [
+        for (final m in metrics)
+          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(m.$1,
+                style: const TextStyle(fontSize: 11, color: DinarColors.muted)),
+            const SizedBox(height: 6),
+            FinancialAmount(m.$2, size: 18, color: m.$3)
+          ])
+      ]),
+      const SizedBox(height: 18),
+      ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: LinearProgressIndicator(
+            value: summary.totalIncomeMinor + summary.totalExpenseMinor == 0
+                ? 0
+                : summary.totalIncomeMinor /
+                    (summary.totalIncomeMinor + summary.totalExpenseMinor),
+            backgroundColor: DinarColors.gold,
+            color: DinarColors.green,
+            minHeight: 6,
+          )),
+    ]));
   }
 }

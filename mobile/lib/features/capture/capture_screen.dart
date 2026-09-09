@@ -1,10 +1,15 @@
 import 'dart:io';
+import 'dart:async';
+import 'package:dinarwise/core/theme.dart';
+import 'package:dinarwise/core/widgets/dinar_widgets.dart';
+import 'package:dinarwise/features/expenses/income_actions.dart';
 
 import 'package:dinarwise/core/analytics/analytics_service.dart';
 import 'package:dinarwise/core/currency/gulf_currency.dart';
 import 'package:dinarwise/core/diagnostics/crash_reporting_service.dart';
 import 'package:dinarwise/core/preferences/onboarding_controller.dart';
 import 'package:dinarwise/features/categories/category_localization.dart';
+import 'package:dinarwise/features/categories/data/category_repository.dart';
 import 'package:dinarwise/features/categories/custom_category_dialog.dart';
 import 'package:dinarwise/features/expenses/amount_parser.dart';
 import 'package:dinarwise/features/expenses/data/expense_providers.dart';
@@ -13,6 +18,11 @@ import 'package:dinarwise/l10n/l10n_extension.dart';
 import 'package:dinarwise/features/payment_methods/payment_method_providers.dart';
 import 'package:dinarwise/features/receipts/receipt_providers.dart';
 import 'package:dinarwise/features/receipts/receipt_viewer.dart';
+import 'package:dinarwise/features/receipts/smart/gemma_receipt_service.dart';
+import 'package:dinarwise/features/receipts/smart/receipt_form_mapper.dart';
+import 'package:dinarwise/features/receipts/smart/receipt_ocr_service.dart';
+import 'package:dinarwise/features/receipts/smart/receipt_scan_service.dart';
+import 'package:dinarwise/features/receipts/smart/receipt_validator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -37,7 +47,6 @@ class CaptureScreen extends ConsumerStatefulWidget {
 }
 
 class _CaptureScreenState extends ConsumerState<CaptureScreen> {
-  static const _customCategoryValue = '__custom__';
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _merchantController;
   late final TextEditingController _amountController;
@@ -50,6 +59,8 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
   late final GulfCurrency _currency;
   String? _pendingReceiptPath;
   String? _storedReceiptPath;
+  bool _scanningReceipt = false;
+  String? _scanError;
 
   bool get _editing => widget.expense != null;
 
@@ -96,6 +107,10 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
             .read(receiptRepositoryProvider)
             .forTransaction(expense.id);
         if (mounted) setState(() => _storedReceiptPath = receipt?.filePath);
+      });
+    } else if (_pendingReceiptPath != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _scanReceipt(_pendingReceiptPath!, ReceiptScript.auto);
       });
     }
   }
@@ -213,12 +228,244 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
 
   Future<void> _pickReceipt(ImageSource source) async {
     try {
-      final picked = await ImagePicker().pickImage(source: source);
+      final picked =
+          await ref.read(receiptScanServiceProvider).images.pick(source);
       if (picked != null && mounted) {
-        setState(() => _pendingReceiptPath = picked.path);
+        setState(() {
+          _pendingReceiptPath = picked;
+          _scanError = null;
+        });
+        await _scanReceipt(picked, ReceiptScript.auto);
       }
     } catch (_) {
       if (mounted) setState(() => _error = context.l10n.receiptPickError);
+    }
+  }
+
+  Future<void> _scanReceipt(String path, ReceiptScript script) async {
+    final gemma = ref.read(receiptScanServiceProvider).gemma;
+    final state = await gemma.status();
+    if (!mounted) return;
+    if (state != GemmaModelState.ready) {
+      await _showModelSetup(gemma, state);
+      if (!mounted || await gemma.status() != GemmaModelState.ready) return;
+    }
+    setState(() {
+      _scanningReceipt = true;
+      _scanError = null;
+    });
+    try {
+      final categories = await ref.read(categoriesProvider.future);
+      final systemCodes = categories
+          .where((item) => item.isSystem && item.systemCode != null)
+          .map((item) => item.systemCode!);
+      final result = await ref.read(receiptScanServiceProvider).scan(
+            path,
+            script,
+            systemCodes,
+          );
+      if (!mounted) return;
+      await _reviewReceipt(result, categories);
+    } catch (_) {
+      if (mounted) setState(() => _scanError = context.l10n.smartScanFailed);
+    } finally {
+      if (mounted) setState(() => _scanningReceipt = false);
+    }
+  }
+
+  Future<void> _showModelSetup(
+    GemmaReceiptService gemma,
+    GemmaModelState state,
+  ) async {
+    var importing = false;
+    double? progress;
+    StreamSubscription<double?>? subscription;
+    try {
+      await showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) => StatefulBuilder(
+          builder: (context, setDialogState) => AlertDialog(
+            title: Text(context.l10n.smartReceiptModel),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (importing) LinearProgressIndicator(value: progress),
+                const SizedBox(height: 12),
+                Text(
+                  state == GemmaModelState.unconfigured
+                      ? context.l10n.smartReceiptModelNotConfigured
+                      : state == GemmaModelState.unsupported
+                          ? context.l10n.smartReceiptUnsupported
+                          : context.l10n.smartReceiptModelRequired,
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: importing ? null : () => Navigator.pop(context),
+                child: Text(context.l10n.manualEntry),
+              ),
+              if (state == GemmaModelState.missing && gemma.canImportModel)
+                FilledButton(
+                  onPressed: importing
+                      ? null
+                      : () async {
+                          setDialogState(() => importing = true);
+                          subscription = gemma.importProgress.listen((value) {
+                            if (dialogContext.mounted) {
+                              setDialogState(() => progress = value);
+                            }
+                          });
+                          try {
+                            await gemma.importModel();
+                            if (dialogContext.mounted) {
+                              Navigator.pop(dialogContext);
+                            }
+                          } catch (_) {
+                            if (dialogContext.mounted) {
+                              setDialogState(() => importing = false);
+                              ScaffoldMessenger.of(dialogContext).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    dialogContext.l10n.smartReceiptModelError,
+                                  ),
+                                ),
+                              );
+                            }
+                          }
+                        },
+                  child: Text(context.l10n.importModel),
+                ),
+            ],
+          ),
+        ),
+      );
+    } finally {
+      await subscription?.cancel();
+    }
+  }
+
+  Future<void> _reviewReceipt(
+    ValidatedReceipt initial,
+    List<CategoryRecord> categories,
+  ) async {
+    final fields = <String, TextEditingController>{
+      for (final key in receiptFields)
+        key: TextEditingController(text: initial.fields[key] ?? ''),
+    };
+    final lineItems = TextEditingController(
+      text: initial.lineItems
+          .map((item) =>
+              item.total == null ? item.name : '${item.name} — ${item.total}')
+          .join('\n'),
+    );
+    try {
+      final accepted = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(context.l10n.reviewReceiptDetails),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  for (final entry in fields.entries)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: TextField(
+                        controller: entry.value,
+                        keyboardType: const {
+                          'total',
+                          'subtotal',
+                          'tax',
+                          'cardLastFour',
+                        }.contains(entry.key)
+                            ? const TextInputType.numberWithOptions(
+                                decimal: true)
+                            : null,
+                        decoration: InputDecoration(
+                          labelText: _receiptFieldLabel(context, entry.key),
+                        ),
+                      ),
+                    ),
+                  if (lineItems.text.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: TextField(
+                        controller: lineItems,
+                        minLines: 2,
+                        maxLines: 8,
+                        decoration: InputDecoration(
+                          labelText: context.l10n.receiptLineItems,
+                        ),
+                      ),
+                    ),
+                  if (initial.confidence < .85)
+                    Text(
+                      context.l10n.lowConfidenceReview,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(context.l10n.cancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: Text(context.l10n.useDetectedDetails),
+            ),
+          ],
+        ),
+      );
+      if (accepted != true || !mounted) return;
+      final result = ReceiptValidator().validate({
+        for (final entry in fields.entries)
+          if (entry.value.text.trim().isNotEmpty)
+            entry.key: entry.value.text.trim(),
+        'confidence': initial.confidence,
+        'lineItems': [
+          for (final line in lineItems.text.split('\n'))
+            if (line.trim().isNotEmpty) {'name': line.trim()},
+        ],
+      });
+      final categoryMap = {
+        for (final item in categories)
+          if (item.isSystem && item.systemCode != null)
+            item.systemCode!: item.id,
+      };
+      final patch = ReceiptFormMapper().map(
+        result,
+        ledgerCurrency: _currency.code,
+        systemCategories: categoryMap,
+      );
+      setState(() {
+        if (patch.merchant?.isNotEmpty == true) {
+          _merchantController.text = patch.merchant!;
+        }
+        if (patch.amount != null) _amountController.text = patch.amount!;
+        if (patch.notes?.isNotEmpty == true && _notesController.text.isEmpty) {
+          _notesController.text = patch.notes!;
+        }
+        if (patch.date != null) _date = patch.date!;
+        if (patch.categoryId != null) _categoryId = patch.categoryId;
+        _scanError = patch.issues.contains(ReceiptIssue.differentCurrency)
+            ? context.l10n.detectedCurrencyMismatch
+            : patch.issues.contains(ReceiptIssue.inconsistentTotal)
+                ? context.l10n.receiptTotalsInconsistent
+                : null;
+      });
+    } finally {
+      for (final controller in fields.values) {
+        controller.dispose();
+      }
+      lineItems.dispose();
     }
   }
 
@@ -232,6 +479,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
       setState(() {
         _pendingReceiptPath = null;
         _storedReceiptPath = null;
+        _scanError = null;
       });
       ref.invalidate(receiptStorageProvider);
     }
@@ -314,209 +562,343 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
     }
   }
 
+  void _keypad(String digit) {
+    final text = _amountController.text;
+    String next;
+    if (digit == 'back') {
+      next = text.isEmpty ? '' : text.substring(0, text.length - 1);
+    } else if (digit == '.') {
+      if (text.contains('.') || text.contains('٫')) return;
+      next = text.isEmpty ? '0.' : '$text.';
+    } else {
+      if (text.length >= 14) return;
+      next = text == '0' ? digit : '$text$digit';
+    }
+    setState(() {
+      _amountController.text = next;
+      _amountController.selection =
+          TextSelection.collapsed(offset: next.length);
+    });
+  }
+
+  Future<void> _chooseDate() async {
+    final selected = await showDatePicker(
+      context: context,
+      initialDate: _date,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+    );
+    if (selected != null && mounted) setState(() => _date = selected);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final categories = ref.watch(categoriesProvider);
     return Scaffold(
       appBar: AppBar(
-        title: Text(_editing ? l10n.editTransaction : l10n.addExpense),
+        title: Row(children: [
+          Image.asset('assets/branding/stitch-logo.png', width: 32, height: 32),
+          const SizedBox(width: 10),
+          Expanded(
+              child: Text(_editing ? l10n.editTransaction : l10n.addTransaction,
+                  maxLines: 2)),
+        ]),
         actions: [
           if (_editing)
             IconButton(
-              tooltip: l10n.delete,
-              onPressed: _delete,
-              icon: const Icon(Icons.delete_outline),
-            ),
+                tooltip: l10n.delete,
+                onPressed: _delete,
+                icon: const Icon(Icons.delete_outline)),
         ],
       ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(20),
-          children: [
-            Text(
-              l10n.enterExpenseDetails,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-            ),
-            const SizedBox(height: 6),
-            Text(l10n.manualExpenseHint),
-            const SizedBox(height: 24),
-            TextFormField(
-              controller: _merchantController,
-              textInputAction: TextInputAction.next,
-              decoration: InputDecoration(
-                labelText: l10n.merchant,
-                prefixIcon: const Icon(Icons.storefront_outlined),
-              ),
-              validator: (value) =>
-                  (value?.trim().isEmpty ?? true) ? l10n.enterMerchant : null,
-            ),
-            const SizedBox(height: 14),
-            Consumer(
-              builder: (context, ref, _) {
-                final methods = ref.watch(paymentMethodsProvider);
-                return methods.when(
-                  loading: () => const LinearProgressIndicator(),
-                  error: (_, __) => const SizedBox.shrink(),
-                  data: (items) {
-                    _paymentMethodId ??= items
-                        .where((method) => method.isDefault)
-                        .firstOrNull
-                        ?.id;
-                    return DropdownButtonFormField<String>(
-                      initialValue:
-                          items.any((item) => item.id == _paymentMethodId)
-                              ? _paymentMethodId
-                              : null,
+      body: SafeArea(
+          top: false,
+          child: Form(
+            key: _formKey,
+            child: ListView(padding: const EdgeInsets.all(20), children: [
+              if (!_editing)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Wrap(spacing: 8, runSpacing: 8, children: [
+                    ChoiceChip(
+                        label: Text(l10n.expense),
+                        selected: true,
+                        avatar: const Icon(Icons.south),
+                        onSelected: (_) {}),
+                    ActionChip(
+                        label: Text(l10n.income),
+                        avatar: const Icon(Icons.north),
+                        onPressed: () => manageIncome(context, ref)),
+                    ActionChip(
+                        label: Text(l10n.transferLabel),
+                        avatar: const Icon(Icons.sync_alt),
+                        onPressed: () => showTransferUnavailable(context)),
+                  ]),
+                ),
+              DinarCard(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  child: Column(children: [
+                    Chip(
+                        label: Text(_currency.code),
+                        avatar: const Icon(Icons.payments_outlined, size: 18)),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      key: const ValueKey('expenseAmountField'),
+                      controller: _amountController,
+                      keyboardType: TextInputType.none,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                          fontFamily: 'PlusJakartaSans',
+                          fontSize: 42,
+                          fontWeight: FontWeight.w800),
+                      onChanged: (_) => setState(() {}),
                       decoration: InputDecoration(
-                        labelText: l10n.paymentMethod,
-                        prefixIcon: const Icon(Icons.account_balance_wallet),
-                      ),
-                      items: items
-                          .map(
-                            (method) => DropdownMenuItem(
-                              value: method.id,
-                              child: Text(
-                                _paymentMethodLabel(
-                                    context, method.systemCode, method.name),
-                              ),
+                          labelText: l10n.amount,
+                          hintText: '0.00',
+                          fillColor: Colors.white),
+                      validator: (value) {
+                        final amount = parseLocalizedAmount(value ?? '');
+                        return amount == null || amount <= 0
+                            ? l10n.enterValidAmount
+                            : null;
+                      },
+                    ),
+                  ])),
+              const SizedBox(height: 18),
+              DinarCard(
+                  padding: const EdgeInsets.all(10),
+                  child: LayoutBuilder(builder: (context, constraints) {
+                    final height =
+                        MediaQuery.textScalerOf(context).scale(24) + 28;
+                    return GridView.count(
+                      crossAxisCount: 3,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      crossAxisSpacing: 8,
+                      mainAxisSpacing: 8,
+                      childAspectRatio:
+                          ((constraints.maxWidth - 16) / 3) / height,
+                      children: [
+                        for (final digit in [
+                          '1',
+                          '2',
+                          '3',
+                          '4',
+                          '5',
+                          '6',
+                          '7',
+                          '8',
+                          '9',
+                          '.',
+                          '0',
+                          'back'
+                        ])
+                          Semantics(
+                            button: true,
+                            label:
+                                digit == 'back' ? l10n.backspaceLabel : digit,
+                            child: FilledButton.tonal(
+                              key: ValueKey('keypad-$digit'),
+                              style: FilledButton.styleFrom(
+                                  backgroundColor: DinarColors.inset,
+                                  foregroundColor: DinarColors.ink,
+                                  padding: EdgeInsets.zero),
+                              onPressed: _saving ? null : () => _keypad(digit),
+                              child: digit == 'back'
+                                  ? const Icon(Icons.backspace_outlined)
+                                  : Text(digit,
+                                      style: const TextStyle(
+                                          fontSize: 26,
+                                          fontFamily: 'PlusJakartaSans')),
                             ),
-                          )
-                          .toList(),
-                      onChanged: (value) =>
-                          setState(() => _paymentMethodId = value),
+                          ),
+                      ],
                     );
-                  },
-                );
-              },
-            ),
-            const SizedBox(height: 14),
-            TextFormField(
-              controller: _amountController,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              textInputAction: TextInputAction.next,
-              decoration: InputDecoration(
-                labelText: l10n.amount,
-                prefixText: '${_currency.code} ',
-                prefixIcon: const Icon(Icons.payments_outlined),
+                  })),
+              const SizedBox(height: 18),
+              categories.when(
+                loading: () => const LinearProgressIndicator(),
+                error: (_, __) => Text(l10n.unknownError),
+                data: (items) {
+                  _categoryId ??= items
+                      .where((category) => category.systemCode == 'shopping')
+                      .firstOrNull
+                      ?.id;
+                  return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(l10n.category,
+                            style: Theme.of(context).textTheme.labelLarge),
+                        const SizedBox(height: 10),
+                        SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(children: [
+                              for (final category in items)
+                                Padding(
+                                  padding:
+                                      const EdgeInsetsDirectional.only(end: 8),
+                                  child: ChoiceChip(
+                                    label: Text(
+                                        localizedCategoryName(l10n, category)),
+                                    avatar: Icon(
+                                        categoryIcon(category.systemCode),
+                                        size: 19),
+                                    selected: _categoryId == category.id,
+                                    selectedColor: const Color(0xFFFFDEA5),
+                                    onSelected: (_) => setState(
+                                        () => _categoryId = category.id),
+                                  ),
+                                ),
+                              ActionChip(
+                                  label: Text(l10n.customCategory),
+                                  avatar: const Icon(Icons.add, size: 18),
+                                  onPressed: () async {
+                                    final created =
+                                        await showCustomCategoryDialog(
+                                            context, ref);
+                                    if (created != null && mounted) {
+                                      setState(() => _categoryId = created.id);
+                                    }
+                                  }),
+                            ])),
+                      ]);
+                },
               ),
-              validator: (value) {
-                final amount = parseLocalizedAmount(value ?? '');
-                return amount == null || amount <= 0
-                    ? l10n.enterValidAmount
-                    : null;
-              },
-            ),
-            const SizedBox(height: 14),
-            categories.when(
-              loading: () => const LinearProgressIndicator(),
-              error: (_, __) => Text(l10n.unknownError),
-              data: (items) {
-                _categoryId ??= items
-                    .where((category) => category.systemCode == 'shopping')
-                    .firstOrNull
-                    ?.id;
-                return DropdownButtonFormField<String>(
-                  initialValue: items.any((item) => item.id == _categoryId)
-                      ? _categoryId
-                      : null,
+              const SizedBox(height: 18),
+              DinarCard(
+                  child: Column(children: [
+                TextFormField(
+                  key: const ValueKey('expenseMerchantField'),
+                  controller: _merchantController,
+                  textInputAction: TextInputAction.next,
                   decoration: InputDecoration(
-                    labelText: l10n.category,
-                    prefixIcon: const Icon(Icons.category_outlined),
-                  ),
-                  items: [
-                    ...items.map(
-                      (category) => DropdownMenuItem(
-                        value: category.id,
-                        child: Text(localizedCategoryName(l10n, category)),
-                      ),
-                    ),
-                    DropdownMenuItem(
-                      value: _customCategoryValue,
-                      child: Text(l10n.customCategory),
-                    ),
-                  ],
-                  onChanged: (value) async {
-                    if (value == _customCategoryValue) {
-                      final created =
-                          await showCustomCategoryDialog(context, ref);
-                      if (created != null && mounted) {
-                        setState(() => _categoryId = created.id);
-                      }
-                    } else {
-                      setState(() => _categoryId = value);
-                    }
-                  },
-                );
-              },
-            ),
-            const SizedBox(height: 14),
-            TextFormField(
-              controller: _notesController,
-              minLines: 2,
-              maxLines: 4,
-              decoration: InputDecoration(
-                labelText: l10n.notesOptional,
-                prefixIcon: const Icon(Icons.notes),
+                      labelText: l10n.merchant,
+                      prefixIcon: const Icon(Icons.storefront_outlined)),
+                  validator: (value) => (value?.trim().isEmpty ?? true)
+                      ? l10n.enterMerchant
+                      : null,
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _notesController,
+                  minLines: 1,
+                  maxLines: 4,
+                  decoration: InputDecoration(
+                      labelText: l10n.notesOptional,
+                      prefixIcon: const Icon(Icons.notes)),
+                ),
+                const SizedBox(height: 12),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.schedule),
+                  title: Text(l10n.date),
+                  subtitle: Text(DateFormat.yMMMEd(
+                          Localizations.localeOf(context).toLanguageTag())
+                      .format(_date)),
+                  onTap: _chooseDate,
+                ),
+                Wrap(spacing: 8, runSpacing: 8, children: [
+                  OutlinedButton(
+                      onPressed: () => setState(() => _date = DateTime.now()),
+                      child: Text(l10n.today)),
+                  OutlinedButton(
+                      onPressed: () => setState(() => _date =
+                          DateTime.now().subtract(const Duration(days: 1))),
+                      child: Text(l10n.yesterday)),
+                  OutlinedButton.icon(
+                      onPressed: _chooseDate,
+                      icon: const Icon(Icons.calendar_month_outlined, size: 18),
+                      label: Text(l10n.date)),
+                ]),
+                const SizedBox(height: 12),
+                Consumer(builder: (context, ref, _) {
+                  final methods = ref.watch(paymentMethodsProvider);
+                  return methods.when(
+                    loading: () => const LinearProgressIndicator(),
+                    error: (_, __) => const SizedBox.shrink(),
+                    data: (items) {
+                      _paymentMethodId ??= items
+                          .where((method) => method.isDefault)
+                          .firstOrNull
+                          ?.id;
+                      return DropdownButtonFormField<String>(
+                        isExpanded: true,
+                        initialValue:
+                            items.any((item) => item.id == _paymentMethodId)
+                                ? _paymentMethodId
+                                : null,
+                        decoration: InputDecoration(
+                            labelText: l10n.paymentMethod,
+                            prefixIcon: const Icon(
+                                Icons.account_balance_wallet_outlined)),
+                        items: items
+                            .map((method) => DropdownMenuItem(
+                                value: method.id,
+                                child: Text(_paymentMethodLabel(
+                                    context, method.systemCode, method.name))))
+                            .toList(),
+                        onChanged: (value) =>
+                            setState(() => _paymentMethodId = value),
+                      );
+                    },
+                  );
+                }),
+                const SizedBox(height: 10),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.call_split),
+                  title: Text(l10n.splitBnplLabel),
+                  subtitle: Text(l10n.manageBnplHint,
+                      style: const TextStyle(fontSize: 11)),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => context.push('/planning/bnpl'),
+                ),
+                const SizedBox(height: 10),
+                _ReceiptAttachmentCard(
+                    filePath: _pendingReceiptPath ?? _storedReceiptPath,
+                    onAdd: _showReceiptSource,
+                    onRemove: _removeReceipt,
+                    scanning: _scanningReceipt,
+                    scanError: _scanError,
+                    onScan: (script) {
+                      final path = _pendingReceiptPath ?? _storedReceiptPath;
+                      if (path != null) _scanReceipt(path, script);
+                    }),
+                const SizedBox(height: 8),
+                Text(l10n.manualReceiptHint,
+                    style:
+                        const TextStyle(fontSize: 11, color: DinarColors.muted),
+                    textAlign: TextAlign.center),
+              ])),
+              const SizedBox(height: 18),
+              if (_error != null)
+                Padding(
+                    padding: const EdgeInsets.only(top: 14),
+                    child: Text(_error!,
+                        style: TextStyle(
+                            color: Theme.of(context).colorScheme.error),
+                        textAlign: TextAlign.center)),
+              const SizedBox(height: 20),
+              FilledButton.icon(
+                key: const ValueKey('saveExpenseButton'),
+                onPressed: _saving ? null : _save,
+                icon: _saving
+                    ? const SizedBox.square(
+                        dimension: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Icon(Icons.check_circle_outline),
+                label: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: Text(
+                        _saving
+                            ? l10n.saving
+                            : '${l10n.saveExpenseLabel} (${_currency.formatter(Localizations.localeOf(context).toLanguageTag()).format(parseLocalizedAmount(_amountController.text) ?? 0)})',
+                        textAlign: TextAlign.center)),
               ),
-            ),
-            const SizedBox(height: 14),
-            ListTile(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              tileColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-              leading: const Icon(Icons.calendar_today_outlined),
-              title: Text(l10n.date),
-              subtitle: Text(
-                DateFormat.yMd(Localizations.localeOf(context).toLanguageTag())
-                    .format(_date),
-              ),
-              onTap: () async {
-                final selected = await showDatePicker(
-                  context: context,
-                  initialDate: _date,
-                  firstDate: DateTime(2020),
-                  lastDate: DateTime.now(),
-                );
-                if (selected != null) setState(() => _date = selected);
-              },
-            ),
-            const SizedBox(height: 14),
-            _ReceiptAttachmentCard(
-              filePath: _pendingReceiptPath ?? _storedReceiptPath,
-              onAdd: _showReceiptSource,
-              onRemove: _removeReceipt,
-            ),
-            if (_error != null) ...[
-              const SizedBox(height: 14),
-              Text(
-                _error!,
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-              ),
-            ],
-            const SizedBox(height: 24),
-            FilledButton.icon(
-              onPressed: _saving ? null : _save,
-              icon: _saving
-                  ? const SizedBox.square(
-                      dimension: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.check),
-              label: Padding(
-                padding: const EdgeInsets.all(14),
-                child: Text(_saving ? l10n.saving : l10n.save),
-              ),
-            ),
-          ],
-        ),
-      ),
+            ]),
+          )),
     );
   }
 }
@@ -540,16 +922,37 @@ String _paymentMethodLabel(
       _ => fallback,
     };
 
+String _receiptFieldLabel(BuildContext context, String key) => switch (key) {
+      'merchantName' => context.l10n.merchant,
+      'total' => context.l10n.receiptTotal,
+      'subtotal' => context.l10n.receiptSubtotal,
+      'tax' => context.l10n.receiptTax,
+      'currency' => context.l10n.receiptCurrency,
+      'date' => context.l10n.date,
+      'time' => context.l10n.receiptTime,
+      'paymentMethod' => context.l10n.paymentMethod,
+      'cardLastFour' => context.l10n.cardLastFour,
+      'invoiceNumber' => context.l10n.invoiceNumber,
+      'category' => context.l10n.category,
+      _ => key,
+    };
+
 class _ReceiptAttachmentCard extends StatelessWidget {
   const _ReceiptAttachmentCard({
     required this.filePath,
     required this.onAdd,
     required this.onRemove,
+    required this.onScan,
+    required this.scanning,
+    required this.scanError,
   });
 
   final String? filePath;
   final VoidCallback onAdd;
   final VoidCallback onRemove;
+  final ValueChanged<ReceiptScript> onScan;
+  final bool scanning;
+  final String? scanError;
 
   @override
   Widget build(BuildContext context) {
@@ -566,33 +969,72 @@ class _ReceiptAttachmentCard extends StatelessWidget {
     }
     return Card(
       clipBehavior: Clip.antiAlias,
-      child: Row(
+      child: Column(
         children: [
-          InkWell(
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => ReceiptViewer(filePath: path),
+          Row(children: [
+            InkWell(
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => ReceiptViewer(filePath: path),
+                ),
+              ),
+              child: Image.file(
+                File(path),
+                width: 96,
+                height: 96,
+                fit: BoxFit.cover,
               ),
             ),
-            child: Image.file(
-              File(path),
-              width: 96,
-              height: 96,
-              fit: BoxFit.cover,
+            Expanded(
+              child: ListTile(
+                title: Text(context.l10n.receiptAttached),
+                subtitle: Text(context.l10n.tapToView),
+                onTap: onAdd,
+              ),
             ),
-          ),
-          Expanded(
-            child: ListTile(
-              title: Text(context.l10n.receiptAttached),
-              subtitle: Text(context.l10n.tapToView),
-              onTap: onAdd,
+            IconButton(
+              tooltip: context.l10n.removeReceipt,
+              onPressed: onRemove,
+              icon: const Icon(Icons.delete_outline),
             ),
-          ),
-          IconButton(
-            tooltip: context.l10n.removeReceipt,
-            onPressed: onRemove,
-            icon: const Icon(Icons.delete_outline),
-          ),
+          ]),
+          if (scanning) ...[
+            const LinearProgressIndicator(),
+            Padding(
+              padding: const EdgeInsets.all(8),
+              child: Text(context.l10n.processingReceipt),
+            ),
+          ] else
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                alignment: WrapAlignment.center,
+                children: [
+                  FilledButton.tonalIcon(
+                    key: const ValueKey('scanReceiptAuto'),
+                    onPressed: () => onScan(ReceiptScript.auto),
+                    icon: const Icon(Icons.document_scanner_outlined),
+                    label: Text(context.l10n.smartScan),
+                  ),
+                  OutlinedButton(
+                    key: const ValueKey('scanReceiptArabic'),
+                    onPressed: () => onScan(ReceiptScript.arabic),
+                    child: Text(context.l10n.arabicMixedReceipt),
+                  ),
+                ],
+              ),
+            ),
+          if (scanError != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+              child: Text(
+                scanError!,
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+                textAlign: TextAlign.center,
+              ),
+            ),
         ],
       ),
     );

@@ -1,4 +1,5 @@
 import 'package:dinarwise/features/expenses/amount_parser.dart';
+import 'package:dinarwise/core/theme.dart';
 import 'package:dinarwise/l10n/l10n_extension.dart';
 import 'package:flutter/material.dart';
 
@@ -69,24 +70,88 @@ class _IncomeDialogState extends State<_IncomeDialog> {
     return AlertDialog(
       icon: const Icon(Icons.add_card_rounded),
       title: Text(_editing ? l10n.editIncome : l10n.addIncome),
-      content: Form(
-        key: _formKey,
-        child: TextFormField(
-          key: const ValueKey('incomeAmountField'),
-          controller: _controller,
-          autofocus: true,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          decoration: InputDecoration(
-            labelText: l10n.incomeAmount,
-            prefixText: '${widget.currencyCode} ',
-            prefixIcon: const Icon(Icons.payments_outlined),
-          ),
-          validator: (value) {
-            final amount = parseLocalizedAmount(value ?? '');
-            return amount == null || amount <= 0 ? l10n.enterValidAmount : null;
-          },
-        ),
-      ),
+      content: SingleChildScrollView(
+          child: SizedBox(
+              width: 340,
+              child: Form(
+                key: _formKey,
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  TextFormField(
+                    key: const ValueKey('incomeAmountField'),
+                    controller: _controller,
+                    autofocus: false,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                        fontFamily: 'PlusJakartaSans',
+                        fontSize: 30,
+                        fontWeight: FontWeight.w700),
+                    keyboardType: TextInputType.none,
+                    decoration: InputDecoration(
+                      labelText: l10n.incomeAmount,
+                      prefixText: '${widget.currencyCode} ',
+                      prefixIcon: const Icon(Icons.payments_outlined),
+                    ),
+                    validator: (value) {
+                      final amount = parseLocalizedAmount(value ?? '');
+                      return amount == null || amount <= 0
+                          ? l10n.enterValidAmount
+                          : null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  LayoutBuilder(
+                      builder: (context, constraints) => GridView.count(
+                            crossAxisCount: 3,
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            mainAxisSpacing: 8,
+                            crossAxisSpacing: 8,
+                            childAspectRatio: ((constraints.maxWidth - 16) /
+                                    3) /
+                                (MediaQuery.textScalerOf(context).scale(22) +
+                                    24),
+                            children: [
+                              for (final key in [
+                                '1',
+                                '2',
+                                '3',
+                                '4',
+                                '5',
+                                '6',
+                                '7',
+                                '8',
+                                '9',
+                                '.',
+                                '0',
+                                'back'
+                              ])
+                                FilledButton.tonal(
+                                  style: FilledButton.styleFrom(
+                                      backgroundColor: DinarColors.inset,
+                                      padding: EdgeInsets.zero),
+                                  onPressed: () {
+                                    final text = _controller.text;
+                                    if (key == 'back') {
+                                      _controller.text = text.isEmpty
+                                          ? ''
+                                          : text.substring(0, text.length - 1);
+                                    } else if (key != '.' ||
+                                        !text.contains('.')) {
+                                      _controller.text = '$text$key';
+                                    }
+                                  },
+                                  child: key == 'back'
+                                      ? Semantics(
+                                          label: l10n.backspaceLabel,
+                                          child: const Icon(
+                                              Icons.backspace_outlined))
+                                      : Text(key,
+                                          style: const TextStyle(fontSize: 22)),
+                                ),
+                            ],
+                          )),
+                ]),
+              ))),
       actions: [
         if (_editing)
           TextButton(
@@ -104,6 +169,7 @@ class _IncomeDialogState extends State<_IncomeDialog> {
           child: Text(l10n.cancel),
         ),
         FilledButton(
+          key: const ValueKey('saveIncomeButton'),
           onPressed: () {
             if (!_formKey.currentState!.validate()) return;
             Navigator.pop(
@@ -113,7 +179,7 @@ class _IncomeDialogState extends State<_IncomeDialog> {
               ),
             );
           },
-          child: Text(l10n.save),
+          child: Text(l10n.saveIncomeLabel),
         ),
       ],
     );

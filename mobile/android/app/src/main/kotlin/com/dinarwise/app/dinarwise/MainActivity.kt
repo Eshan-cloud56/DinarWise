@@ -14,9 +14,11 @@ class MainActivity : FlutterFragmentActivity() {
     private var pickFileResult: MethodChannel.Result? = null
     private var sharedReceiptChannel: MethodChannel? = null
     private var pendingReceiptPath: String? = null
+    private var smartReceiptBridge: SmartReceiptBridge? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        smartReceiptBridge = SmartReceiptBridge(this, flutterEngine.dartExecutor.binaryMessenger)
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
             "dinarwise/file_share"
@@ -91,6 +93,7 @@ class MainActivity : FlutterFragmentActivity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+        if (smartReceiptBridge?.onActivityResult(requestCode, resultCode, data) == true) return
         if (requestCode != pickFileRequest) return
         val callback = pickFileResult ?: return
         pickFileResult = null
@@ -108,6 +111,12 @@ class MainActivity : FlutterFragmentActivity() {
         } catch (error: Exception) {
             callback.error("pick_failed", error.message, null)
         }
+    }
+
+    override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {
+        smartReceiptBridge?.close()
+        smartReceiptBridge = null
+        super.cleanUpFlutterEngine(flutterEngine)
     }
 
     private fun receiptPath(intent: Intent?): String? {

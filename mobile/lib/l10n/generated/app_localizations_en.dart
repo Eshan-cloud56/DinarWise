@@ -9,6 +9,102 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get saveIncomeLabel => 'Save income';
+
+  @override
+  String get brandTitle => 'DinarWise';
+
+  @override
+  String get transactionsLabel => 'Transactions';
+
+  @override
+  String get planningLabel => 'Planning';
+
+  @override
+  String get today => 'Today';
+
+  @override
+  String get yesterday => 'Yesterday';
+
+  @override
+  String get homeLabel => 'Home';
+
+  @override
+  String get dashboardWelcome => 'Your household, in balance.';
+
+  @override
+  String get localRecordsLabel => 'Financial records stored on this device';
+
+  @override
+  String get availableToSpend => 'Available to spend';
+
+  @override
+  String get safeToSpendToday => 'Safe to spend today';
+
+  @override
+  String get quickServices => 'Quick services';
+
+  @override
+  String get scanBill => 'Scan bill';
+
+  @override
+  String get transferLabel => 'Transfer';
+
+  @override
+  String get transferUnavailable =>
+      'Transfers between accounts are not available. DinarWise currently tracks household income and expenses without bank-account transfers.';
+
+  @override
+  String get smartInsights => 'Smart insights';
+
+  @override
+  String get spendingBreakdown => 'Spending breakdown';
+
+  @override
+  String get recentActivity => 'Recent activity';
+
+  @override
+  String get insightsLabel => 'Insights';
+
+  @override
+  String get cashFlow => 'Monthly cash flow';
+
+  @override
+  String get netSavings => 'Net savings';
+
+  @override
+  String get savedInGoals => 'Saved in goals';
+
+  @override
+  String get perDay => '/ day';
+
+  @override
+  String get manualReceiptHint =>
+      'Attach a receipt and use private on-device Smart Scan, or continue manually.';
+
+  @override
+  String get monthPace => 'Month progress';
+
+  @override
+  String get saveExpenseLabel => 'Save expense';
+
+  @override
+  String get splitBnplLabel => 'Split / BNPL plans';
+
+  @override
+  String get manageBnplHint =>
+      'Manage instalments in BNPL planning. This does not split the current transaction.';
+
+  @override
+  String get thisMonthLabel => 'This month';
+
+  @override
+  String get paymentMethodUnknown => 'No payment method';
+
+  @override
+  String get backspaceLabel => 'Delete last digit';
+
+  @override
   String get appName => 'Dinar Wise: Expense AI Manager';
 
   @override
@@ -866,7 +962,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get defaultPaymentMethod => 'Default payment method';
 
   @override
-  String get attachReceipt => 'Attach receipt';
+  String get attachReceipt => 'Attach or Smart Scan Receipt';
 
   @override
   String get takeReceiptPhoto => 'Take receipt photo';
@@ -1231,4 +1327,85 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tutorialFinish => 'Finish';
+
+  @override
+  String get smartReceiptModel => 'Smart Receipt model';
+
+  @override
+  String get smartReceiptModelNotConfigured =>
+      'Smart Receipt Scan is not yet configured for public model distribution. You can continue entering this expense manually.';
+
+  @override
+  String get smartReceiptUnsupported =>
+      'This device cannot run the on-device Smart Receipt model. Manual expense entry remains available.';
+
+  @override
+  String get smartReceiptModelRequired =>
+      'Choose the licensed Gemma 3n E2B model file. It will be verified and stored privately on this device.';
+
+  @override
+  String get smartReceiptModelError =>
+      'The model could not be verified or imported.';
+
+  @override
+  String get importModel => 'Import verified model';
+
+  @override
+  String get manualEntry => 'Manual entry';
+
+  @override
+  String get smartScanFailed =>
+      'The receipt could not be read. Retry or enter the expense manually.';
+
+  @override
+  String get reviewReceiptDetails => 'Review detected details';
+
+  @override
+  String get lowConfidenceReview =>
+      'Some details are uncertain. Review every field before using them.';
+
+  @override
+  String get useDetectedDetails => 'Use these details';
+
+  @override
+  String get detectedCurrencyMismatch =>
+      'The receipt currency differs from your selected currency. The amount was not filled.';
+
+  @override
+  String get receiptTotalsInconsistent =>
+      'The detected receipt totals are inconsistent. The amount was not filled.';
+
+  @override
+  String get processingReceipt =>
+      'Reading this receipt privately on your device…';
+
+  @override
+  String get smartScan => 'Smart scan';
+
+  @override
+  String get arabicMixedReceipt => 'Arabic / mixed receipt';
+
+  @override
+  String get receiptTotal => 'Total';
+
+  @override
+  String get receiptSubtotal => 'Subtotal';
+
+  @override
+  String get receiptTax => 'VAT / tax';
+
+  @override
+  String get receiptCurrency => 'Currency';
+
+  @override
+  String get receiptTime => 'Time';
+
+  @override
+  String get cardLastFour => 'Card last 4 digits';
+
+  @override
+  String get invoiceNumber => 'Invoice / receipt number';
+
+  @override
+  String get receiptLineItems => 'Reliable line items';
 }

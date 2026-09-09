@@ -98,6 +98,192 @@ abstract class AppLocalizations {
     Locale('en')
   ];
 
+  /// No description provided for @saveIncomeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Save income'**
+  String get saveIncomeLabel;
+
+  /// No description provided for @brandTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'DinarWise'**
+  String get brandTitle;
+
+  /// No description provided for @transactionsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Transactions'**
+  String get transactionsLabel;
+
+  /// No description provided for @planningLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Planning'**
+  String get planningLabel;
+
+  /// No description provided for @today.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get today;
+
+  /// No description provided for @yesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get yesterday;
+
+  /// No description provided for @homeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Home'**
+  String get homeLabel;
+
+  /// No description provided for @dashboardWelcome.
+  ///
+  /// In en, this message translates to:
+  /// **'Your household, in balance.'**
+  String get dashboardWelcome;
+
+  /// No description provided for @localRecordsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Financial records stored on this device'**
+  String get localRecordsLabel;
+
+  /// No description provided for @availableToSpend.
+  ///
+  /// In en, this message translates to:
+  /// **'Available to spend'**
+  String get availableToSpend;
+
+  /// No description provided for @safeToSpendToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Safe to spend today'**
+  String get safeToSpendToday;
+
+  /// No description provided for @quickServices.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick services'**
+  String get quickServices;
+
+  /// No description provided for @scanBill.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan bill'**
+  String get scanBill;
+
+  /// No description provided for @transferLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer'**
+  String get transferLabel;
+
+  /// No description provided for @transferUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfers between accounts are not available. DinarWise currently tracks household income and expenses without bank-account transfers.'**
+  String get transferUnavailable;
+
+  /// No description provided for @smartInsights.
+  ///
+  /// In en, this message translates to:
+  /// **'Smart insights'**
+  String get smartInsights;
+
+  /// No description provided for @spendingBreakdown.
+  ///
+  /// In en, this message translates to:
+  /// **'Spending breakdown'**
+  String get spendingBreakdown;
+
+  /// No description provided for @recentActivity.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent activity'**
+  String get recentActivity;
+
+  /// No description provided for @insightsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Insights'**
+  String get insightsLabel;
+
+  /// No description provided for @cashFlow.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly cash flow'**
+  String get cashFlow;
+
+  /// No description provided for @netSavings.
+  ///
+  /// In en, this message translates to:
+  /// **'Net savings'**
+  String get netSavings;
+
+  /// No description provided for @savedInGoals.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved in goals'**
+  String get savedInGoals;
+
+  /// No description provided for @perDay.
+  ///
+  /// In en, this message translates to:
+  /// **'/ day'**
+  String get perDay;
+
+  /// No description provided for @manualReceiptHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Attach a receipt and use private on-device Smart Scan, or continue manually.'**
+  String get manualReceiptHint;
+
+  /// No description provided for @monthPace.
+  ///
+  /// In en, this message translates to:
+  /// **'Month progress'**
+  String get monthPace;
+
+  /// No description provided for @saveExpenseLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Save expense'**
+  String get saveExpenseLabel;
+
+  /// No description provided for @splitBnplLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Split / BNPL plans'**
+  String get splitBnplLabel;
+
+  /// No description provided for @manageBnplHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage instalments in BNPL planning. This does not split the current transaction.'**
+  String get manageBnplHint;
+
+  /// No description provided for @thisMonthLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'This month'**
+  String get thisMonthLabel;
+
+  /// No description provided for @paymentMethodUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'No payment method'**
+  String get paymentMethodUnknown;
+
+  /// No description provided for @backspaceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete last digit'**
+  String get backspaceLabel;
+
   /// No description provided for @appName.
   ///
   /// In en, this message translates to:
@@ -1697,7 +1883,7 @@ abstract class AppLocalizations {
   /// No description provided for @attachReceipt.
   ///
   /// In en, this message translates to:
-  /// **'Attach receipt'**
+  /// **'Attach or Smart Scan Receipt'**
   String get attachReceipt;
 
   /// No description provided for @takeReceiptPhoto.
@@ -2353,6 +2539,150 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Finish'**
   String get tutorialFinish;
+
+  /// No description provided for @smartReceiptModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Smart Receipt model'**
+  String get smartReceiptModel;
+
+  /// No description provided for @smartReceiptModelNotConfigured.
+  ///
+  /// In en, this message translates to:
+  /// **'Smart Receipt Scan is not yet configured for public model distribution. You can continue entering this expense manually.'**
+  String get smartReceiptModelNotConfigured;
+
+  /// No description provided for @smartReceiptUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'This device cannot run the on-device Smart Receipt model. Manual expense entry remains available.'**
+  String get smartReceiptUnsupported;
+
+  /// No description provided for @smartReceiptModelRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the licensed Gemma 3n E2B model file. It will be verified and stored privately on this device.'**
+  String get smartReceiptModelRequired;
+
+  /// No description provided for @smartReceiptModelError.
+  ///
+  /// In en, this message translates to:
+  /// **'The model could not be verified or imported.'**
+  String get smartReceiptModelError;
+
+  /// No description provided for @importModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Import verified model'**
+  String get importModel;
+
+  /// No description provided for @manualEntry.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual entry'**
+  String get manualEntry;
+
+  /// No description provided for @smartScanFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The receipt could not be read. Retry or enter the expense manually.'**
+  String get smartScanFailed;
+
+  /// No description provided for @reviewReceiptDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Review detected details'**
+  String get reviewReceiptDetails;
+
+  /// No description provided for @lowConfidenceReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Some details are uncertain. Review every field before using them.'**
+  String get lowConfidenceReview;
+
+  /// No description provided for @useDetectedDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Use these details'**
+  String get useDetectedDetails;
+
+  /// No description provided for @detectedCurrencyMismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'The receipt currency differs from your selected currency. The amount was not filled.'**
+  String get detectedCurrencyMismatch;
+
+  /// No description provided for @receiptTotalsInconsistent.
+  ///
+  /// In en, this message translates to:
+  /// **'The detected receipt totals are inconsistent. The amount was not filled.'**
+  String get receiptTotalsInconsistent;
+
+  /// No description provided for @processingReceipt.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading this receipt privately on your device…'**
+  String get processingReceipt;
+
+  /// No description provided for @smartScan.
+  ///
+  /// In en, this message translates to:
+  /// **'Smart scan'**
+  String get smartScan;
+
+  /// No description provided for @arabicMixedReceipt.
+  ///
+  /// In en, this message translates to:
+  /// **'Arabic / mixed receipt'**
+  String get arabicMixedReceipt;
+
+  /// No description provided for @receiptTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Total'**
+  String get receiptTotal;
+
+  /// No description provided for @receiptSubtotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Subtotal'**
+  String get receiptSubtotal;
+
+  /// No description provided for @receiptTax.
+  ///
+  /// In en, this message translates to:
+  /// **'VAT / tax'**
+  String get receiptTax;
+
+  /// No description provided for @receiptCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'Currency'**
+  String get receiptCurrency;
+
+  /// No description provided for @receiptTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Time'**
+  String get receiptTime;
+
+  /// No description provided for @cardLastFour.
+  ///
+  /// In en, this message translates to:
+  /// **'Card last 4 digits'**
+  String get cardLastFour;
+
+  /// No description provided for @invoiceNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Invoice / receipt number'**
+  String get invoiceNumber;
+
+  /// No description provided for @receiptLineItems.
+  ///
+  /// In en, this message translates to:
+  /// **'Reliable line items'**
+  String get receiptLineItems;
 }
 
 class _AppLocalizationsDelegate

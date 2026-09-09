@@ -33,11 +33,8 @@ class LanguageSelectionScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Icon(
-                    Icons.account_balance_wallet_rounded,
-                    size: 72,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
+                  Image.asset('assets/branding/stitch-logo.png',
+                      height: 72, semanticLabel: 'DinarWise'),
                   const SizedBox(height: 28),
                   Text(
                     l10n.languageSelectionTitle,

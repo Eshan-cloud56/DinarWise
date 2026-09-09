@@ -12,6 +12,7 @@ import 'package:dinarwise/features/onboarding/language_selection_screen.dart';
 import 'package:dinarwise/features/onboarding/currency_selection_screen.dart';
 import 'package:dinarwise/features/onboarding/privacy_consent_screen.dart';
 import 'package:dinarwise/features/planning/planning_screen.dart';
+import 'package:dinarwise/features/planning/planning_hub_screen.dart';
 import 'package:dinarwise/features/planning/budgets_screen.dart';
 import 'package:dinarwise/features/planning/bnpl_screen.dart';
 import 'package:dinarwise/features/planning/recurring_screen.dart';
@@ -157,6 +158,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           };
         },
       ),
+      GoRoute(path: '/planning', builder: (_, __) => const PlanningHubScreen()),
     ],
   );
 });

@@ -44,7 +44,9 @@ void main() {
     expect(find.text('Choose your language'), findsOneWidget);
     expect(find.text('Sign in'), findsNothing);
     expect(find.text('Create account'), findsNothing);
-    await database.close();
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+    await tester.runAsync(database.close);
   });
 
   testWidgets('English selection opens English privacy consent',
@@ -74,7 +76,9 @@ void main() {
     (policyLink.recognizer! as TapGestureRecognizer).onTap!();
     await tester.pump();
     expect(find.byType(Checkbox), findsNothing);
-    await database.close();
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+    await tester.runAsync(database.close);
   });
 
   testWidgets('Arabic selection applies Arabic RTL privacy screen', (
@@ -103,7 +107,9 @@ void main() {
           .textDirection,
       TextDirection.rtl,
     );
-    await database.close();
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+    await tester.runAsync(database.close);
   });
 
   testWidgets('consent gates dashboard and is persisted', (tester) async {
@@ -115,15 +121,17 @@ void main() {
     );
     expect(button.onPressed, isNotNull);
     await tester.ensureVisible(find.text('Get Started'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Get Started'));
     await tester.pumpAndSettle();
     expect(find.text('Choose your currency'), findsOneWidget);
     await tester.tap(find.text('Saudi Riyal'));
     await tester.pump();
     await tester.ensureVisible(find.text('Continue'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Continue'));
     await tester.pumpAndSettle();
-    expect(find.text('Recent transactions'), findsOneWidget);
+    expect(find.text('Recent activity'), findsOneWidget);
     final preferences = await SharedPreferences.getInstance();
     expect(preferences.getBool('privacy_policy_accepted'), isTrue);
     expect(
@@ -133,7 +141,9 @@ void main() {
     expect(preferences.getBool('onboarding_completed'), isTrue);
     expect(preferences.getString('selected_currency'), 'SAR');
     expect(preferences.getString('privacy_policy_accepted_at'), isNotNull);
-    await database.close();
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+    await tester.runAsync(database.close);
   });
 
   testWidgets('completed onboarding opens dashboard directly', (tester) async {
@@ -149,12 +159,15 @@ void main() {
         'local_profile_id': 'stable-test-profile',
       },
     );
-    expect(find.text('Recent transactions'), findsOneWidget);
+    expect(find.text('Recent activity'), findsOneWidget);
     expect(find.text('Total income'), findsOneWidget);
     expect(find.text('Total expenses'), findsOneWidget);
-    expect(find.text('Your remaining balance is'), findsOneWidget);
+    expect(find.text('Available to spend'), findsOneWidget);
     expect(find.text('Add income'), findsOneWidget);
     expect(find.text('Choose your language'), findsNothing);
+    await tester
+        .ensureVisible(find.byKey(const ValueKey('dashboardAddIncome')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('dashboardAddIncome')));
     await tester.pumpAndSettle();
     expect(find.byType(AlertDialog), findsOneWidget);
@@ -163,7 +176,9 @@ void main() {
     expect(find.byType(SegmentedButton<String>), findsNothing);
     await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();
-    await database.close();
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+    await tester.runAsync(database.close);
   });
 
   testWidgets('outdated privacy version requires consent but not language', (
@@ -181,7 +196,9 @@ void main() {
     );
     expect(find.text('Welcome to DinarWise'), findsOneWidget);
     expect(find.text('Choose your language'), findsNothing);
-    await database.close();
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+    await tester.runAsync(database.close);
   });
 
   testWidgets('changing language preserves financial data and consent', (
@@ -211,7 +228,9 @@ void main() {
     final preferences = await SharedPreferences.getInstance();
     expect(preferences.getBool('privacy_policy_accepted'), isTrue);
     expect(preferences.getString('selected_language'), 'ar');
-    await database.close();
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+    await tester.runAsync(database.close);
   });
 
   testWidgets('tutorial appears once and Skip persists completion',
@@ -239,7 +258,9 @@ void main() {
     final preferences = AppPreferences(await SharedPreferences.getInstance());
     expect(preferences.dashboardTutorialCompletedV1, isTrue);
     expect(find.text('Dashboard summary'), findsNothing);
-    await database.close();
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+    await tester.runAsync(database.close);
   });
 
   testWidgets('tutorial Finish persists completion', (tester) async {
@@ -268,7 +289,9 @@ void main() {
 
     final preferences = AppPreferences(await SharedPreferences.getInstance());
     expect(preferences.dashboardTutorialCompletedV1, isTrue);
-    await database.close();
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+    await tester.runAsync(database.close);
   });
 
   testWidgets('Settings replays tutorial without changing financial data',
@@ -303,7 +326,9 @@ void main() {
               (rows) => rows.length,
             );
     expect(categoryCountAfter, categoryCountBefore);
-    await database.close();
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+    await tester.runAsync(database.close);
   });
 
   testWidgets('Arabic tutorial renders RTL without overflow', (tester) async {
@@ -326,7 +351,9 @@ void main() {
     expect(tester.takeException(), isNull);
     await tester.tap(find.text('تخطي'));
     await tester.pumpAndSettle();
-    await database.close();
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+    await tester.runAsync(database.close);
   });
 
   testWidgets('Arabic dashboard, settings, expense, and AI fallback localize',
@@ -343,18 +370,18 @@ void main() {
         'local_profile_id': 'stable-test-profile',
       },
     );
-    expect(find.text('المعاملات الأخيرة'), findsOneWidget);
+    expect(find.text('النشاط الأخير'), findsOneWidget);
     expect(find.text('إجمالي الدخل'), findsOneWidget);
     expect(find.text('إجمالي المصروفات'), findsOneWidget);
-    expect(find.text('رصيدك المتبقي هو'), findsOneWidget);
+    expect(find.text('المتاح للإنفاق'), findsOneWidget);
     expect(find.text('إضافة دخل'), findsOneWidget);
-    expect(find.text('Recent transactions'), findsNothing);
+    expect(find.text('Recent activity'), findsNothing);
     expect(
       tester
           .widget<Directionality>(
             find
                 .ancestor(
-                  of: find.text('المعاملات الأخيرة'),
+                  of: find.text('النشاط الأخير'),
                   matching: find.byType(Directionality),
                 )
                 .first,
@@ -362,12 +389,15 @@ void main() {
           .textDirection,
       TextDirection.rtl,
     );
-    await tester.drag(find.byType(ListView).first, const Offset(0, -700));
+    await tester.ensureVisible(find.text('الميزانيات'));
     await tester.pumpAndSettle();
-    expect(find.text('التخطيط المالي'), findsOneWidget);
+    await tester.pumpAndSettle();
+    expect(find.text('التخطيط المالي'), findsWidgets);
     expect(find.text('الميزانيات'), findsOneWidget);
     expect(find.text('خطط اشترِ الآن وادفع لاحقًا'), findsOneWidget);
 
+    await tester.ensureVisible(find.byIcon(Icons.auto_awesome_outlined));
+    await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.auto_awesome_outlined));
     await tester.pumpAndSettle();
     expect(
@@ -379,8 +409,23 @@ void main() {
     );
     await tester.tap(find.text('إضافة يدويًا'));
     await tester.pumpAndSettle();
-    expect(find.text('إضافة مصروف'), findsWidgets);
+    expect(find.text('إضافة معاملة'), findsWidgets);
+    await tester.scrollUntilVisible(
+        find.byKey(const ValueKey('expenseMerchantField')), 150,
+        scrollable: find
+            .descendant(
+                of: find.byType(ListView).first,
+                matching: find.byType(Scrollable))
+            .first);
+    await tester.pumpAndSettle();
     expect(find.text('المتجر'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('الفئة'), -100,
+        scrollable: find
+            .descendant(
+                of: find.byType(ListView).first,
+                matching: find.byType(Scrollable))
+            .first);
+    await tester.pumpAndSettle();
     expect(find.text('الفئة'), findsOneWidget);
     expect(find.text('Merchant'), findsNothing);
     expect(find.byType(SegmentedButton<String>), findsNothing);
@@ -393,7 +438,9 @@ void main() {
     expect(find.text('الميزانيات'), findsNothing);
     expect(find.text('خطط اشترِ الآن وادفع لاحقًا'), findsNothing);
     expect(find.text('Settings'), findsNothing);
-    await database.close();
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+    await tester.runAsync(database.close);
   });
 
   testWidgets('reset cancellation preserves data and confirmation resets', (
@@ -425,6 +472,8 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
     await tester.pump();
     expect(find.text('Choose your language'), findsOneWidget);
-    await database.close();
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+    await tester.runAsync(database.close);
   });
 }

@@ -9,6 +9,102 @@ class AppLocalizationsAr extends AppLocalizations {
   AppLocalizationsAr([String locale = 'ar']) : super(locale);
 
   @override
+  String get saveIncomeLabel => 'حفظ الدخل';
+
+  @override
+  String get brandTitle => 'دينار وايز';
+
+  @override
+  String get transactionsLabel => 'المعاملات';
+
+  @override
+  String get planningLabel => 'التخطيط';
+
+  @override
+  String get today => 'اليوم';
+
+  @override
+  String get yesterday => 'أمس';
+
+  @override
+  String get homeLabel => 'الرئيسية';
+
+  @override
+  String get dashboardWelcome => 'ميزانية منزلك بين يديك.';
+
+  @override
+  String get localRecordsLabel => 'السجلات المالية محفوظة على هذا الجهاز';
+
+  @override
+  String get availableToSpend => 'المتاح للإنفاق';
+
+  @override
+  String get safeToSpendToday => 'المتاح للإنفاق اليوم';
+
+  @override
+  String get quickServices => 'خدمات سريعة';
+
+  @override
+  String get scanBill => 'إرفاق فاتورة';
+
+  @override
+  String get transferLabel => 'تحويل';
+
+  @override
+  String get transferUnavailable =>
+      'التحويل بين الحسابات غير متاح. يتتبع دينار وايز دخل المنزل ومصروفاته دون تحويلات بنكية.';
+
+  @override
+  String get smartInsights => 'رؤى مالية';
+
+  @override
+  String get spendingBreakdown => 'توزيع الإنفاق';
+
+  @override
+  String get recentActivity => 'النشاط الأخير';
+
+  @override
+  String get insightsLabel => 'الرؤى';
+
+  @override
+  String get cashFlow => 'التدفق النقدي الشهري';
+
+  @override
+  String get netSavings => 'صافي التوفير';
+
+  @override
+  String get savedInGoals => 'مدخرات الأهداف';
+
+  @override
+  String get perDay => '/ يوم';
+
+  @override
+  String get manualReceiptHint =>
+      'أرفق إيصالًا واستخدم المسح الذكي الخاص على الجهاز، أو تابع الإدخال يدويًا.';
+
+  @override
+  String get monthPace => 'تقدم الشهر';
+
+  @override
+  String get saveExpenseLabel => 'حفظ المصروف';
+
+  @override
+  String get splitBnplLabel => 'التقسيط / خطط الدفع الآجل';
+
+  @override
+  String get manageBnplHint =>
+      'أدر الأقساط ضمن خطط الدفع الآجل. لن يؤدي ذلك إلى تقسيم المعاملة الحالية.';
+
+  @override
+  String get thisMonthLabel => 'هذا الشهر';
+
+  @override
+  String get paymentMethodUnknown => 'وسيلة الدفع غير محددة';
+
+  @override
+  String get backspaceLabel => 'حذف الرقم الأخير';
+
+  @override
   String get appName => 'دينار وايز: مدير المصروفات بالذكاء الاصطناعي';
 
   @override
@@ -861,7 +957,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get defaultPaymentMethod => 'طريقة الدفع الافتراضية';
 
   @override
-  String get attachReceipt => 'إرفاق إيصال';
+  String get attachReceipt => 'إرفاق الإيصال أو مسحه بذكاء';
 
   @override
   String get takeReceiptPhoto => 'التقاط صورة للإيصال';
@@ -1226,4 +1322,83 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get tutorialFinish => 'إنهاء';
+
+  @override
+  String get smartReceiptModel => 'نموذج مسح الإيصال الذكي';
+
+  @override
+  String get smartReceiptModelNotConfigured =>
+      'لم يتم بعد إعداد توزيع النموذج العام لمسح الإيصال الذكي. يمكنك متابعة إدخال المصروف يدويًا.';
+
+  @override
+  String get smartReceiptUnsupported =>
+      'لا يمكن لهذا الجهاز تشغيل نموذج الإيصالات المحلي. يظل الإدخال اليدوي متاحًا.';
+
+  @override
+  String get smartReceiptModelRequired =>
+      'اختر ملف Gemma 3n E2B المرخّص. سيتم التحقق منه وتخزينه بشكل خاص على هذا الجهاز.';
+
+  @override
+  String get smartReceiptModelError => 'تعذّر التحقق من النموذج أو استيراده.';
+
+  @override
+  String get importModel => 'استيراد النموذج المتحقق منه';
+
+  @override
+  String get manualEntry => 'إدخال يدوي';
+
+  @override
+  String get smartScanFailed =>
+      'تعذّرت قراءة الإيصال. أعد المحاولة أو أدخل المصروف يدويًا.';
+
+  @override
+  String get reviewReceiptDetails => 'مراجعة التفاصيل المكتشفة';
+
+  @override
+  String get lowConfidenceReview =>
+      'بعض التفاصيل غير مؤكدة. راجع كل حقل قبل استخدامها.';
+
+  @override
+  String get useDetectedDetails => 'استخدام هذه التفاصيل';
+
+  @override
+  String get detectedCurrencyMismatch =>
+      'تختلف عملة الإيصال عن عملتك المحددة، لذلك لم تتم تعبئة المبلغ.';
+
+  @override
+  String get receiptTotalsInconsistent =>
+      'إجماليات الإيصال المكتشفة غير متسقة، لذلك لم تتم تعبئة المبلغ.';
+
+  @override
+  String get processingReceipt => 'تجري قراءة الإيصال بشكل خاص على جهازك…';
+
+  @override
+  String get smartScan => 'مسح ذكي';
+
+  @override
+  String get arabicMixedReceipt => 'إيصال عربي / مختلط';
+
+  @override
+  String get receiptTotal => 'الإجمالي';
+
+  @override
+  String get receiptSubtotal => 'المجموع الفرعي';
+
+  @override
+  String get receiptTax => 'ضريبة القيمة المضافة / الضريبة';
+
+  @override
+  String get receiptCurrency => 'العملة';
+
+  @override
+  String get receiptTime => 'الوقت';
+
+  @override
+  String get cardLastFour => 'آخر 4 أرقام من البطاقة';
+
+  @override
+  String get invoiceNumber => 'رقم الفاتورة / الإيصال';
+
+  @override
+  String get receiptLineItems => 'بنود الإيصال الموثوقة';
 }

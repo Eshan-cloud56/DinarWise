@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Approved artwork stays inside the adaptive icon safe zone. -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:insetLeft="21%" android:insetTop="21%"
+    android:insetRight="21%" android:insetBottom="21%">
+    <bitmap android:src="@drawable/launcher_art" android:gravity="fill"/>
+</inset>

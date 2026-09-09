@@ -52,5 +52,18 @@ flutter:
   generate: true
   uses-material-design: true
   assets:
-    - assets/branding/DinarWise-Splash-Animation.mp4
-    - assets/branding/DinarWise-Splash-Poster.png
+    - assets/fonts/Inter-OFL.txt
+    - assets/fonts/PlusJakartaSans-OFL.txt
+    - assets/fonts/NotoSansArabic-OFL.txt
+    - assets/branding/stitch-logo.png
+    - assets/branding/launcher-approved.png
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter.ttf
+    - family: PlusJakartaSans
+      fonts:
+        - asset: assets/fonts/PlusJakartaSans.ttf
+    - family: NotoSansArabic
+      fonts:
+        - asset: assets/fonts/NotoSansArabic.ttf

@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DinarWise — Receipt scanning demo</title>
+<style>
+  :root {
+    color-scheme: light;
+    --brand: #0E7C66;
+    --brand-dark: #0a5f4e;
+    --brand-tint: #e4f1ed;
+    --surface: #F7F8F4;
+    --card: #ffffff;
+    --ink: #17211f;
+    --muted: #5d6b67;
+    --line: #dfe4e0;
+    --warn: #b26a00;
+    --warn-tint: #fff5e2;
+    --danger: #b3261e;
+    --danger-tint: #fdecea;
+    --ok: #0E7C66;
+    --radius: 20px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--surface);
+    color: var(--ink);
+    font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    padding: 32px 20px 72px;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; }
+  header { margin-bottom: 24px; }
+  h1 { font-size: 26px; margin: 0 0 6px; letter-spacing: -0.02em; }
+  .sub { color: var(--muted); margin: 0; max-width: 62ch; }
+  .card {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 22px;
+    border: 1px solid var(--line);
+  }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+  @media (max-width: 880px) { .grid { grid-template-columns: 1fr; } }
+
+  /* Status strip */
+  #status {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 18px; border-radius: 16px; margin-bottom: 20px;
+    border: 1px solid var(--line); background: var(--card);
+  }
+  #status .dot {
+    width: 11px; height: 11px; border-radius: 50%;
+    background: var(--muted); flex: none;
+  }
+  #status.ready .dot { background: var(--ok); }
+  #status.ready { background: var(--brand-tint); border-color: #bfded6; }
+  #status.bad .dot { background: var(--danger); }
+  #status.bad { background: var(--danger-tint); border-color: #f3c9c6; }
+  #status .txt { flex: 1; min-width: 0; }
+  #status strong { display: block; }
+  #status code {
+    background: rgba(0,0,0,.06); padding: 2px 7px; border-radius: 6px;
+    font-size: 13px; word-break: break-all;
+  }
+
+  /* Drop zone */
+  #drop {
+    border: 2px dashed #c3cdc9; border-radius: var(--radius);
+    padding: 40px 24px; text-align: center; cursor: pointer;
+    background: var(--card); transition: border-color .15s, background .15s;
+  }
+  #drop:hover, #drop.over { border-color: var(--brand); background: var(--brand-tint); }
+  #drop .big { font-size: 34px; line-height: 1; margin-bottom: 10px; }
+  #drop p { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
+  #preview { max-width: 100%; max-height: 340px; border-radius: 14px; display: block; margin: 0 auto; }
+
+  .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 16px; }
+  label.inline { font-size: 13px; color: var(--muted); font-weight: 600; }
+  select, button {
+    font: inherit; border-radius: 12px; border: 1px solid var(--line);
+    padding: 10px 14px; background: #fff; color: var(--ink);
+  }
+  button.primary {
+    background: var(--brand); color: #fff; border-color: var(--brand);
+    font-weight: 600; cursor: pointer; padding: 12px 22px;
+  }
+  button.primary:hover:not(:disabled) { background: var(--brand-dark); }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  button.ghost { cursor: pointer; }
+
+  /* Result form */
+  .field { margin-bottom: 14px; }
+  .field > span.lbl {
+    display: block; font-size: 12px; font-weight: 700; letter-spacing: .04em;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 5px;
+  }
+  .val {
+    background: #f1f3ef; border-radius: 14px; padding: 12px 14px;
+    min-height: 46px; display: flex; align-items: center; justify-content: space-between;
+    gap: 10px; word-break: break-word;
+  }
+  .val.flagged { background: var(--warn-tint); box-shadow: inset 0 0 0 2px #f0c987; }
+  .val .flag { font-size: 11px; font-weight: 700; color: var(--warn); white-space: nowrap; }
+  .val.empty { color: var(--muted); font-style: italic; }
+  .amount { font-size: 27px; font-weight: 700; letter-spacing: -0.02em; }
+  .rtl { direction: rtl; text-align: right; unicode-bidi: plaintext; }
+
+  .banner { border-radius: 14px; padding: 13px 16px; margin-bottom: 18px; font-size: 14px; }
+  .banner.normal { background: var(--brand-tint); color: var(--brand-dark); }
+  .banner.uncertain { background: var(--warn-tint); color: var(--warn); }
+  .banner.manual { background: var(--danger-tint); color: var(--danger); }
+
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+  .chip {
+    font-size: 12px; padding: 4px 11px; border-radius: 999px;
+    background: #eef1ed; color: var(--muted); font-weight: 600;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 6px; }
+  table td { padding: 6px 4px; border-bottom: 1px solid var(--line); }
+  table td:last-child { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  details { margin-top: 18px; }
+  summary { cursor: pointer; color: var(--muted); font-size: 13px; font-weight: 600; }
+  pre {
+    background: #14201d; color: #d7e6e1; padding: 16px; border-radius: 14px;
+    overflow: auto; font-size: 12px; max-height: 340px; margin-top: 10px;
+  }
+  .spinner {
+    width: 34px; height: 34px; border: 3px solid var(--brand-tint);
+    border-top-color: var(--brand); border-radius: 50%;
+    animation: spin .8s linear infinite; margin: 0 auto 14px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .center { text-align: center; color: var(--muted); }
+  .placeholder { color: var(--muted); text-align: center; padding: 46px 20px; }
+  .err { background: var(--danger-tint); color: var(--danger); padding: 16px; border-radius: 14px; }
+  .err h3 { margin: 0 0 6px; font-size: 15px; }
+  .note { font-size: 13px; color: var(--muted); margin-top: 14px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Receipt scanning — local AI demo</h1>
+  <p class="sub">
+    Drop a photo of a receipt below. It is sent to the model running on this machine,
+    read, and turned into a pre-filled expense draft. Nothing is uploaded to the internet
+    and nothing is saved to any database.
+  </p>
+</header>
+
+<div id="status"><span class="dot"></span><span class="txt">Checking the local AI service…</span></div>
+
+<div class="grid">
+  <div class="card">
+    <div id="drop">
+      <div class="big">🧾</div>
+      <strong>Drop a receipt photo here</strong>
+      <p>or click to choose a file — JPEG, PNG, WebP or HEIC</p>
+    </div>
+    <input type="file" id="file" accept="image/*" hidden>
+    <div class="row">
+      <label class="inline" for="currency">If the receipt has no currency, assume</label>
+      <select id="currency">
+        <option value="SAR">SAR — Saudi Riyal</option>
+        <option value="AED">AED — UAE Dirham</option>
+        <option value="KWD">KWD — Kuwaiti Dinar</option>
+        <option value="BHD">BHD — Bahraini Dinar</option>
+        <option value="QAR">QAR — Qatari Riyal</option>
+        <option value="OMR">OMR — Omani Rial</option>
+      </select>
+    </div>
+    <div class="row">
+      <button class="primary" id="go" disabled>Read this receipt</button>
+      <button class="ghost" id="reset" hidden>Clear</button>
+    </div>
+    <p class="note">
+      First run is slow: the model has to load into memory. Later receipts are much faster.
+    </p>
+  </div>
+
+  <div class="card" id="out">
+    <div class="placeholder">The extracted expense draft will appear here.</div>
+  </div>
+</div>
+
+<p class="note">
+  This mirrors what the app would do: the AI only ever produces a <em>draft</em>. In
+  DinarWise the user still taps Save, and only that tap writes the expense to the phone.
+</p>
+
+</div>
+
+<script>
+const API = '/api/v1';
+const CATEGORY_LABELS = {
+  restaurants: 'Restaurants & cafés', groceries: 'Groceries', fuel: 'Fuel',
+  transportation: 'Transportation', shopping: 'Shopping', healthcare: 'Healthcare',
+  utilities: 'Utilities', subscriptions: 'Subscriptions', bnpl: 'BNPL instalment',
+  other: 'Other'
+};
+const PAYMENT_LABELS = {
+  cash: 'Cash', debit_card: 'Debit card', credit_card: 'Credit card',
+  bank_transfer: 'Bank transfer', mada: 'Mada', stc_pay: 'STC Pay',
+  google_pay: 'Google Pay', tabby: 'Tabby', tamara: 'Tamara', other: 'Other'
+};
+const FIELD_LABELS = {
+  merchant_name: 'Merchant', amount: 'Amount', currency: 'Currency',
+  transaction_date: 'Date', category: 'Category'
+};
+const WARNING_LABELS = {
+  currency_assumed: 'No currency printed on the receipt, so your selection was used.',
+  hijri_date_not_converted: 'The date looked Hijri and was not converted, so today was used.',
+  future_date_rejected: 'The date read was in the future and was ignored.',
+  implausible_date_rejected: 'The date read was too old to be plausible and was ignored.',
+  unparsed_date: 'The date could not be understood, so today was used.',
+  tax_exceeded_total_discarded: 'The VAT figure looked wrong and was discarded.',
+  line_items_exceed_total: 'The line items add up to more than the total, so something was misread.'
+};
+
+const el = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c =>
+  ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const hasArabic = s => /[؀-ۿ]/.test(String(s || ''));
+
+let chosen = null;
+
+/* ---------- status ---------- */
+async function refreshStatus() {
+  const box = el('status');
+  try {
+    const res = await fetch(`${API}/capture/ai-status`);
+    const s = await res.json();
+    if (s.enabled && s.reachable && s.model_installed) {
+      box.className = 'ready';
+      box.innerHTML = `<span class="dot"></span><span class="txt">
+        <strong>Local AI is ready</strong>Reading receipts with <code>${esc(s.model)}</code></span>`;
+    } else {
+      box.className = 'bad';
+      let extra = '';
+      if (s.reachable && !s.model_installed) {
+        extra = `<br>Installed right now: ${
+          s.installed_models.length ? s.installed_models.map(m => `<code>${esc(m)}</code>`).join(' ') : 'none'}`;
+      }
+      box.innerHTML = `<span class="dot"></span><span class="txt">
+        <strong>Not ready yet</strong>${esc(s.detail)}${extra}</span>`;
+    }
+  } catch {
+    box.className = 'bad';
+    box.innerHTML = `<span class="dot"></span><span class="txt">
+      <strong>Backend not reachable</strong>Start it with
+      <code>uvicorn app.main:app --reload</code></span>`;
+  }
+}
+
+/* ---------- file selection ---------- */
+const drop = el('drop');
+drop.addEventListener('click', () => el('file').click());
+drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); });
+drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+drop.addEventListener('drop', e => {
+  e.preventDefault();
+  drop.classList.remove('over');
+  if (e.dataTransfer.files[0]) select(e.dataTransfer.files[0]);
+});
+el('file').addEventListener('change', e => e.target.files[0] && select(e.target.files[0]));
+
+function select(file) {
+  if (!file.type.startsWith('image/')) {
+    alert('Please choose an image file.');
+    return;
+  }
+  chosen = file;
+  const url = URL.createObjectURL(file);
+  drop.innerHTML = `<img id="preview" src="${url}" alt="Selected receipt">
+    <p>${esc(file.name)} — ${(file.size / 1024).toFixed(0)} KB</p>`;
+  el('go').disabled = false;
+  el('reset').hidden = false;
+}
+
+el('reset').addEventListener('click', () => {
+  chosen = null;
+  el('file').value = '';
+  el('go').disabled = true;
+  el('reset').hidden = true;
+  drop.innerHTML = `<div class="big">🧾</div><strong>Drop a receipt photo here</strong>
+    <p>or click to choose a file — JPEG, PNG, WebP or HEIC</p>`;
+  el('out').innerHTML = '<div class="placeholder">The extracted expense draft will appear here.</div>';
+});
+
+/* ---------- extraction ---------- */
+el('go').addEventListener('click', async () => {
+  if (!chosen) return;
+  el('go').disabled = true;
+
+  const started = Date.now();
+  el('out').innerHTML = `<div class="spinner"></div>
+    <div class="center"><strong>Reading the receipt…</strong>
+    <div id="tick">0.0s elapsed</div></div>`;
+  const tick = setInterval(() => {
+    const t = el('tick');
+    if (t) t.textContent = ((Date.now() - started) / 1000).toFixed(1) + 's elapsed';
+  }, 100);
+
+  const body = new FormData();
+  body.append('file', chosen);
+  body.append('default_currency', el('currency').value);
+
+  try {
+    const res = await fetch(`${API}/capture/receipt`, { method: 'POST', body });
+    const data = await res.json();
+    clearInterval(tick);
+    if (!res.ok) {
+      const d = data.detail;
+      const msg = typeof d === 'string' ? d : (d && d.message) || 'Unknown error';
+      const code = d && d.code ? `<div class="chip">${esc(d.code)}</div>` : '';
+      el('out').innerHTML = `<div class="err"><h3>Could not read this receipt</h3>
+        <div>${esc(msg)}</div></div><div class="meta">${code}</div>`;
+      return;
+    }
+    render(data);
+  } catch (err) {
+    clearInterval(tick);
+    el('out').innerHTML = `<div class="err"><h3>Request failed</h3>
+      <div>${esc(err.message)}</div></div>`;
+  } finally {
+    el('go').disabled = false;
+  }
+});
+
+/* ---------- rendering ---------- */
+function field(label, value, flagged, opts = {}) {
+  const empty = value === null || value === undefined || value === '';
+  const shown = empty ? (opts.emptyText || 'Not detected') : value;
+  return `<div class="field"><span class="lbl">${esc(label)}</span>
+    <div class="val${flagged ? ' flagged' : ''}${empty ? ' empty' : ''}">
+      <span class="${opts.cls || ''}${hasArabic(shown) ? ' rtl' : ''}">${esc(shown)}</span>
+      ${flagged ? '<span class="flag">CHECK THIS</span>' : ''}
+    </div></div>`;
+}
+
+function render(draft) {
+  const x = draft.extraction;
+  const flags = new Set(x.low_confidence_fields || []);
+  const pct = Math.round(parseFloat(x.confidence) * 100);
+
+  const bannerText = {
+    normal: 'High confidence. Glance over it, then this would be saved with one tap.',
+    uncertain: 'Some fields were uncertain — the highlighted ones need a look.',
+    manual: 'Low confidence. Treat every field below as a guess and verify it.'
+  }[draft.review_level];
+
+  const flagged = [...flags].map(f => FIELD_LABELS[f] || f);
+  const warnings = (draft.warnings || []).map(w => WARNING_LABELS[w] || w);
+
+  const items = (x.line_items || []).length
+    ? `<details open><summary>${x.line_items.length} line item(s) read</summary>
+        <table>${x.line_items.map(i => `<tr>
+          <td class="${hasArabic(i.description) ? 'rtl' : ''}">${esc(i.description)}</td>
+          <td>${i.amount === null ? '—' : esc(i.amount)}</td></tr>`).join('')}</table></details>`
+    : '';
+
+  el('out').innerHTML = `
+    <div class="banner ${esc(draft.review_level)}">${esc(bannerText)}</div>
+
+    ${field('Merchant', x.merchant_name, flags.has('merchant_name'))}
+    ${field('Amount', `${x.currency} ${x.amount}`,
+        flags.has('amount') || flags.has('currency'), { cls: 'amount' })}
+    ${field('Date', x.transaction_date, flags.has('transaction_date'))}
+    ${field('Category', CATEGORY_LABELS[x.category] || x.category, flags.has('category'))}
+    ${field('Payment method', PAYMENT_LABELS[x.payment_method] || x.payment_method, false,
+        { emptyText: 'Not printed on receipt' })}
+    ${x.tax_amount ? field('VAT included', `${x.currency} ${x.tax_amount}`, false) : ''}
+    ${x.bnpl_provider ? field('BNPL provider', x.bnpl_provider, false) : ''}
+
+    ${items}
+
+    <div class="meta">
+      <span class="chip">Confidence ${pct}%</span>
+      <span class="chip">${esc(draft.review_level)}</span>
+      <span class="chip">${(draft.processing_ms / 1000).toFixed(1)}s</span>
+      <span class="chip">${esc(draft.model || draft.engine)}</span>
+    </div>
+
+    ${flagged.length ? `<p class="note"><strong>Needs checking:</strong> ${esc(flagged.join(', '))}</p>` : ''}
+    ${warnings.length ? `<p class="note"><strong>Notes:</strong> ${warnings.map(esc).join(' ')}</p>` : ''}
+
+    <details><summary>Show the raw data the model returned</summary>
+      <pre>${esc(JSON.stringify(draft, null, 2))}</pre></details>`;
+}
+
+refreshStatus();
+setInterval(refreshStatus, 15000);
+</script>
+</body>
+</html>

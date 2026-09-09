@@ -63,11 +63,8 @@ class _PrivacyConsentScreenState extends ConsumerState<PrivacyConsentScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Icon(
-                    Icons.account_balance_wallet_rounded,
-                    size: 68,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
+                  Image.asset('assets/branding/stitch-logo.png',
+                      height: 72, semanticLabel: 'DinarWise'),
                   const SizedBox(height: 20),
                   Text(
                     l10n.appName,

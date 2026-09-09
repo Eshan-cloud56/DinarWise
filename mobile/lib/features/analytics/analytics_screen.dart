@@ -1,4 +1,5 @@
 import 'package:dinarwise/features/analytics/analytics_calculator.dart';
+import 'package:dinarwise/core/widgets/dinar_widgets.dart';
 import 'package:dinarwise/core/analytics/analytics_service.dart';
 import 'package:dinarwise/core/performance/performance_service.dart';
 import 'package:dinarwise/core/currency/gulf_currency.dart';
@@ -58,7 +59,8 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
         .watch(selectedCurrencyProvider)
         .formatter(Localizations.localeOf(context).toLanguageTag());
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.analytics)),
+      appBar: DinarHeader(subtitle: l10n.analytics),
+      bottomNavigationBar: const DinarBottomNav(selected: 4),
       body: records.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (_, __) => Center(child: Text(l10n.unknownError)),
