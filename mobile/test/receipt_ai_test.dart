@@ -1,4 +1,6 @@
-import 'package:dinarwise/features/receipts/smart/gemma_receipt_service.dart';
+import 'package:flutter/services.dart';
+import 'dart:convert';
+import 'package:dinarwise/features/receipts/smart/receipt_api_service.dart';
 import 'package:dinarwise/features/receipts/smart/receipt_form_mapper.dart';
 import 'package:dinarwise/features/receipts/smart/receipt_image_service.dart';
 import 'package:dinarwise/features/receipts/smart/receipt_ocr_service.dart';
@@ -24,21 +26,20 @@ class _Ocr extends ReceiptOcrService {
   }
 }
 
-class _Gemma extends GemmaReceiptService {
-  _Gemma(this.value, {this.state = GemmaModelState.ready});
+class _Api extends ReceiptApiService {
+  _Api(this.value);
   final String value;
-  final GemmaModelState state;
   String? received;
   @override
-  Future<GemmaModelState> status() async => state;
-  @override
-  Future<String> extract(String text, Iterable<String> categories) async {
+  Future<Map<String, dynamic>> extract(String text,
+      {required String locale, required String currencyHint}) async {
     received = text;
-    return value;
+    return jsonDecode(value) as Map<String, dynamic>;
   }
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   group('receipt validation', () {
     test('normalizes Arabic digits and checks total arithmetic', () {
       final result = ReceiptValidator().validate({
@@ -80,7 +81,7 @@ void main() {
       expect(result.issues, contains(ReceiptIssue.lowConfidence));
     });
 
-    test('does not fill inconsistent total or a different currency', () {
+    test('review mapping ignores removed tax and API currency fields', () {
       final parsed = ReceiptValidator().validate({
         'merchantName': 'Shop',
         'total': '115',
@@ -95,10 +96,9 @@ void main() {
         ledgerCurrency: 'SAR',
         systemCategories: const {},
       );
-      expect(patch.amount, isNull);
+      expect(patch.amount, '115.00');
       expect(patch.merchant, 'Shop');
-      expect(patch.issues, contains(ReceiptIssue.differentCurrency));
-      expect(patch.issues, contains(ReceiptIssue.inconsistentTotal));
+      expect(patch.issues, isEmpty);
       // No payment/account identifier is ever inferred by the mapper.
       expect(patch.toString(), isNot(contains('1234')));
     });
@@ -127,7 +127,7 @@ void main() {
       expect(patch.amount, '45.75');
       expect(patch.categoryId, 'category-1');
       expect(patch.date, DateTime(2026, 9, 1, 18, 30));
-      expect(patch.notes, contains('Household groceries'));
+      expect(patch.paymentMethod, isNull);
     });
 
     test('strict parser rejects prose and oversized output', () {
@@ -142,45 +142,57 @@ void main() {
     });
   });
 
-  test('pipeline passes local OCR to Gemma and respects Arabic override',
+  test('pipeline passes local OCR to API and respects Arabic override',
       () async {
     final images = _Images();
     final ocr = _Ocr('متجر\nالإجمالي ١١٥ ريال');
-    final gemma = _Gemma(
+    final api = _Api(
       '{"merchantName":"متجر","total":"١١٥","currency":"SAR",'
       '"category":"groceries","confidence":0.91}',
     );
     final result = await ReceiptScanService(
       images: images,
       ocr: ocr,
-      gemma: gemma,
-    ).scan('private.jpg', ReceiptScript.arabic, const ['groceries']);
+      api: api,
+    ).scan('private.jpg', ReceiptScript.arabic, const ['groceries'],
+        locale: 'ar-SA', currencyHint: 'SAR');
     expect(images.validated, isTrue);
     expect(ocr.script, ReceiptScript.arabic);
-    expect(gemma.received, contains('الإجمالي'));
+    expect(api.received, contains('الإجمالي'));
     expect(result.fields['total'], '115.000');
   });
 
-  test('pipeline requires model before processing image', () async {
+  test('empty detected fields reach mandatory editable review', () async {
     final images = _Images();
     final service = ReceiptScanService(
       images: images,
       ocr: _Ocr('private text'),
-      gemma: _Gemma('', state: GemmaModelState.missing),
+      api: _Api('{}'),
     );
-    await expectLater(
-      service.scan('private.jpg', ReceiptScript.auto, const []),
-      throwsStateError,
-    );
-    expect(images.validated, isFalse);
+    final result = await service.scan(
+        'private.jpg', ReceiptScript.auto, const [],
+        locale: 'en-SA', currencyHint: 'SAR');
+    expect(result.fields, isEmpty);
+    expect(images.validated, isTrue);
   });
 
-  test('approved model is pinned by digest without a credential or URL', () {
-    const gemma = GemmaReceiptService();
-    expect(gemma.configured, isTrue);
-    expect(
-      GemmaReceiptService.modelSha256,
-      '2ed7bc3a0026c93d5b8a4544b352d9d00cd66ff0bac3ef6a20ac3d2cba4010d6',
-    );
+  test('production native bridge requests OCR only, never a model', () async {
+    final calls = <String>[];
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(ReceiptOcrService.channel,
+            (MethodCall call) async {
+      calls.add(call.method);
+      expect(call.method, 'ocr');
+      return {'text': 'TEST RECEIPT TOTAL SAR 10', 'engine': 'mlkit'};
+    });
+    addTearDown(() => TestDefaultBinaryMessengerBinding
+        .instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(ReceiptOcrService.channel, null));
+    final receipt = await ReceiptScanService(
+            images: _Images(), api: _Api('{"total":10,"currency":"SAR"}'))
+        .scan('private.jpg', ReceiptScript.auto, const [],
+            locale: 'en-SA', currencyHint: 'SAR');
+    expect(receipt.fields['total'], '10.000');
+    expect(calls, ['ocr']);
   });
 }

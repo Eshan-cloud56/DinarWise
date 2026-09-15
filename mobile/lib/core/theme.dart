@@ -73,6 +73,7 @@ ThemeData buildDinarWiseTheme() {
           side: const BorderSide(color: DinarColors.border)),
     ),
     inputDecorationTheme: InputDecorationTheme(
+      errorMaxLines: 3,
       filled: true,
       fillColor: DinarColors.inset,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),

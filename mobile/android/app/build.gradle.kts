@@ -1,5 +1,8 @@
 import java.io.FileInputStream
 import java.util.Properties
+import java.security.KeyStore
+import java.security.MessageDigest
+import java.security.PrivateKey
 
 plugins {
     id("com.android.application")
@@ -14,6 +17,47 @@ val keystoreProperties = Properties()
 val keystorePropertiesFile = rootProject.file("key.properties")
 if (keystorePropertiesFile.exists()) {
     FileInputStream(keystorePropertiesFile).use(keystoreProperties::load)
+}
+
+// CI may supply the same permanent key through environment variables. Never log values.
+fun signingValue(property: String, environment: String): String? =
+    providers.environmentVariable(environment).orNull
+        ?: keystoreProperties.getProperty(property)
+
+val releaseStorePath = signingValue("storeFile", "DINARWISE_UPLOAD_STORE_FILE")
+val releaseStorePassword = signingValue("storePassword", "DINARWISE_UPLOAD_STORE_PASSWORD")
+val releaseKeyAlias = signingValue("keyAlias", "DINARWISE_UPLOAD_KEY_ALIAS")
+val releaseKeyPassword = signingValue("keyPassword", "DINARWISE_UPLOAD_KEY_PASSWORD")
+// Public certificate fingerprint, not a secret. Changing keys requires an explicit migration.
+val permanentUploadSha256 = "dd13b7cb07d0057f0a5aeee0247e2e8e159738ef936910589cad3ee2eebbe05b"
+
+val validatePermanentReleaseSigning = tasks.register("validatePermanentReleaseSigning") {
+    group = "verification"
+    description = "Reject missing, debug, or changed DinarWise release signing keys."
+    doLast {
+        if (listOf(releaseStorePath, releaseStorePassword, releaseKeyAlias, releaseKeyPassword)
+                .any { it.isNullOrBlank() }) {
+            throw GradleException("Release signing requires the permanent upload key: configure ignored android/key.properties or DINARWISE_UPLOAD_* environment variables. No debug fallback is permitted.")
+        }
+        try {
+            val file = rootProject.file(releaseStorePath!!)
+            val store = KeyStore.getInstance(file, releaseStorePassword!!.toCharArray())
+            val certificate = store.getCertificate(releaseKeyAlias!!) ?: error("missing certificate")
+            val fingerprint = MessageDigest.getInstance("SHA-256")
+                .digest(certificate.encoded).joinToString("") { "%02x".format(it.toInt() and 0xff) }
+            check(fingerprint == permanentUploadSha256)
+            check(store.getKey(releaseKeyAlias, releaseKeyPassword!!.toCharArray()) is PrivateKey)
+        } catch (_: Exception) {
+            // Do not propagate file paths, passwords or provider exception details.
+            throw GradleException("Release signing validation failed. Use the existing permanent DinarWise private upload key and correct credentials; debug or replacement certificates are not accepted.")
+        }
+    }
+}
+
+tasks.configureEach {
+    if (name == "preReleaseBuild" || name == "validateSigningRelease") {
+        dependsOn(validatePermanentReleaseSigning)
+    }
 }
 
 android {
@@ -41,12 +85,10 @@ android {
 
     signingConfigs {
         create("release") {
-            if (keystorePropertiesFile.exists()) {
-                keyAlias = keystoreProperties["keyAlias"] as String
-                keyPassword = keystoreProperties["keyPassword"] as String
-                storeFile = rootProject.file(keystoreProperties["storeFile"] as String)
-                storePassword = keystoreProperties["storePassword"] as String
-            }
+            keyAlias = releaseKeyAlias
+            keyPassword = releaseKeyPassword
+            storeFile = releaseStorePath?.takeIf { it.isNotBlank() }?.let { rootProject.file(it) }
+            storePassword = releaseStorePassword
         }
     }
 
@@ -61,7 +103,6 @@ dependencies {
     implementation("androidx.exifinterface:exifinterface:1.4.1")
     implementation("com.google.mlkit:text-recognition:16.0.1")
     implementation("cz.adaptech.tesseract4android:tesseract4android:4.9.0")
-    implementation("com.google.ai.edge.litertlm:litertlm-android:0.16.1")
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }
 

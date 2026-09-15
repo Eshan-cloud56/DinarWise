@@ -1,3 +1,4 @@
+import 'package:dinarwise/core/widgets/dinar_form.dart';
 import 'package:dinarwise/core/preferences/onboarding_controller.dart';
 import 'package:dinarwise/features/payment_methods/payment_method_providers.dart';
 import 'package:dinarwise/features/payment_methods/payment_method_repository.dart';
@@ -72,7 +73,7 @@ class PaymentMethodsScreen extends ConsumerWidget {
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
           title: Text(context.l10n.reassignPaymentMethod),
-          content: DropdownButtonFormField<String>(
+          content: DinarDropdownField<String>(
             initialValue: replacement,
             items: methods
                 .where((item) => item.id != method.id)

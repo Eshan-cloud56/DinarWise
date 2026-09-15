@@ -79,8 +79,17 @@ class AppLocalizationsAr extends AppLocalizations {
   String get perDay => '/ يوم';
 
   @override
-  String get manualReceiptHint =>
-      'أرفق إيصالًا واستخدم المسح الذكي الخاص على الجهاز، أو تابع الإدخال يدويًا.';
+  String get manualReceiptHint => 'الإدخال اليدوي متاح دون إنترنت.';
+
+  @override
+  String get receiptTransferred => 'تم التحويل';
+
+  @override
+  String get smartScanInformation => 'حول المسح الذكي';
+
+  @override
+  String get receiptLedgerPrecision =>
+      'أدخل مبلغًا بدقة منزلتين عشريتين فقط؛ يمكن أن تكون المنازل الإضافية أصفارًا.';
 
   @override
   String get monthPace => 'تقدم الشهر';
@@ -1323,28 +1332,19 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tutorialFinish => 'إنهاء';
 
   @override
-  String get smartReceiptModel => 'نموذج مسح الإيصال الذكي';
-
-  @override
-  String get smartReceiptModelNotConfigured =>
-      'لم يتم بعد إعداد توزيع النموذج العام لمسح الإيصال الذكي. يمكنك متابعة إدخال المصروف يدويًا.';
-
-  @override
-  String get smartReceiptUnsupported =>
-      'لا يمكن لهذا الجهاز تشغيل نموذج الإيصالات المحلي. يظل الإدخال اليدوي متاحًا.';
-
-  @override
-  String get smartReceiptModelRequired =>
-      'اختر ملف Gemma 3n E2B المرخّص. سيتم التحقق منه وتخزينه بشكل خاص على هذا الجهاز.';
-
-  @override
-  String get smartReceiptModelError => 'تعذّر التحقق من النموذج أو استيراده.';
-
-  @override
-  String get importModel => 'استيراد النموذج المتحقق منه';
-
-  @override
   String get manualEntry => 'إدخال يدوي';
+
+  @override
+  String get smartReceiptCloudNotice =>
+      'يرسل المسح الذكي النص المستخرج إلى خدمة ديناروايز عبر HTTPS لتحليله. لا تُرفع الصور. يلزم الإنترنت. راجع جميع التفاصيل قبل الحفظ.';
+
+  @override
+  String get smartReceiptOffline =>
+      'تعذر الاتصال. تحقق من الإنترنت وأعد المحاولة، أو أدخل المصروف يدويًا.';
+
+  @override
+  String get smartReceiptTimeout =>
+      'استغرق المسح الذكي وقتًا طويلًا. أعد المحاولة أو أدخل المصروف يدويًا.';
 
   @override
   String get smartScanFailed =>
@@ -1369,7 +1369,7 @@ class AppLocalizationsAr extends AppLocalizations {
       'إجماليات الإيصال المكتشفة غير متسقة، لذلك لم تتم تعبئة المبلغ.';
 
   @override
-  String get processingReceipt => 'تجري قراءة الإيصال بشكل خاص على جهازك…';
+  String get processingReceipt => 'جارٍ قراءة إيصالك وتحليله…';
 
   @override
   String get smartScan => 'مسح ذكي';

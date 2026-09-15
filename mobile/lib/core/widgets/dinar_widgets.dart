@@ -23,6 +23,23 @@ class DinarCard extends StatelessWidget {
       Card(child: Padding(padding: padding, child: child));
 }
 
+/// Retains normal typography, scaling down only when a value cannot fit.
+class ResponsiveFinancialText extends StatelessWidget {
+  const ResponsiveFinancialText(this.value,
+      {super.key, this.style, this.textDirection});
+  final String value;
+  final TextStyle? style;
+  final TextDirection? textDirection;
+
+  @override
+  Widget build(BuildContext context) => FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: AlignmentDirectional.centerStart,
+        child: Text(value,
+            maxLines: 1, style: style, textDirection: textDirection),
+      );
+}
+
 class FinancialAmount extends ConsumerWidget {
   const FinancialAmount(this.minor,
       {this.color,
@@ -47,7 +64,8 @@ class FinancialAmount extends ConsumerWidget {
                 locale: Localizations.localeOf(context).toLanguageTag(),
                 decimalDigits: currency.decimalDigits)
             .format(currency.toMajor(minor));
-    return Text('${signed ? (income ? '+' : '−') : ''}$value',
+    return ResponsiveFinancialText(
+        '${signed ? (income ? '+' : '−') : ''}$value',
         textDirection: TextDirection.ltr,
         style: TextStyle(
             fontFamily: 'PlusJakartaSans',

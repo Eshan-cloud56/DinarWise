@@ -1,3 +1,4 @@
+import 'package:dinarwise/core/widgets/dinar_form.dart';
 import 'package:dinarwise/core/currency/gulf_currency.dart';
 import 'package:dinarwise/core/preferences/onboarding_controller.dart';
 import 'package:dinarwise/features/categories/category_localization.dart';
@@ -31,6 +32,7 @@ class BudgetsScreen extends ConsumerWidget {
     final draft = await showModalBottomSheet<BudgetDraft>(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       showDragHandle: true,
       builder: (_) => _BudgetEditor(budget: budget, categories: categories),
     );
@@ -370,120 +372,105 @@ class _BudgetEditorState extends State<_BudgetEditor> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-        20,
-        0,
-        20,
-        MediaQuery.viewInsetsOf(context).bottom + 20,
+    return DinarFormSheet(children: [
+      Text(
+        widget.budget == null ? l10n.addBudget : l10n.editBudget,
+        style: Theme.of(context).textTheme.titleLarge,
       ),
-      child: SingleChildScrollView(
-        child: Column(
-          children: [
-            Text(
-              widget.budget == null ? l10n.addBudget : l10n.editBudget,
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            TextField(
-              controller: _name,
-              decoration: InputDecoration(labelText: l10n.name),
-            ),
-            TextField(
-              controller: _limit,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              decoration: InputDecoration(labelText: l10n.budgetLimit),
-            ),
-            SwitchListTile(
-              value: _overall,
-              onChanged: (value) => setState(() => _overall = value),
-              title: Text(l10n.overallBudget),
-            ),
-            if (!_overall)
-              Align(
-                alignment: AlignmentDirectional.centerStart,
-                child: Wrap(
-                  spacing: 6,
-                  children: widget.categories
-                      .map(
-                        (category) => FilterChip(
-                          selected: _categories.contains(category.id),
-                          label: Text(localizedCategoryName(l10n, category)),
-                          onSelected: (selected) => setState(() {
-                            selected
-                                ? _categories.add(category.id)
-                                : _categories.remove(category.id);
-                          }),
-                        ),
-                      )
-                      .toList(),
-                ),
-              ),
-            DropdownButtonFormField<String>(
-              initialValue: _rollover,
-              decoration: InputDecoration(labelText: l10n.rollover),
-              items: [
-                DropdownMenuItem(value: 'none', child: Text(l10n.noRollover)),
-                DropdownMenuItem(
-                  value: 'unused',
-                  child: Text(l10n.carryUnused),
-                ),
-                DropdownMenuItem(
-                  value: 'all',
-                  child: Text(l10n.carryUnusedAndOverspending),
-                ),
-              ],
-              onChanged: (value) => setState(() => _rollover = value!),
-            ),
-            DropdownButtonFormField<String>(
-              initialValue: _cycle,
-              decoration: InputDecoration(labelText: l10n.budgetCycle),
-              items: [
-                DropdownMenuItem(value: 'monthly', child: Text(l10n.monthly)),
-                DropdownMenuItem(
-                  value: 'salary',
-                  child: Text(l10n.salaryCycle),
-                ),
-              ],
-              onChanged: (value) => setState(() => _cycle = value!),
-            ),
-            if (_cycle == 'salary')
-              DropdownButtonFormField<int>(
-                initialValue: _payday,
-                decoration: InputDecoration(labelText: l10n.payday),
-                items: List.generate(
-                  28,
-                  (index) => DropdownMenuItem(
-                    value: index + 1,
-                    child: Text('${index + 1}'),
+      TextField(
+        controller: _name,
+        decoration: InputDecoration(labelText: l10n.name),
+      ),
+      TextField(
+        controller: _limit,
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        decoration: InputDecoration(labelText: l10n.budgetLimit),
+      ),
+      SwitchListTile(
+        value: _overall,
+        onChanged: (value) => setState(() => _overall = value),
+        title: Text(l10n.overallBudget),
+      ),
+      if (!_overall)
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: Wrap(
+            spacing: 6,
+            runSpacing: 8,
+            children: widget.categories
+                .map(
+                  (category) => FilterChip(
+                    selected: _categories.contains(category.id),
+                    label: Text(localizedCategoryName(l10n, category)),
+                    onSelected: (selected) => setState(() {
+                      selected
+                          ? _categories.add(category.id)
+                          : _categories.remove(category.id);
+                    }),
                   ),
-                ),
-                onChanged: (value) => setState(() => _payday = value!),
-              ),
-            TextField(
-              controller: _fixed,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              decoration: InputDecoration(labelText: l10n.fixedCommitments),
+                )
+                .toList(),
+          ),
+        ),
+      DinarDropdownField<String>(
+        initialValue: _rollover,
+        decoration: InputDecoration(labelText: l10n.rollover),
+        items: [
+          DropdownMenuItem(value: 'none', child: Text(l10n.noRollover)),
+          DropdownMenuItem(
+            value: 'unused',
+            child: Text(l10n.carryUnused),
+          ),
+          DropdownMenuItem(
+            value: 'all',
+            child: Text(l10n.carryUnusedAndOverspending),
+          ),
+        ],
+        onChanged: (value) => setState(() => _rollover = value!),
+      ),
+      DinarDropdownField<String>(
+        initialValue: _cycle,
+        decoration: InputDecoration(labelText: l10n.budgetCycle),
+        items: [
+          DropdownMenuItem(value: 'monthly', child: Text(l10n.monthly)),
+          DropdownMenuItem(
+            value: 'salary',
+            child: Text(l10n.salaryCycle),
+          ),
+        ],
+        onChanged: (value) => setState(() => _cycle = value!),
+      ),
+      if (_cycle == 'salary')
+        DinarDropdownField<int>(
+          initialValue: _payday,
+          decoration: InputDecoration(labelText: l10n.payday),
+          items: List.generate(
+            28,
+            (index) => DropdownMenuItem(
+              value: index + 1,
+              child: Text('${index + 1}'),
             ),
-            TextField(
-              controller: _buffer,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              decoration: InputDecoration(labelText: l10n.emergencyBuffer),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: _save,
-                child: Text(l10n.save),
-              ),
-            ),
-          ],
+          ),
+          onChanged: (value) => setState(() => _payday = value!),
+        ),
+      TextField(
+        controller: _fixed,
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        decoration: InputDecoration(labelText: l10n.fixedCommitments),
+      ),
+      TextField(
+        controller: _buffer,
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        decoration: InputDecoration(labelText: l10n.emergencyBuffer),
+      ),
+      SizedBox(
+        width: double.infinity,
+        child: FilledButton(
+          onPressed: _save,
+          child: Text(l10n.save),
         ),
       ),
-    );
+    ]);
   }
 }
 

@@ -1,5 +1,6 @@
+import 'package:dinarwise/features/receipts/smart/receipt_review_dialog.dart';
+import 'package:dinarwise/core/widgets/dinar_form.dart';
 import 'dart:io';
-import 'dart:async';
 import 'package:dinarwise/core/theme.dart';
 import 'package:dinarwise/core/widgets/dinar_widgets.dart';
 
@@ -7,7 +8,10 @@ import 'package:dinarwise/core/analytics/analytics_service.dart';
 import 'package:dinarwise/core/currency/gulf_currency.dart';
 import 'package:dinarwise/core/diagnostics/crash_reporting_service.dart';
 import 'package:dinarwise/core/preferences/onboarding_controller.dart';
+import 'package:dinarwise/core/preferences/app_preferences.dart';
+import 'package:dinarwise/features/receipts/smart/smart_scan_disclosure.dart';
 import 'package:dinarwise/features/categories/category_localization.dart';
+import 'package:dinarwise/features/categories/category_grid_picker.dart';
 import 'package:dinarwise/features/categories/data/category_repository.dart';
 import 'package:dinarwise/features/categories/custom_category_dialog.dart';
 import 'package:dinarwise/features/expenses/amount_parser.dart';
@@ -17,7 +21,7 @@ import 'package:dinarwise/l10n/l10n_extension.dart';
 import 'package:dinarwise/features/payment_methods/payment_method_providers.dart';
 import 'package:dinarwise/features/receipts/receipt_providers.dart';
 import 'package:dinarwise/features/receipts/receipt_viewer.dart';
-import 'package:dinarwise/features/receipts/smart/gemma_receipt_service.dart';
+import 'package:dinarwise/features/receipts/smart/receipt_api_service.dart';
 import 'package:dinarwise/features/receipts/smart/receipt_form_mapper.dart';
 import 'package:dinarwise/features/receipts/smart/receipt_ocr_service.dart';
 import 'package:dinarwise/features/receipts/smart/receipt_scan_service.dart';
@@ -243,18 +247,20 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
   }
 
   Future<void> _scanReceipt(String path, ReceiptScript script) async {
-    final gemma = ref.read(receiptScanServiceProvider).gemma;
-    final state = await gemma.status();
-    if (!mounted) return;
-    if (state != GemmaModelState.ready) {
-      await _showModelSetup(gemma, state);
-      if (!mounted || await gemma.status() != GemmaModelState.ready) return;
-    }
+    if (_scanningReceipt) return;
     setState(() {
       _scanningReceipt = true;
       _scanError = null;
     });
     try {
+      final preferences = ref.read(appPreferencesProvider);
+      final approved = await acknowledgeSmartScan(context, preferences);
+      if (approved != true || !mounted) return;
+      final locale = Localizations.localeOf(context).languageCode == 'ar'
+          ? 'ar-SA'
+          : 'en-SA';
+      final currency =
+          ref.read(onboardingControllerProvider).requireValue.currencyCode;
       final categories = await ref.read(categoriesProvider.future);
       final systemCodes = categories
           .where((item) => item.isSystem && item.systemCode != null)
@@ -263,9 +269,19 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
             path,
             script,
             systemCodes,
+            locale: locale,
+            currencyHint: currency ?? _currency.code,
           );
       if (!mounted) return;
       await _reviewReceipt(result, categories);
+    } on ReceiptApiException catch (error) {
+      if (mounted) {
+        setState(() => _scanError = switch (error.failure) {
+              ReceiptApiFailure.connection => context.l10n.smartReceiptOffline,
+              ReceiptApiFailure.timeout => context.l10n.smartReceiptTimeout,
+              _ => context.l10n.smartScanFailed,
+            });
+      }
     } catch (_) {
       if (mounted) setState(() => _scanError = context.l10n.smartScanFailed);
     } finally {
@@ -273,200 +289,61 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
     }
   }
 
-  Future<void> _showModelSetup(
-    GemmaReceiptService gemma,
-    GemmaModelState state,
-  ) async {
-    var importing = false;
-    double? progress;
-    StreamSubscription<double?>? subscription;
-    try {
-      await showDialog<void>(
-        context: context,
-        barrierDismissible: false,
-        builder: (dialogContext) => StatefulBuilder(
-          builder: (context, setDialogState) => AlertDialog(
-            title: Text(context.l10n.smartReceiptModel),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (importing) LinearProgressIndicator(value: progress),
-                const SizedBox(height: 12),
-                Text(
-                  state == GemmaModelState.unconfigured
-                      ? context.l10n.smartReceiptModelNotConfigured
-                      : state == GemmaModelState.unsupported
-                          ? context.l10n.smartReceiptUnsupported
-                          : context.l10n.smartReceiptModelRequired,
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: importing ? null : () => Navigator.pop(context),
-                child: Text(context.l10n.manualEntry),
-              ),
-              if (state == GemmaModelState.missing && gemma.canImportModel)
-                FilledButton(
-                  onPressed: importing
-                      ? null
-                      : () async {
-                          setDialogState(() => importing = true);
-                          subscription = gemma.importProgress.listen((value) {
-                            if (dialogContext.mounted) {
-                              setDialogState(() => progress = value);
-                            }
-                          });
-                          try {
-                            await gemma.importModel();
-                            if (dialogContext.mounted) {
-                              Navigator.pop(dialogContext);
-                            }
-                          } catch (_) {
-                            if (dialogContext.mounted) {
-                              setDialogState(() => importing = false);
-                              ScaffoldMessenger.of(dialogContext).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    dialogContext.l10n.smartReceiptModelError,
-                                  ),
-                                ),
-                              );
-                            }
-                          }
-                        },
-                  child: Text(context.l10n.importModel),
-                ),
-            ],
-          ),
-        ),
-      );
-    } finally {
-      await subscription?.cancel();
-    }
-  }
-
   Future<void> _reviewReceipt(
     ValidatedReceipt initial,
     List<CategoryRecord> categories,
   ) async {
-    final fields = <String, TextEditingController>{
-      for (final key in receiptFields)
-        key: TextEditingController(text: initial.fields[key] ?? ''),
+    final reviewLocale = Localizations.localeOf(context).toLanguageTag();
+    final reviewCategories = {
+      for (final item in categories)
+        (item.systemCode ?? item.id): localizedCategoryName(context.l10n, item),
     };
-    final lineItems = TextEditingController(
-      text: initial.lineItems
-          .map((item) =>
-              item.total == null ? item.name : '${item.name} — ${item.total}')
-          .join('\n'),
+    final result = await showDialog<ValidatedReceipt>(
+      context: context,
+      builder: (_) => ReceiptReviewDialog(
+        receipt: initial,
+        locale: reviewLocale,
+        ledgerCurrency: _currency,
+        categoryLabels: reviewCategories,
+      ),
     );
-    try {
-      final accepted = await showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text(context.l10n.reviewReceiptDetails),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  for (final entry in fields.entries)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: TextField(
-                        controller: entry.value,
-                        keyboardType: const {
-                          'total',
-                          'subtotal',
-                          'tax',
-                          'cardLastFour',
-                        }.contains(entry.key)
-                            ? const TextInputType.numberWithOptions(
-                                decimal: true)
-                            : null,
-                        decoration: InputDecoration(
-                          labelText: _receiptFieldLabel(context, entry.key),
-                        ),
-                      ),
-                    ),
-                  if (lineItems.text.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: TextField(
-                        controller: lineItems,
-                        minLines: 2,
-                        maxLines: 8,
-                        decoration: InputDecoration(
-                          labelText: context.l10n.receiptLineItems,
-                        ),
-                      ),
-                    ),
-                  if (initial.confidence < .85)
-                    Text(
-                      context.l10n.lowConfidenceReview,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.error,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: Text(context.l10n.cancel),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: Text(context.l10n.useDetectedDetails),
-            ),
-          ],
-        ),
-      );
-      if (accepted != true || !mounted) return;
-      final result = ReceiptValidator().validate({
-        for (final entry in fields.entries)
-          if (entry.value.text.trim().isNotEmpty)
-            entry.key: entry.value.text.trim(),
-        'confidence': initial.confidence,
-        'lineItems': [
-          for (final line in lineItems.text.split('\n'))
-            if (line.trim().isNotEmpty) {'name': line.trim()},
-        ],
-      });
-      final categoryMap = {
-        for (final item in categories)
-          if (item.isSystem && item.systemCode != null)
-            item.systemCode!: item.id,
-      };
-      final patch = ReceiptFormMapper().map(
-        result,
-        ledgerCurrency: _currency.code,
-        systemCategories: categoryMap,
-      );
-      setState(() {
-        if (patch.merchant?.isNotEmpty == true) {
-          _merchantController.text = patch.merchant!;
-        }
-        if (patch.amount != null) _amountController.text = patch.amount!;
-        if (patch.notes?.isNotEmpty == true && _notesController.text.isEmpty) {
-          _notesController.text = patch.notes!;
-        }
-        if (patch.date != null) _date = patch.date!;
-        if (patch.categoryId != null) _categoryId = patch.categoryId;
-        _scanError = patch.issues.contains(ReceiptIssue.differentCurrency)
-            ? context.l10n.detectedCurrencyMismatch
-            : patch.issues.contains(ReceiptIssue.inconsistentTotal)
-                ? context.l10n.receiptTotalsInconsistent
-                : null;
-      });
-    } finally {
-      for (final controller in fields.values) {
-        controller.dispose();
+    if (result == null || !mounted) return;
+    final categoryMap = {
+      for (final item in categories) (item.systemCode ?? item.id): item.id,
+    };
+    final patch = ReceiptFormMapper().map(
+      result,
+      ledgerCurrency: _currency.code,
+      systemCategories: categoryMap,
+    );
+    final methods = await ref.read(paymentMethodsProvider.future);
+    if (!mounted) return;
+    final payment = patch.paymentMethod?.trim().toLowerCase();
+    String? detectedPaymentId;
+    for (final method in methods) {
+      if (payment != null &&
+          (payment == method.name.toLowerCase() ||
+              payment ==
+                  _paymentMethodLabel(context, method.systemCode, method.name)
+                      .toLowerCase() ||
+              payment == method.systemCode ||
+              (method.systemCode == 'bank_transfer' &&
+                  {'transferred', context.l10n.receiptTransferred.toLowerCase()}
+                      .contains(payment)))) {
+        detectedPaymentId = method.id;
+        break;
       }
-      lineItems.dispose();
     }
+    setState(() {
+      if (patch.merchant?.isNotEmpty == true) {
+        _merchantController.text = patch.merchant!;
+      }
+      if (patch.amount != null) _amountController.text = patch.amount!;
+      if (detectedPaymentId != null) _paymentMethodId = detectedPaymentId;
+      if (patch.date != null) _date = patch.date!;
+      if (patch.categoryId != null) _categoryId = patch.categoryId;
+      _scanError = null;
+    });
   }
 
   Future<void> _removeReceipt() async {
@@ -745,37 +622,18 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
                         Text(l10n.category,
                             style: Theme.of(context).textTheme.labelLarge),
                         const SizedBox(height: 10),
-                        SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: Row(children: [
-                              for (final category in items)
-                                Padding(
-                                  padding:
-                                      const EdgeInsetsDirectional.only(end: 8),
-                                  child: ChoiceChip(
-                                    label: Text(
-                                        localizedCategoryName(l10n, category)),
-                                    avatar: Icon(
-                                        categoryIcon(category.systemCode),
-                                        size: 19),
-                                    selected: _categoryId == category.id,
-                                    selectedColor: const Color(0xFFFFDEA5),
-                                    onSelected: (_) => setState(
-                                        () => _categoryId = category.id),
-                                  ),
-                                ),
-                              ActionChip(
-                                  label: Text(l10n.customCategory),
-                                  avatar: const Icon(Icons.add, size: 18),
-                                  onPressed: () async {
-                                    final created =
-                                        await showCustomCategoryDialog(
-                                            context, ref);
-                                    if (created != null && mounted) {
-                                      setState(() => _categoryId = created.id);
-                                    }
-                                  }),
-                            ])),
+                        CategoryGridPicker(
+                          categories: items,
+                          selectedId: _categoryId,
+                          onSelected: (id) => setState(() => _categoryId = id),
+                          onCustom: () async {
+                            final created =
+                                await showCustomCategoryDialog(context, ref);
+                            if (created != null && mounted) {
+                              setState(() => _categoryId = created.id);
+                            }
+                          },
+                        ),
                       ]);
                 },
               ),
@@ -852,7 +710,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
                           .where((method) => method.isDefault)
                           .firstOrNull
                           ?.id;
-                      return DropdownButtonFormField<String>(
+                      return DinarDropdownField<String>(
                         isExpanded: true,
                         initialValue:
                             items.any((item) => item.id == _paymentMethodId)
@@ -896,10 +754,11 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
                       if (path != null) _scanReceipt(path, script);
                     }),
                 const SizedBox(height: 8),
-                Text(l10n.manualReceiptHint,
-                    style:
-                        const TextStyle(fontSize: 11, color: DinarColors.muted),
-                    textAlign: TextAlign.center),
+                TextButton.icon(
+                  onPressed: () => showSmartScanInformation(context),
+                  icon: const Icon(Icons.info_outline, size: 16),
+                  label: Text(l10n.smartScanInformation),
+                ),
               ])),
               const SizedBox(height: 18),
               if (_error != null)
@@ -949,21 +808,6 @@ String _paymentMethodLabel(
       'tamara' => 'Tamara',
       'other' => context.l10n.other,
       _ => fallback,
-    };
-
-String _receiptFieldLabel(BuildContext context, String key) => switch (key) {
-      'merchantName' => context.l10n.merchant,
-      'total' => context.l10n.receiptTotal,
-      'subtotal' => context.l10n.receiptSubtotal,
-      'tax' => context.l10n.receiptTax,
-      'currency' => context.l10n.receiptCurrency,
-      'date' => context.l10n.date,
-      'time' => context.l10n.receiptTime,
-      'paymentMethod' => context.l10n.paymentMethod,
-      'cardLastFour' => context.l10n.cardLastFour,
-      'invoiceNumber' => context.l10n.invoiceNumber,
-      'category' => context.l10n.category,
-      _ => key,
     };
 
 class _ReceiptAttachmentCard extends StatelessWidget {

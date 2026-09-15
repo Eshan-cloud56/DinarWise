@@ -1,3 +1,4 @@
+import 'package:dinarwise/core/widgets/dinar_form.dart';
 import 'package:dinarwise/core/currency/gulf_currency.dart';
 import 'package:dinarwise/core/preferences/onboarding_controller.dart';
 import 'package:dinarwise/features/expenses/amount_parser.dart';
@@ -19,6 +20,7 @@ class BnplScreen extends ConsumerWidget {
     final draft = await showModalBottomSheet<BnplDraft>(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       showDragHandle: true,
       builder: (_) => _BnplEditor(plan: plan),
     );
@@ -129,6 +131,7 @@ class BnplScreen extends ConsumerWidget {
     return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       showDragHandle: true,
       builder: (_) => FractionallySizedBox(
         heightFactor: .85,
@@ -283,77 +286,61 @@ class _BnplEditorState extends State<_BnplEditor> {
   }
 
   @override
-  Widget build(BuildContext context) => Padding(
-        padding: EdgeInsets.fromLTRB(
-          20,
-          0,
-          20,
-          MediaQuery.viewInsetsOf(context).bottom + 20,
+  Widget build(BuildContext context) => DinarFormSheet(children: [
+        Text(
+          widget.plan == null
+              ? context.l10n.addBnplPlan
+              : context.l10n.editBnplPlan,
+          style: Theme.of(context).textTheme.titleLarge,
         ),
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              Text(
-                widget.plan == null
-                    ? context.l10n.addBnplPlan
-                    : context.l10n.editBnplPlan,
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              DropdownButtonFormField<String>(
-                initialValue: _provider,
-                decoration: InputDecoration(labelText: context.l10n.provider),
-                items: [
-                  const DropdownMenuItem(value: 'tabby', child: Text('Tabby')),
-                  const DropdownMenuItem(
-                      value: 'tamara', child: Text('Tamara')),
-                  DropdownMenuItem(
-                    value: 'custom',
-                    child: Text(context.l10n.customProvider),
-                  ),
-                ],
-                onChanged: (value) => setState(() => _provider = value!),
-              ),
-              if (_provider == 'custom')
-                TextField(
-                  controller: _custom,
-                  decoration:
-                      InputDecoration(labelText: context.l10n.providerName),
-                ),
-              TextField(
-                controller: _merchant,
-                decoration: InputDecoration(labelText: context.l10n.merchant),
-              ),
-              TextField(
-                controller: _amount,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-                decoration:
-                    InputDecoration(labelText: context.l10n.purchaseAmount),
-              ),
-              ListTile(
-                title: Text(context.l10n.purchaseDate),
-                subtitle: Text(DateFormat.yMd().format(_date)),
-                onTap: () async {
-                  final selected = await showDatePicker(
-                    context: context,
-                    firstDate: DateTime(2000),
-                    lastDate: DateTime(2100),
-                    initialDate: _date,
-                  );
-                  if (selected != null) setState(() => _date = selected);
-                },
-              ),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: _save,
-                  child: Text(context.l10n.save),
-                ),
-              ),
-            ],
+        DinarDropdownField<String>(
+          initialValue: _provider,
+          decoration: InputDecoration(labelText: context.l10n.provider),
+          items: [
+            const DropdownMenuItem(value: 'tabby', child: Text('Tabby')),
+            const DropdownMenuItem(value: 'tamara', child: Text('Tamara')),
+            DropdownMenuItem(
+              value: 'custom',
+              child: Text(context.l10n.customProvider),
+            ),
+          ],
+          onChanged: (value) => setState(() => _provider = value!),
+        ),
+        if (_provider == 'custom')
+          TextField(
+            controller: _custom,
+            decoration: InputDecoration(labelText: context.l10n.providerName),
+          ),
+        TextField(
+          controller: _merchant,
+          decoration: InputDecoration(labelText: context.l10n.merchant),
+        ),
+        TextField(
+          controller: _amount,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          decoration: InputDecoration(labelText: context.l10n.purchaseAmount),
+        ),
+        ListTile(
+          title: Text(context.l10n.purchaseDate),
+          subtitle: Text(DateFormat.yMd().format(_date)),
+          onTap: () async {
+            final selected = await showDinarDatePicker(
+              context: context,
+              firstDate: DateTime(2000),
+              lastDate: DateTime(2100),
+              initialDate: _date,
+            );
+            if (selected != null && mounted) setState(() => _date = selected);
+          },
+        ),
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton(
+            onPressed: _save,
+            child: Text(context.l10n.save),
           ),
         ),
-      );
+      ]);
 }
 
 NumberFormat _currency(BuildContext context, WidgetRef ref) => ref

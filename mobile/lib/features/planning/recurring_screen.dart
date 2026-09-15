@@ -1,3 +1,4 @@
+import 'package:dinarwise/core/widgets/dinar_form.dart';
 import 'package:dinarwise/core/currency/gulf_currency.dart';
 import 'package:dinarwise/core/preferences/onboarding_controller.dart';
 import 'package:dinarwise/features/categories/category_localization.dart';
@@ -23,6 +24,7 @@ class RecurringScreen extends ConsumerWidget {
     final draft = await showModalBottomSheet<RecurringDraft>(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       showDragHandle: true,
       builder: (_) => _RecurringEditor(item: item, categories: categories),
     );
@@ -95,6 +97,7 @@ class RecurringScreen extends ConsumerWidget {
     return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       showDragHandle: true,
       builder: (_) => FractionallySizedBox(
         heightFactor: .88,
@@ -264,141 +267,125 @@ class _RecurringEditorState extends State<_RecurringEditor> {
   }
 
   @override
-  Widget build(BuildContext context) => Padding(
-        padding: EdgeInsets.fromLTRB(
-          20,
-          0,
-          20,
-          MediaQuery.viewInsetsOf(context).bottom + 20,
+  Widget build(BuildContext context) => DinarFormSheet(children: [
+        Text(
+          widget.item == null
+              ? context.l10n.addRecurring
+              : context.l10n.editRecurring,
+          style: Theme.of(context).textTheme.titleLarge,
         ),
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              Text(
-                widget.item == null
-                    ? context.l10n.addRecurring
-                    : context.l10n.editRecurring,
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              TextField(
-                controller: _name,
-                decoration: InputDecoration(labelText: context.l10n.name),
-              ),
-              TextField(
-                controller: _amount,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-                decoration: InputDecoration(labelText: context.l10n.amount),
-              ),
-              DropdownButtonFormField<String>(
-                initialValue: _recurrence,
-                decoration: InputDecoration(labelText: context.l10n.recurrence),
-                items: [
-                  DropdownMenuItem(
-                    value: 'daily',
-                    child: Text(context.l10n.daily),
-                  ),
-                  DropdownMenuItem(
-                    value: 'weekly',
-                    child: Text(context.l10n.weekly),
-                  ),
-                  DropdownMenuItem(
-                    value: 'monthly',
-                    child: Text(context.l10n.monthly),
-                  ),
-                  DropdownMenuItem(
-                    value: 'yearly',
-                    child: Text(context.l10n.yearly),
-                  ),
-                ],
-                onChanged: (value) => setState(() => _recurrence = value!),
-              ),
-              DropdownButtonFormField<int>(
-                initialValue: _interval,
-                decoration: InputDecoration(labelText: context.l10n.every),
-                items: List.generate(
-                  12,
-                  (index) => DropdownMenuItem(
-                    value: index + 1,
-                    child: Text('${index + 1}'),
-                  ),
-                ),
-                onChanged: (value) => setState(() => _interval = value!),
-              ),
-              DropdownButtonFormField<String?>(
-                initialValue: _categoryId,
-                decoration: InputDecoration(labelText: context.l10n.category),
-                items: [
-                  DropdownMenuItem(
-                    value: null,
-                    child: Text(context.l10n.other),
-                  ),
-                  ...widget.categories.map(
-                    (category) => DropdownMenuItem(
-                      value: category.id,
-                      child: Text(
-                        localizedCategoryName(context.l10n, category),
-                      ),
-                    ),
-                  ),
-                ],
-                onChanged: (value) => setState(() => _categoryId = value),
-              ),
-              SwitchListTile(
-                value: _subscription,
-                onChanged: (value) => setState(() => _subscription = value),
-                title: Text(context.l10n.isSubscription),
-              ),
-              _DateTile(
-                label: context.l10n.startDate,
-                date: _start,
-                onChanged: (date) => setState(() => _start = date),
-              ),
-              _DateTile(
-                label: context.l10n.endDate,
-                date: _end,
-                optional: true,
-                onChanged: (date) => setState(() => _end = date),
-              ),
-              TextField(
-                controller: _occurrences,
-                keyboardType: TextInputType.number,
-                decoration:
-                    InputDecoration(labelText: context.l10n.maxOccurrences),
-              ),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: () {
-                    final amount = parseLocalizedAmount(_amount.text);
-                    if (_name.text.trim().isEmpty ||
-                        amount == null ||
-                        amount <= 0) {
-                      return;
-                    }
-                    Navigator.pop(
-                      context,
-                      RecurringDraft(
-                        id: widget.item?.id,
-                        name: _name.text.trim(),
-                        amountMinor: (amount * 100).round(),
-                        recurrence: _recurrence,
-                        intervalCount: _interval,
-                        categoryId: _categoryId,
-                        startDate: _start,
-                        endDate: _end,
-                        maxOccurrences: int.tryParse(_occurrences.text.trim()),
-                        isSubscription: _subscription,
-                      ),
-                    );
-                  },
-                  child: Text(context.l10n.save),
+        TextField(
+          controller: _name,
+          decoration: InputDecoration(labelText: context.l10n.name),
+        ),
+        TextField(
+          controller: _amount,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          decoration: InputDecoration(labelText: context.l10n.amount),
+        ),
+        DinarDropdownField<String>(
+          initialValue: _recurrence,
+          decoration: InputDecoration(labelText: context.l10n.recurrence),
+          items: [
+            DropdownMenuItem(
+              value: 'daily',
+              child: Text(context.l10n.daily),
+            ),
+            DropdownMenuItem(
+              value: 'weekly',
+              child: Text(context.l10n.weekly),
+            ),
+            DropdownMenuItem(
+              value: 'monthly',
+              child: Text(context.l10n.monthly),
+            ),
+            DropdownMenuItem(
+              value: 'yearly',
+              child: Text(context.l10n.yearly),
+            ),
+          ],
+          onChanged: (value) => setState(() => _recurrence = value!),
+        ),
+        DinarDropdownField<int>(
+          initialValue: _interval,
+          decoration: InputDecoration(labelText: context.l10n.every),
+          items: List.generate(
+            12,
+            (index) => DropdownMenuItem(
+              value: index + 1,
+              child: Text('${index + 1}'),
+            ),
+          ),
+          onChanged: (value) => setState(() => _interval = value!),
+        ),
+        DinarDropdownField<String?>(
+          initialValue: _categoryId,
+          decoration: InputDecoration(labelText: context.l10n.category),
+          items: [
+            DropdownMenuItem(
+              value: null,
+              child: Text(context.l10n.other),
+            ),
+            ...widget.categories.map(
+              (category) => DropdownMenuItem(
+                value: category.id,
+                child: Text(
+                  localizedCategoryName(context.l10n, category),
                 ),
               ),
-            ],
+            ),
+          ],
+          onChanged: (value) => setState(() => _categoryId = value),
+        ),
+        SwitchListTile(
+          value: _subscription,
+          onChanged: (value) => setState(() => _subscription = value),
+          title: Text(context.l10n.isSubscription),
+        ),
+        _DateTile(
+          label: context.l10n.startDate,
+          date: _start,
+          onChanged: (date) => setState(() => _start = date),
+        ),
+        _DateTile(
+          label: context.l10n.endDate,
+          date: _end,
+          optional: true,
+          onChanged: (date) => setState(() => _end = date),
+        ),
+        TextField(
+          controller: _occurrences,
+          keyboardType: TextInputType.number,
+          decoration: InputDecoration(labelText: context.l10n.maxOccurrences),
+        ),
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton(
+            onPressed: () {
+              final amount = parseLocalizedAmount(_amount.text);
+              if (_name.text.trim().isEmpty || amount == null || amount <= 0) {
+                return;
+              }
+              Navigator.pop(
+                context,
+                RecurringDraft(
+                  id: widget.item?.id,
+                  name: _name.text.trim(),
+                  amountMinor: (amount * 100).round(),
+                  recurrence: _recurrence,
+                  intervalCount: _interval,
+                  categoryId: _categoryId,
+                  startDate: _start,
+                  endDate: _end,
+                  maxOccurrences: int.tryParse(_occurrences.text.trim()),
+                  isSubscription: _subscription,
+                ),
+              );
+            },
+            child: Text(context.l10n.save),
           ),
         ),
-      );
+      ]);
 }
 
 class _DateTile extends StatelessWidget {
@@ -422,7 +409,7 @@ class _DateTile extends StatelessWidget {
         ),
         trailing: const Icon(Icons.date_range_outlined),
         onTap: () async {
-          final selected = await showDatePicker(
+          final selected = await showDinarDatePicker(
             context: context,
             firstDate: DateTime(2000),
             lastDate: DateTime(2100),

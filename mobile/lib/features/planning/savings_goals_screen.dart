@@ -1,3 +1,5 @@
+import 'package:dinarwise/core/widgets/dinar_form.dart';
+import 'package:dinarwise/core/widgets/dinar_widgets.dart';
 import 'package:dinarwise/core/preferences/onboarding_controller.dart';
 import 'package:dinarwise/core/currency/gulf_currency.dart';
 import 'package:dinarwise/features/expenses/amount_parser.dart';
@@ -39,6 +41,7 @@ class SavingsGoalsScreen extends ConsumerWidget {
     final result = await showModalBottomSheet<_GoalDraft>(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       showDragHandle: true,
       builder: (_) => _GoalEditor(goal: goal),
     );
@@ -112,11 +115,11 @@ class SavingsGoalsScreen extends ConsumerWidget {
                               borderRadius: BorderRadius.circular(10),
                             ),
                             const SizedBox(height: 8),
-                            Text(
+                            ResponsiveFinancialText(
                               '${currency.format(goal.currentMinor / 100)} / '
                               '${currency.format(goal.targetMinor / 100)}',
                             ),
-                            Text(
+                            ResponsiveFinancialText(
                               '${context.l10n.remaining}: '
                               '${currency.format(progress.remainingMinor / 100)}',
                             ),
@@ -149,6 +152,7 @@ class SavingsGoalsScreen extends ConsumerWidget {
     return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       showDragHandle: true,
       builder: (_) => FractionallySizedBox(
         heightFactor: .85,
@@ -331,6 +335,7 @@ class _GoalEditor extends StatefulWidget {
 }
 
 class _GoalEditorState extends State<_GoalEditor> {
+  final _dateAnchor = GlobalKey();
   late final TextEditingController _name =
       TextEditingController(text: widget.goal?.name);
   late final TextEditingController _target = TextEditingController(
@@ -362,95 +367,85 @@ class _GoalEditorState extends State<_GoalEditor> {
       };
 
   @override
-  Widget build(BuildContext context) => Padding(
-        padding: EdgeInsets.fromLTRB(
-          20,
-          0,
-          20,
-          MediaQuery.viewInsetsOf(context).bottom + 20,
+  Widget build(BuildContext context) => DinarFormSheet(children: [
+        Text(
+          widget.goal == null ? context.l10n.addGoal : context.l10n.editGoal,
+          style: Theme.of(context).textTheme.titleLarge,
         ),
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              Text(
-                widget.goal == null
-                    ? context.l10n.addGoal
-                    : context.l10n.editGoal,
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              DropdownButtonFormField<String>(
-                initialValue: _template,
-                decoration:
-                    InputDecoration(labelText: context.l10n.goalTemplate),
-                items: _goalTemplates
-                    .map(
-                      (template) => DropdownMenuItem(
-                        value: template,
-                        child: Text(_templateLabel(context, template)),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (value) => setState(() {
-                  _template = value!;
-                  if (_template != 'custom' && _name.text.trim().isEmpty) {
-                    _name.text = _templateLabel(context, _template);
-                  }
-                }),
-              ),
-              TextField(
-                controller: _name,
-                decoration: InputDecoration(labelText: context.l10n.name),
-              ),
-              TextField(
-                controller: _target,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-                decoration:
-                    InputDecoration(labelText: context.l10n.targetAmount),
-              ),
-              ListTile(
-                title: Text(context.l10n.targetDate),
-                subtitle: Text(
-                  _date == null
-                      ? context.l10n.optional
-                      : DateFormat.yMd().format(_date!),
+        DinarDropdownField<String>(
+          initialValue: _template,
+          decoration: InputDecoration(labelText: context.l10n.goalTemplate),
+          items: _goalTemplates
+              .map(
+                (template) => DropdownMenuItem(
+                  value: template,
+                  child: Text(_templateLabel(context, template)),
                 ),
-                trailing: const Icon(Icons.date_range_outlined),
-                onTap: () async {
-                  final selected = await showDatePicker(
-                    context: context,
-                    firstDate: DateTime.now(),
-                    lastDate: DateTime.now().add(const Duration(days: 3650)),
-                    initialDate: _date ?? DateTime.now(),
-                  );
-                  if (selected != null) setState(() => _date = selected);
-                },
-              ),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: () {
-                    final target = parseLocalizedAmount(_target.text);
-                    if (_name.text.trim().isEmpty ||
-                        target == null ||
-                        target <= 0) {
-                      return;
-                    }
-                    Navigator.pop(
-                      context,
-                      _GoalDraft(
-                        name: _name.text.trim(),
-                        targetMinor: (target * 100).round(),
-                        targetDate: _date,
-                        templateCode: _template,
-                      ),
-                    );
-                  },
-                  child: Text(context.l10n.save),
+              )
+              .toList(),
+          onChanged: (value) => setState(() {
+            _template = value!;
+            if (_template != 'custom' && _name.text.trim().isEmpty) {
+              _name.text = _templateLabel(context, _template);
+            }
+          }),
+        ),
+        TextField(
+          controller: _name,
+          decoration: InputDecoration(labelText: context.l10n.name),
+        ),
+        TextField(
+          controller: _target,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          decoration: InputDecoration(labelText: context.l10n.targetAmount),
+        ),
+        ListTile(
+          key: _dateAnchor,
+          title: Text(context.l10n.targetDate),
+          subtitle: Text(
+            _date == null
+                ? context.l10n.optional
+                : DateFormat.yMd().format(_date!),
+          ),
+          trailing: const Icon(Icons.date_range_outlined),
+          onTap: () async {
+            final selected = await showDinarDatePicker(
+              context: context,
+              firstDate: DateTime.now(),
+              lastDate: DateTime.now().add(const Duration(days: 3650)),
+              initialDate: _date ?? DateTime.now(),
+            );
+            if (selected != null && mounted) setState(() => _date = selected);
+            if (!mounted) return;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              final target = _dateAnchor.currentContext;
+              if (target == null || !mounted) return;
+              Scrollable.ensureVisible(target,
+                  alignmentPolicy:
+                      ScrollPositionAlignmentPolicy.keepVisibleAtEnd);
+            });
+          },
+        ),
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton(
+            onPressed: () {
+              final target = parseLocalizedAmount(_target.text);
+              if (_name.text.trim().isEmpty || target == null || target <= 0) {
+                return;
+              }
+              Navigator.pop(
+                context,
+                _GoalDraft(
+                  name: _name.text.trim(),
+                  targetMinor: (target * 100).round(),
+                  targetDate: _date,
+                  templateCode: _template,
                 ),
-              ),
-            ],
+              );
+            },
+            child: Text(context.l10n.save),
           ),
         ),
-      );
+      ]);
 }

@@ -79,8 +79,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get perDay => '/ day';
 
   @override
-  String get manualReceiptHint =>
-      'Attach a receipt and use private on-device Smart Scan, or continue manually.';
+  String get manualReceiptHint => 'Manual entry works offline.';
+
+  @override
+  String get receiptTransferred => 'Transferred';
+
+  @override
+  String get smartScanInformation => 'About Smart Scan';
+
+  @override
+  String get receiptLedgerPrecision =>
+      'Enter an amount with no more than two non-zero decimal places.';
 
   @override
   String get monthPace => 'Month progress';
@@ -1329,29 +1338,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tutorialFinish => 'Finish';
 
   @override
-  String get smartReceiptModel => 'Smart Receipt model';
-
-  @override
-  String get smartReceiptModelNotConfigured =>
-      'Smart Receipt Scan is not yet configured for public model distribution. You can continue entering this expense manually.';
-
-  @override
-  String get smartReceiptUnsupported =>
-      'This device cannot run the on-device Smart Receipt model. Manual expense entry remains available.';
-
-  @override
-  String get smartReceiptModelRequired =>
-      'Choose the licensed Gemma 3n E2B model file. It will be verified and stored privately on this device.';
-
-  @override
-  String get smartReceiptModelError =>
-      'The model could not be verified or imported.';
-
-  @override
-  String get importModel => 'Import verified model';
-
-  @override
   String get manualEntry => 'Manual entry';
+
+  @override
+  String get smartReceiptCloudNotice =>
+      'Smart Scan sends extracted receipt text to the DinarWise service over HTTPS for analysis. Images are not uploaded. Internet is required. Review all details before saving.';
+
+  @override
+  String get smartReceiptOffline =>
+      'Smart Scan could not connect. Check your internet connection and retry, or enter the expense manually.';
+
+  @override
+  String get smartReceiptTimeout =>
+      'Smart Scan took too long. Retry or enter the expense manually.';
 
   @override
   String get smartScanFailed =>
@@ -1376,8 +1375,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'The detected receipt totals are inconsistent. The amount was not filled.';
 
   @override
-  String get processingReceipt =>
-      'Reading this receipt privately on your device…';
+  String get processingReceipt => 'Reading and analyzing your receipt…';
 
   @override
   String get smartScan => 'Smart scan';

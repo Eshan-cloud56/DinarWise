@@ -119,6 +119,7 @@ class ReceiptValidator {
         continue;
       }
       final text = value.toString().trim();
+      if (text.isEmpty) continue;
       if (text.length > (key == 'merchantName' ? 200 : 80) ||
           RegExp(r'[\x00-\x08\x0b\x0c\x0e-\x1f]').hasMatch(text)) {
         issues.add(ReceiptIssue.invalidField);

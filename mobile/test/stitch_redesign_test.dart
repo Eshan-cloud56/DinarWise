@@ -3,6 +3,8 @@ import 'dart:ui' as ui;
 import 'package:dinarwise/app.dart';
 import 'package:dinarwise/core/constants.dart';
 import 'package:dinarwise/core/theme.dart';
+import 'package:dinarwise/core/widgets/dinar_form.dart';
+import 'package:go_router/go_router.dart';
 import 'package:dinarwise/core/database/app_database.dart';
 import 'package:dinarwise/core/database/database_provider.dart';
 import 'package:dinarwise/core/preferences/app_preferences.dart';
@@ -88,6 +90,88 @@ void main() {
     }
   });
   for (final language in ['en', 'ar']) {
+    testWidgets('Large income stays contained with $language scaled text',
+        (tester) async {
+      final db = await _start(tester, language, width: 320, scale: 2);
+      final add = find.byKey(const ValueKey('dashboardAddIncome'));
+      await tester.ensureVisible(add);
+      await tester.pumpAndSettle();
+      await tester.tap(add);
+      await tester.pumpAndSettle();
+      final amount = find.byKey(const ValueKey('incomeAmountField'));
+      await tester.enterText(amount, '999999999999999999.99');
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      final rect = tester.getRect(amount);
+      expect(rect.left, greaterThanOrEqualTo(0));
+      expect(rect.right, lessThanOrEqualTo(320));
+      await tester.enterText(amount, '1000');
+      await tester.tap(find.byKey(const ValueKey('saveIncomeButton')));
+      await tester.pumpAndSettle();
+      final container =
+          ProviderScope.containerOf(tester.element(find.byType(DinarWiseApp)));
+      expect(
+          (await container.read(financialSummaryProvider.future))
+              .totalIncomeMinor,
+          100000);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+      await tester.runAsync(db.close);
+    });
+    for (final section in ['budgets', 'goals', 'bnpl', 'recurring']) {
+      testWidgets('$section sheet and compact selector at large $language text',
+          (tester) async {
+        final db = await _start(tester, language, scale: 2, width: 360);
+        tester.element(find.byType(Scaffold).first).go('/planning/$section');
+        await tester.pumpAndSettle();
+        await tester.tap(find.byType(FloatingActionButton));
+        await tester.pumpAndSettle();
+        final sheet = find.byType(DinarFormSheet);
+        expect(sheet, findsOneWidget);
+        final selector = find
+            .descendant(
+                of: sheet, matching: find.byType(DinarDropdownField<String>))
+            .first;
+        await tester.ensureVisible(selector);
+        await tester.pumpAndSettle();
+        await tester.tap(selector);
+        await tester.pumpAndSettle();
+        final menu = find.byType(Scrollable).last;
+        final rect = tester.getRect(menu);
+        expect(rect.height, lessThanOrEqualTo(320));
+        expect(rect.top, greaterThanOrEqualTo(0));
+        expect(rect.bottom, lessThanOrEqualTo(844));
+        final value = tester
+            .widget<DinarDropdownField<String>>(selector)
+            .items!
+            .last
+            .child as Text;
+        final option = find.text(value.data!).last;
+        await tester.ensureVisible(option);
+        await tester.pumpAndSettle();
+        await tester.tap(option);
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        final field =
+            find.descendant(of: sheet, matching: find.byType(TextField)).last;
+        await tester.ensureVisible(field);
+        await tester.pumpAndSettle();
+        await tester.tap(field);
+        tester.view.viewInsets = const FakeViewPadding(bottom: 280);
+        await tester.pumpAndSettle();
+        final save = find
+            .descendant(of: sheet, matching: find.byType(FilledButton))
+            .last;
+        await tester.ensureVisible(save);
+        await tester.pumpAndSettle();
+        expect(tester.getRect(save).bottom, lessThanOrEqualTo(844 - 280));
+        expect(tester.takeException(), isNull);
+        tester.view.resetViewInsets();
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pumpAndSettle();
+        await tester.runAsync(db.close);
+      });
+    }
     testWidgets('Expense date selection and required merchant in $language',
         (tester) async {
       final db = await _start(tester, language);

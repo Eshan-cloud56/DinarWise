@@ -1,3 +1,4 @@
+import 'package:dinarwise/core/widgets/dinar_form.dart';
 import 'package:dinarwise/core/preferences/onboarding_controller.dart';
 import 'package:dinarwise/core/currency/gulf_currency.dart';
 import 'package:dinarwise/features/categories/category_localization.dart';
@@ -61,7 +62,7 @@ class PlanningScreen extends ConsumerWidget {
                   ),
                   if (showCategories) ...[
                     const SizedBox(height: 12),
-                    DropdownButtonFormField<String>(
+                    DinarDropdownField<String>(
                       initialValue: categoryId,
                       decoration: InputDecoration(labelText: l10n.category),
                       items: [

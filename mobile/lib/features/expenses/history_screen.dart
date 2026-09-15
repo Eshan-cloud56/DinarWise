@@ -1,3 +1,4 @@
+import 'package:dinarwise/core/widgets/dinar_form.dart';
 import 'dart:async';
 import 'package:dinarwise/core/widgets/dinar_widgets.dart';
 import 'package:dinarwise/core/theme.dart';
@@ -466,7 +467,7 @@ class _FilterPanel extends StatelessWidget {
               Row(
                 children: [
                   Expanded(
-                    child: DropdownButtonFormField<String>(
+                    child: DinarDropdownField<String>(
                       isExpanded: true,
                       initialValue: filter.categoryId ?? '',
                       decoration: InputDecoration(labelText: l10n.category),
@@ -488,7 +489,7 @@ class _FilterPanel extends StatelessWidget {
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: DropdownButtonFormField<TransactionHistorySort>(
+                    child: DinarDropdownField<TransactionHistorySort>(
                       isExpanded: true,
                       initialValue: filter.sort,
                       decoration: InputDecoration(labelText: l10n.filter),
@@ -518,7 +519,7 @@ class _FilterPanel extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 10),
-              DropdownButtonFormField<String>(
+              DinarDropdownField<String>(
                 isExpanded: true,
                 initialValue: filter.paymentMethodId ?? '',
                 decoration: InputDecoration(labelText: l10n.paymentMethod),

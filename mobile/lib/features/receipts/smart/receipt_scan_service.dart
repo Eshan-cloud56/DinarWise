@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:dinarwise/features/receipts/smart/gemma_receipt_service.dart';
+import 'package:dinarwise/features/receipts/smart/receipt_api_service.dart';
 import 'package:dinarwise/features/receipts/smart/receipt_image_service.dart';
 import 'package:dinarwise/features/receipts/smart/receipt_ocr_service.dart';
 import 'package:dinarwise/features/receipts/smart/receipt_validator.dart';
@@ -10,29 +10,42 @@ class ReceiptScanService {
   ReceiptScanService(
       {ReceiptImageService? images,
       ReceiptOcrService? ocr,
-      GemmaReceiptService? gemma,
+      ReceiptApiService? api,
       ReceiptValidator? validator})
       : images = images ?? ReceiptImageService(),
         ocr = ocr ?? const ReceiptOcrService(),
-        gemma = gemma ?? const GemmaReceiptService(),
+        api = api ?? ReceiptApiService(),
         validator = validator ?? ReceiptValidator();
   final ReceiptImageService images;
   final ReceiptOcrService ocr;
-  final GemmaReceiptService gemma;
+  final ReceiptApiService api;
   final ReceiptValidator validator;
   bool _busy = false;
 
   Future<ValidatedReceipt> scan(
-      String path, ReceiptScript script, Iterable<String> categories) async {
+      String path, ReceiptScript script, Iterable<String> categories,
+      {required String locale, required String currencyHint}) async {
     if (_busy) throw StateError('scan_busy');
     _busy = true;
     try {
-      if (await gemma.status() != GemmaModelState.ready) {
-        throw StateError('model_missing');
-      }
       await images.validate(path);
       final raw = await ocr.recognize(path, script);
-      return validator.parse(await gemma.extract(raw.text, categories));
+      final response = await api.extract(raw.text,
+          locale: locale, currencyHint: currencyHint);
+      // Review only uses these editable values. Currency comes from app state,
+      // and discarded tax/card/invoice metadata cannot block a reviewed total.
+      final receipt = validator.validate({
+        for (final key in [
+          'merchantName',
+          'total',
+          'date',
+          'time',
+          'paymentMethod',
+          'category'
+        ])
+          key: response[key],
+      });
+      return receipt;
     } finally {
       _busy = false;
     }

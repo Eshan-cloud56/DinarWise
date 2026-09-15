@@ -22,6 +22,14 @@ class AppPreferences {
 
   final SharedPreferences _preferences;
 
+  bool get smartScanAcknowledged =>
+      _preferences.getBool('smart_scan_acknowledged_v1') ?? false;
+  Future<void> acknowledgeSmartScan() async {
+    if (!await _preferences.setBool('smart_scan_acknowledged_v1', true)) {
+      throw StateError('preference_write_failed');
+    }
+  }
+
   String? get selectedLanguage => _preferences.getString(_selectedLanguageKey);
   bool get privacyAccepted =>
       _preferences.getBool(_privacyAcceptedKey) ?? false;

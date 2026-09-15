@@ -58,6 +58,7 @@ Future<void> showDashboardTutorial({
   required AnalyticsService analytics,
   required bool replayed,
 }) async {
+  if (!replayed && preferences.dashboardTutorialCompletedV1) return;
   final l10n = context.l10n;
   final steps = [
     _TutorialStep(
@@ -109,7 +110,7 @@ Future<void> showDashboardTutorial({
     replayed: replayed,
   );
   if (!context.mounted) return;
-  final result = await showDialog<_TutorialResult>(
+  await showDialog<_TutorialResult>(
     context: context,
     barrierDismissible: false,
     barrierColor: Colors.transparent,
@@ -119,9 +120,8 @@ Future<void> showDashboardTutorial({
       analytics: analytics,
     ),
   );
-  if (result != null) {
-    await preferences.setDashboardTutorialCompletedV1(true);
-  }
+  // Android Back is also a dismissal: only Settings should replay the tour.
+  await preferences.setDashboardTutorialCompletedV1(true);
 }
 
 class _DashboardTutorialOverlay extends StatefulWidget {

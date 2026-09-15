@@ -239,8 +239,26 @@ abstract class AppLocalizations {
   /// No description provided for @manualReceiptHint.
   ///
   /// In en, this message translates to:
-  /// **'Attach a receipt and use private on-device Smart Scan, or continue manually.'**
+  /// **'Manual entry works offline.'**
   String get manualReceiptHint;
+
+  /// No description provided for @receiptTransferred.
+  ///
+  /// In en, this message translates to:
+  /// **'Transferred'**
+  String get receiptTransferred;
+
+  /// No description provided for @smartScanInformation.
+  ///
+  /// In en, this message translates to:
+  /// **'About Smart Scan'**
+  String get smartScanInformation;
+
+  /// No description provided for @receiptLedgerPrecision.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter an amount with no more than two non-zero decimal places.'**
+  String get receiptLedgerPrecision;
 
   /// No description provided for @monthPace.
   ///
@@ -2540,47 +2558,29 @@ abstract class AppLocalizations {
   /// **'Finish'**
   String get tutorialFinish;
 
-  /// No description provided for @smartReceiptModel.
-  ///
-  /// In en, this message translates to:
-  /// **'Smart Receipt model'**
-  String get smartReceiptModel;
-
-  /// No description provided for @smartReceiptModelNotConfigured.
-  ///
-  /// In en, this message translates to:
-  /// **'Smart Receipt Scan is not yet configured for public model distribution. You can continue entering this expense manually.'**
-  String get smartReceiptModelNotConfigured;
-
-  /// No description provided for @smartReceiptUnsupported.
-  ///
-  /// In en, this message translates to:
-  /// **'This device cannot run the on-device Smart Receipt model. Manual expense entry remains available.'**
-  String get smartReceiptUnsupported;
-
-  /// No description provided for @smartReceiptModelRequired.
-  ///
-  /// In en, this message translates to:
-  /// **'Choose the licensed Gemma 3n E2B model file. It will be verified and stored privately on this device.'**
-  String get smartReceiptModelRequired;
-
-  /// No description provided for @smartReceiptModelError.
-  ///
-  /// In en, this message translates to:
-  /// **'The model could not be verified or imported.'**
-  String get smartReceiptModelError;
-
-  /// No description provided for @importModel.
-  ///
-  /// In en, this message translates to:
-  /// **'Import verified model'**
-  String get importModel;
-
   /// No description provided for @manualEntry.
   ///
   /// In en, this message translates to:
   /// **'Manual entry'**
   String get manualEntry;
+
+  /// No description provided for @smartReceiptCloudNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Smart Scan sends extracted receipt text to the DinarWise service over HTTPS for analysis. Images are not uploaded. Internet is required. Review all details before saving.'**
+  String get smartReceiptCloudNotice;
+
+  /// No description provided for @smartReceiptOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Smart Scan could not connect. Check your internet connection and retry, or enter the expense manually.'**
+  String get smartReceiptOffline;
+
+  /// No description provided for @smartReceiptTimeout.
+  ///
+  /// In en, this message translates to:
+  /// **'Smart Scan took too long. Retry or enter the expense manually.'**
+  String get smartReceiptTimeout;
 
   /// No description provided for @smartScanFailed.
   ///
@@ -2621,7 +2621,7 @@ abstract class AppLocalizations {
   /// No description provided for @processingReceipt.
   ///
   /// In en, this message translates to:
-  /// **'Reading this receipt privately on your device…'**
+  /// **'Reading and analyzing your receipt…'**
   String get processingReceipt;
 
   /// No description provided for @smartScan.

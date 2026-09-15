@@ -68,6 +68,10 @@ class _IncomeDialogState extends State<_IncomeDialog> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     return AlertDialog(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      titlePadding: const EdgeInsets.fromLTRB(24, 8, 24, 20),
+      contentPadding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
+      actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       icon: const Icon(Icons.add_card_rounded),
       title: Text(_editing ? l10n.editIncome : l10n.addIncome),
       content: SingleChildScrollView(
@@ -76,27 +80,53 @@ class _IncomeDialogState extends State<_IncomeDialog> {
               child: Form(
                 key: _formKey,
                 child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  TextFormField(
-                    key: const ValueKey('incomeAmountField'),
-                    controller: _controller,
-                    autofocus: false,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                        fontFamily: 'PlusJakartaSans',
-                        fontSize: 30,
-                        fontWeight: FontWeight.w700),
-                    keyboardType: TextInputType.none,
-                    decoration: InputDecoration(
-                      labelText: l10n.incomeAmount,
-                      prefixText: '${widget.currencyCode} ',
-                      prefixIcon: const Icon(Icons.payments_outlined),
+                  ValueListenableBuilder<TextEditingValue>(
+                    valueListenable: _controller,
+                    builder: (context, value, _) => LayoutBuilder(
+                      builder: (context, constraints) {
+                        final painter = TextPainter(
+                          text: TextSpan(
+                              text: value.text,
+                              style: const TextStyle(
+                                  fontFamily: 'PlusJakartaSans',
+                                  fontSize: 30,
+                                  fontWeight: FontWeight.w700)),
+                          textDirection: Directionality.of(context),
+                          textScaler: MediaQuery.textScalerOf(context),
+                        )..layout();
+                        // Reserve the existing icon, currency prefix and padding.
+                        final available = (constraints.maxWidth - 130)
+                            .clamp(40.0, double.infinity);
+                        final fontSize = painter.width > available
+                            ? 30 * available / painter.width
+                            : 30.0;
+                        painter.dispose();
+                        return TextFormField(
+                          key: const ValueKey('incomeAmountField'),
+                          controller: _controller,
+                          autofocus: false,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                              fontFamily: 'PlusJakartaSans',
+                              fontSize: fontSize,
+                              fontWeight: FontWeight.w700),
+                          keyboardType: TextInputType.none,
+                          maxLines: 1,
+                          scrollPadding: const EdgeInsets.all(24),
+                          decoration: InputDecoration(
+                            labelText: l10n.incomeAmount,
+                            prefixText: '${widget.currencyCode} ',
+                            prefixIcon: const Icon(Icons.payments_outlined),
+                          ),
+                          validator: (value) {
+                            final amount = parseLocalizedAmount(value ?? '');
+                            return amount == null || amount <= 0
+                                ? l10n.enterValidAmount
+                                : null;
+                          },
+                        );
+                      },
                     ),
-                    validator: (value) {
-                      final amount = parseLocalizedAmount(value ?? '');
-                      return amount == null || amount <= 0
-                          ? l10n.enterValidAmount
-                          : null;
-                    },
                   ),
                   const SizedBox(height: 16),
                   LayoutBuilder(

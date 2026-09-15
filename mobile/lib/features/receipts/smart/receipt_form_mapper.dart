@@ -4,11 +4,11 @@ class ReceiptFormPatch {
   const ReceiptFormPatch(
       {this.merchant,
       this.amount,
-      this.notes,
+      this.paymentMethod,
       this.date,
       this.categoryId,
       required this.issues});
-  final String? merchant, amount, notes, categoryId;
+  final String? merchant, amount, paymentMethod, categoryId;
   final DateTime? date;
   final Set<ReceiptIssue> issues;
   // Intentionally no account/paymentMethodId: existing database has no card IDs.
@@ -22,39 +22,34 @@ class ReceiptFormMapper {
   }) {
     final validator = ReceiptValidator();
     final fields = receipt.fields;
-    final issues = {...receipt.issues};
+    final issues = <ReceiptIssue>{};
     String? amount;
     final total = validator.milli(fields['total'] ?? '', positive: true);
-    if (fields['currency'] != ledgerCurrency) {
-      issues.add(ReceiptIssue.differentCurrency);
-    } else if (total != null) {
+    // The selected app currency labels the existing ledger. Never convert or
+    // copy API currency/subtotal/tax/card/invoice/line-item fields into the form.
+    if (total != null) {
       if (total % 10 != 0) {
         issues.add(ReceiptIssue.ledgerPrecision);
-      } else if (!issues.contains(ReceiptIssue.inconsistentTotal)) {
+      } else {
         amount =
             '${total ~/ 1000}.${((total % 1000) ~/ 10).toString().padLeft(2, '0')}';
       }
     }
-    final date = DateTime.tryParse(fields['date'] ?? '');
-    final time = fields['time']?.split(':');
+    final valid = validator
+        .validate({'date': fields['date'], 'time': fields['time']}).fields;
+    final now = DateTime.now();
+    final date = DateTime.tryParse(valid['date'] ?? '') ?? now;
+    final time = valid['time']?.split(':');
     return ReceiptFormPatch(
       merchant: fields['merchantName'],
       amount: amount,
-      notes: receipt.lineItems.isEmpty
-          ? null
-          : receipt.lineItems
-              .map((item) => item.total == null
-                  ? item.name
-                  : '${item.name} — ${item.total}')
-              .join('\n'),
-      date: date == null
-          ? null
-          : DateTime(
-              date.year,
-              date.month,
-              date.day,
-              time == null ? 0 : int.parse(time[0]),
-              time == null ? 0 : int.parse(time[1])),
+      paymentMethod: fields['paymentMethod'],
+      date: DateTime(
+          date.year,
+          date.month,
+          date.day,
+          time == null ? now.hour : int.parse(time[0]),
+          time == null ? now.minute : int.parse(time[1])),
       categoryId: systemCategories[fields['category']],
       issues: issues,
     );

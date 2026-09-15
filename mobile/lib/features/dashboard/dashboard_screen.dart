@@ -194,10 +194,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         const SizedBox(height: 20),
                         FinancialAmount(summary.remainingBalanceMinor,
                             color: Colors.white, size: 32),
-                        const SizedBox(height: 6),
-                        Text(l.localRecordsLabel,
-                            style: const TextStyle(
-                                color: DinarColors.mint, fontSize: 11)),
                         const SizedBox(height: 16),
                         LayoutBuilder(builder: (context, constraints) {
                           final metrics = [

@@ -1,3 +1,4 @@
+import 'package:dinarwise/core/widgets/dinar_form.dart';
 import 'package:dinarwise/features/categories/custom_category_dialog.dart';
 import 'package:dinarwise/core/analytics/analytics_service.dart';
 import 'package:dinarwise/core/currency/gulf_currency.dart';
@@ -58,7 +59,7 @@ class _CustomCategoriesScreenState
         builder: (context) => StatefulBuilder(
           builder: (context, setState) => AlertDialog(
             title: Text(l10n.reassignCategory),
-            content: DropdownButtonFormField<String>(
+            content: DinarDropdownField<String>(
               initialValue: replacement,
               items: categories
                   .where((item) => item.id != category.id)
@@ -216,7 +217,7 @@ class _CustomCategoriesScreenState
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                child: DropdownButtonFormField<String>(
+                child: DinarDropdownField<String>(
                   initialValue: _sort,
                   decoration: InputDecoration(labelText: l10n.sortCategories),
                   items: [

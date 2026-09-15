@@ -16,5 +16,9 @@ build/
 !mobile/.vscode/*.json
 coverage/
 *.apk
+*.aab
+**/key.properties
+*.jks
+*.keystore
 *.cpgz
 mobile/dist/
