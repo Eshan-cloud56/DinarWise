@@ -8,8 +8,6 @@ import 'package:dinarwise/core/analytics/analytics_service.dart';
 import 'package:dinarwise/core/currency/gulf_currency.dart';
 import 'package:dinarwise/core/diagnostics/crash_reporting_service.dart';
 import 'package:dinarwise/core/preferences/onboarding_controller.dart';
-import 'package:dinarwise/core/preferences/app_preferences.dart';
-import 'package:dinarwise/features/receipts/smart/smart_scan_disclosure.dart';
 import 'package:dinarwise/features/categories/category_localization.dart';
 import 'package:dinarwise/features/categories/category_grid_picker.dart';
 import 'package:dinarwise/features/categories/data/category_repository.dart';
@@ -253,9 +251,6 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
       _scanError = null;
     });
     try {
-      final preferences = ref.read(appPreferencesProvider);
-      final approved = await acknowledgeSmartScan(context, preferences);
-      if (approved != true || !mounted) return;
       final locale = Localizations.localeOf(context).languageCode == 'ar'
           ? 'ar-SA'
           : 'en-SA';
@@ -753,12 +748,6 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
                       final path = _pendingReceiptPath ?? _storedReceiptPath;
                       if (path != null) _scanReceipt(path, script);
                     }),
-                const SizedBox(height: 8),
-                TextButton.icon(
-                  onPressed: () => showSmartScanInformation(context),
-                  icon: const Icon(Icons.info_outline, size: 16),
-                  label: Text(l10n.smartScanInformation),
-                ),
               ])),
               const SizedBox(height: 18),
               if (_error != null)

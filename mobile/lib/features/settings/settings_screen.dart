@@ -6,6 +6,7 @@ import 'package:dinarwise/core/preferences/app_preferences.dart';
 import 'package:dinarwise/core/preferences/onboarding_controller.dart';
 import 'package:dinarwise/features/notifications/notification_providers.dart';
 import 'package:dinarwise/features/tutorial/dashboard_tutorial.dart';
+import 'package:dinarwise/features/receipts/smart/smart_scan_disclosure.dart';
 import 'package:dinarwise/l10n/l10n_extension.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -177,6 +178,12 @@ class SettingsScreen extends ConsumerWidget {
                     title: Text(l10n.receiptStorage),
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () => context.push('/settings/receipts'),
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: const Icon(Icons.info_outline),
+                    title: Text(l10n.smartScanInformation),
+                    onTap: () => showSmartScanInformation(context),
                   ),
                   const Divider(height: 1),
                   ListTile(

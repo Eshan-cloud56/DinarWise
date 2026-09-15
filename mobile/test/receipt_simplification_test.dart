@@ -1,4 +1,3 @@
-import 'package:dinarwise/core/preferences/app_preferences.dart';
 import 'package:dinarwise/core/currency/gulf_currency.dart';
 import 'package:dinarwise/features/receipts/smart/receipt_review_dialog.dart';
 import 'package:dinarwise/features/receipts/smart/receipt_validator.dart';
@@ -6,7 +5,6 @@ import 'package:dinarwise/features/receipts/smart/smart_scan_disclosure.dart';
 import 'package:dinarwise/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 
 Widget app(Widget home, String language) => MaterialApp(
@@ -78,51 +76,23 @@ void main() {
   }
 
   testWidgets(
-      'Disclosure is persisted once; cancel and information do not acknowledge',
+      'Settings information remains available without a scan confirmation',
       (tester) async {
-    SharedPreferences.setMockInitialValues({});
-    final storage = await SharedPreferences.getInstance();
-    var preferences = AppPreferences(storage);
-    var scans = 0;
     await tester.pumpWidget(app(
         Builder(
             builder: (context) => Scaffold(
-                    body: Column(children: [
-                  TextButton(
-                      key: const ValueKey('scan'),
-                      onPressed: () async {
-                        if (await acknowledgeSmartScan(context, preferences)) {
-                          scans++;
-                        }
-                      },
-                      child: const Text('Scan')),
-                  TextButton(
+                  body: TextButton(
                       key: const ValueKey('info'),
                       onPressed: () => showSmartScanInformation(context),
                       child: const Text('Info')),
-                ]))),
+                )),
         'en'));
     await tester.tap(find.byKey(const ValueKey('info')));
     await tester.pumpAndSettle();
-    expect(preferences.smartScanAcknowledged, isFalse);
+    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(find.byType(FilledButton), findsNothing);
     await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('scan')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byType(TextButton).last);
-    await tester.pumpAndSettle();
-    expect(scans, 0);
-    expect(preferences.smartScanAcknowledged, isFalse);
-    await tester.tap(find.byKey(const ValueKey('scan')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byType(FilledButton));
-    await tester.pumpAndSettle();
-    expect(scans, 1);
-    preferences = AppPreferences(await SharedPreferences.getInstance());
-    expect(preferences.smartScanAcknowledged, isTrue);
-    await tester.tap(find.byKey(const ValueKey('scan')));
-    await tester.pumpAndSettle();
-    expect(scans, 2);
     expect(find.byType(AlertDialog), findsNothing);
   });
 }
