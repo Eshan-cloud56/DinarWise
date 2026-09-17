@@ -480,5 +480,54 @@
   "receiptTime": "Time",
   "cardLastFour": "Card last 4 digits",
   "invoiceNumber": "Invoice / receipt number",
-  "receiptLineItems": "Reliable line items"
+  "receiptLineItems": "Reliable line items",
+  "automaticTransactionDetection": "Automatic Transaction Detection",
+  "automaticTransactionDetectionSubtitle": "Detect bank and payment SMS locally to quickly review and add expenses or income.",
+  "smsPaymentDetectedTitle": "Payment detected",
+  "smsPaymentDetectedBody": "A payment of {currency} {amount} was detected. Add to DinarWise?",
+  "@smsPaymentDetectedBody": {
+    "placeholders": {
+      "currency": {"type": "String"},
+      "amount": {"type": "String"}
+    }
+  },
+  "smsCreditDetectedTitle": "Income detected",
+  "smsCreditDetectedBody": "{currency} {amount} was credited to your {bank} account. Add it to DinarWise Income?",
+  "@smsCreditDetectedBody": {
+    "placeholders": {
+      "currency": {"type": "String"},
+      "amount": {"type": "String"},
+      "bank": {"type": "String"}
+    }
+  },
+  "smsActionAdd": "Add / Review",
+  "smsActionDismiss": "Dismiss",
+  "recurringSuggestionTitle": "Recurring Expense Detected",
+  "recurringSuggestionBody": "This looks like a {frequency} subscription. Track automatically?",
+  "@recurringSuggestionBody": {
+    "placeholders": {
+      "frequency": {"type": "String"}
+    }
+  },
+  "trackAutomatically": "Track automatically",
+  "recurringTrackSuccess": "Subscription added to recurring payments.",
+  "frequencyMonthly": "monthly",
+  "frequencyWeekly": "weekly",
+  "frequencyYearly": "yearly",
+  "smsDisclosureTitle": "SMS Transaction Detection",
+  "smsDisclosureSubtitle": "Automatic expense & income suggestions",
+  "smsDisclosureDescription": "DinarWise uses financial transaction SMS locally to detect expenses and income. SMS contents are processed on your device and are not uploaded or shared.",
+  "smsDisclosurePoint1": "Detects transaction amounts, currencies, and merchants from incoming bank notifications.",
+  "smsDisclosurePoint2": "Prompts you with an interactive notification to review and add the transaction with prefilled fields.",
+  "smsDisclosurePoint3": "100% on-device & private: SMS messages are never uploaded to servers, Cloudflare, or any external service.",
+  "smsDisclosurePoint4": "Zero auto-save: transactions are only saved when you explicitly review and confirm them.",
+  "smsDisclosurePoint5": "Requires the RECEIVE_SMS permission solely to detect incoming bank alerts in real time.",
+  "smsDisclosureAgree": "Agree & Enable",
+  "smsDisclosureDecline": "Not Now",
+  "smsDisclosureLearnMore": "Privacy details",
+  "smsPermissionDeniedNotice": "SMS permission was not granted. Automatic transaction detection remains disabled.",
+  "smsDetectionEnabledNotice": "Automatic transaction detection enabled.",
+  "smsDetectionDisabledNotice": "Automatic transaction detection disabled.",
+  "smsDetectionUnavailable": "Automatic transaction detection is not available in this build."
 }
+

@@ -13,6 +13,7 @@ Future<void> manageIncome(
   BuildContext context,
   WidgetRef ref, {
   ExpenseRecord? income,
+  int? initialAmountMinor,
 }) async {
   final onboarding = await ref.read(onboardingControllerProvider.future);
   final analytics = ref.read(analyticsServiceProvider);
@@ -20,9 +21,14 @@ Future<void> manageIncome(
   if (income == null) analytics.incomeAddStarted();
   final currency = GulfCurrency.fromCode(onboarding.currencyCode);
   if (!context.mounted) return;
+  final initialMajor = income != null
+      ? currency.toMajor(income.amountMinor)
+      : (initialAmountMinor != null
+          ? currency.toMajor(initialAmountMinor)
+          : null);
   final result = await showIncomeDialog(
     context,
-    initialAmount: income == null ? null : currency.toMajor(income.amountMinor),
+    initialAmount: initialMajor,
     currencyCode: currency.code,
     decimalDigits: currency.decimalDigits,
   );

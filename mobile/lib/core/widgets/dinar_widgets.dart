@@ -82,20 +82,30 @@ class DinarHeader extends ConsumerWidget implements PreferredSizeWidget {
       {required this.subtitle,
       this.settingsKey,
       this.actions = const [],
+      this.showBack,
       super.key});
   final String subtitle;
   final Key? settingsKey;
   final List<Widget> actions;
+  final bool? showBack;
   @override
   Size get preferredSize => const Size.fromHeight(76);
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = context.l10n;
     final currency = ref.watch(selectedCurrencyProvider);
+    final canPop = showBack ?? Navigator.of(context).canPop();
     return AppBar(
       automaticallyImplyLeading: false,
+      leading: canPop
+          ? IconButton(
+              icon: const Icon(Icons.arrow_back, size: 22),
+              tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+              onPressed: () => Navigator.of(context).maybePop(),
+            )
+          : null,
       toolbarHeight: 76,
-      titleSpacing: 16,
+      titleSpacing: canPop ? 0 : 16,
       title: Row(children: [
         Image.asset('assets/branding/stitch-logo.png',
             width: 34, height: 34, semanticLabel: l.appName),
@@ -155,7 +165,7 @@ class DinarBottomNav extends StatelessWidget {
     final l = context.l10n;
     final labels = [
       l.homeLabel,
-      l.transactionsLabel,
+      l.history,
       l.add,
       l.planningLabel,
       l.insightsLabel
@@ -177,7 +187,6 @@ class DinarBottomNav extends StatelessWidget {
               child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: List.generate(5, (i) {
-                    if (i == 1) return const SizedBox.shrink();
                     return Expanded(
                         child: Semantics(
                             selected: selected == i,
@@ -189,10 +198,10 @@ class DinarBottomNav extends StatelessWidget {
                                 if (selected == i) return;
                                 if (i == 0) {
                                   context.go('/');
-                                } else if (i == 2 || selected == 0) {
+                                } else if (i == 2) {
                                   context.push(routes[i]);
                                 } else {
-                                  context.replace(routes[i]);
+                                  context.go(routes[i]);
                                 }
                               },
                               child: Padding(
@@ -221,6 +230,8 @@ class DinarBottomNav extends StatelessWidget {
                                         const SizedBox(height: 3),
                                         Text(labels[i],
                                             textAlign: TextAlign.center,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
                                             style: TextStyle(
                                                 fontSize: 10,
                                                 fontWeight: selected == i

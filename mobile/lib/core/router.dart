@@ -79,16 +79,36 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/',
         name: 'dashboard',
-        builder: (_, state) => DashboardScreen(
-          openIncome: state.uri.queryParameters['action'] == 'income',
-        ),
+        builder: (_, state) {
+          final isIncome = state.uri.queryParameters['action'] == 'income';
+          final isVoice = state.uri.queryParameters['action'] == 'voice_expense';
+          final amountMinorStr = state.uri.queryParameters['amountMinor'];
+          final initialAmountMinor =
+              amountMinorStr != null ? int.tryParse(amountMinorStr) : null;
+          return DashboardScreen(
+            openIncome: isIncome,
+            openVoiceExpense: isVoice,
+            initialIncomeAmountMinor: initialAmountMinor,
+          );
+        },
       ),
       GoRoute(
         path: '/history',
         name: 'transactions',
-        builder: (_, state) => HistoryScreen(
-          initialCategoryId: state.uri.queryParameters['category'],
-        ),
+        builder: (_, state) {
+          final extra = state.extra;
+          if (extra is HistoryLaunchArgs) {
+            return HistoryScreen(
+              initialCategoryId: extra.categoryId,
+              initialSearch: extra.searchQuery,
+              initialSmartSearchResult: extra.smartSearchResult,
+            );
+          }
+          return HistoryScreen(
+            initialCategoryId: state.uri.queryParameters['category'],
+            initialSearch: state.uri.queryParameters['search'],
+          );
+        },
       ),
       GoRoute(
         path: '/history/calendar',
@@ -113,9 +133,30 @@ final routerProvider = Provider<GoRouter>((ref) {
             return CaptureScreen(
               expense: extra.expense,
               sharedReceiptPath: extra.sharedReceiptPath,
+              prefilledMerchant: extra.prefilledMerchant,
+              prefilledAmountMinor: extra.prefilledAmountMinor,
+              prefilledDate: extra.prefilledDate,
+              prefilledCategoryId: extra.prefilledCategoryId,
+              prefilledPaymentMethodId: extra.prefilledPaymentMethodId,
+              prefilledDescription: extra.prefilledDescription,
+              prefilledCurrency: extra.prefilledCurrency,
             );
           }
-          return CaptureScreen(expense: extra as ExpenseRecord?);
+          if (extra is ExpenseRecord) {
+            return CaptureScreen(expense: extra);
+          }
+          final params = state.uri.queryParameters;
+          final amountMinorStr = params['amountMinor'];
+          final prefilledAmountMinor =
+              amountMinorStr != null ? int.tryParse(amountMinorStr) : null;
+          final dateStr = params['date'];
+          final prefilledDate =
+              dateStr != null ? DateTime.tryParse(dateStr) : null;
+          return CaptureScreen(
+            prefilledMerchant: params['merchant'],
+            prefilledAmountMinor: prefilledAmountMinor,
+            prefilledDate: prefilledDate,
+          );
         },
       ),
       GoRoute(

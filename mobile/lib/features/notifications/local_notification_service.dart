@@ -22,8 +22,9 @@ class LocalNotificationService {
         android: AndroidInitializationSettings('ic_launcher'),
       ),
       onDidReceiveNotificationResponse: (response) {
+        if (response.actionId == 'sms_action_dismiss') return;
         final payload = response.payload;
-        if (payload != null) onOpen(payload);
+        if (payload != null && payload.isNotEmpty) onOpen(payload);
       },
     );
     _initialized = true;

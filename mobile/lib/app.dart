@@ -8,6 +8,7 @@ import 'package:dinarwise/features/planning/commitments_lifecycle.dart';
 import 'package:dinarwise/features/receipts/shared_receipt_lifecycle.dart';
 import 'package:dinarwise/features/security/app_lock_lifecycle.dart';
 import 'package:dinarwise/l10n/generated/app_localizations.dart';
+import 'package:dinarwise/features/voice_expense/voice_expense_lifecycle.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -51,12 +52,14 @@ class DinarWiseApp extends ConsumerWidget {
       theme: common.theme,
       onGenerateTitle: (context) => AppLocalizations.of(context).appName,
       routerConfig: ref.watch(routerProvider),
-      builder: (context, child) => SharedReceiptLifecycle(
-        child: QuickActionsLifecycle(
-          child: NotificationLifecycle(
-            child: AppLockLifecycle(
-              child:
-                  CommitmentsLifecycle(child: child ?? const SizedBox.shrink()),
+      builder: (context, child) => VoiceExpenseLifecycle(
+        child: SharedReceiptLifecycle(
+          child: QuickActionsLifecycle(
+            child: NotificationLifecycle(
+              child: AppLockLifecycle(
+                child:
+                    CommitmentsLifecycle(child: child ?? const SizedBox.shrink()),
+              ),
             ),
           ),
         ),

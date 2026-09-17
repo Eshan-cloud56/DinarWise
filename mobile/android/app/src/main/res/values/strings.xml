@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="voice_expense_widget_name">Voice Expense</string>
+    <string name="voice_expense_widget_desc">Record an expense instantly using your voice.</string>
+    <string name="voice_expense_widget_title">Voice Expense</string>
+    <string name="voice_expense_widget_subtitle">Tap to speak</string>
+</resources>

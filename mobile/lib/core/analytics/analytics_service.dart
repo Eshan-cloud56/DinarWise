@@ -245,6 +245,10 @@ class AnalyticsService {
         AnalyticsParameters.format: format,
         AnalyticsParameters.reason: reason,
       });
+
+  void voiceExpenseStarted() => _event('voice_expense_started');
+  void voiceExpenseCompleted() => _event('voice_expense_completed');
+  void voiceExpenseFailed() => _event('voice_expense_failed');
 }
 
 final analyticsServiceProvider = Provider<AnalyticsService>(

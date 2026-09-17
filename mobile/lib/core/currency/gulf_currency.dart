@@ -83,6 +83,13 @@ class GulfCurrency {
       symbol: 'ر.ع',
       decimalDigits: 3,
     ),
+    GulfCurrency(
+      code: 'PKR',
+      englishName: 'Pakistani Rupee',
+      arabicName: 'الروبية الباكستانية',
+      symbol: 'Rs',
+      decimalDigits: 2,
+    ),
   ];
 
   static GulfCurrency fromCode(String? code) => supported.firstWhere(

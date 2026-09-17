@@ -12,6 +12,9 @@ const _selectedCurrencyKey = 'selected_currency';
 const _analyticsAllowedKey = 'analytics_allowed';
 const _diagnosticsAllowedKey = 'diagnostics_allowed';
 const _dashboardTutorialCompletedV1Key = 'dashboard_tutorial_completed_v1';
+const _smsDetectionEnabledKey = 'sms_detection_enabled';
+const _processedSmsHashesKey = 'processed_sms_hashes';
+const _dismissedRecurringMerchantsKey = 'dismissed_recurring_merchants';
 
 final sharedPreferencesProvider = Provider<SharedPreferences>(
   (_) => throw UnimplementedError('SharedPreferences must be initialized'),
@@ -38,6 +41,44 @@ class AppPreferences {
   String? get selectedCurrency => _preferences.getString(_selectedCurrencyKey);
   bool get dashboardTutorialCompletedV1 =>
       _preferences.getBool(_dashboardTutorialCompletedV1Key) ?? false;
+
+  bool get smsTransactionDetectionEnabled =>
+      _preferences.getBool(_smsDetectionEnabledKey) ?? false;
+
+  Future<void> setSmsTransactionDetectionEnabled(bool enabled) =>
+      _preferences.setBool(_smsDetectionEnabledKey, enabled);
+
+  List<String> get processedSmsHashes =>
+      _preferences.getStringList(_processedSmsHashesKey) ?? const [];
+
+  bool isSmsProcessed(String hash) =>
+      processedSmsHashes.contains(hash);
+
+  Future<void> markSmsProcessed(String hash) async {
+    final list = List<String>.from(processedSmsHashes);
+    if (!list.contains(hash)) {
+      list.add(hash);
+      if (list.length > 1000) {
+        list.removeRange(0, list.length - 1000);
+      }
+      await _preferences.setStringList(_processedSmsHashesKey, list);
+    }
+  }
+
+  List<String> get dismissedRecurringMerchants =>
+      _preferences.getStringList(_dismissedRecurringMerchantsKey) ?? const [];
+
+  bool isRecurringMerchantDismissed(String merchant) =>
+      dismissedRecurringMerchants.contains(merchant.trim().toLowerCase());
+
+  Future<void> dismissRecurringMerchant(String merchant) async {
+    final normalized = merchant.trim().toLowerCase();
+    final list = List<String>.from(dismissedRecurringMerchants);
+    if (!list.contains(normalized)) {
+      list.add(normalized);
+      await _preferences.setStringList(_dismissedRecurringMerchantsKey, list);
+    }
+  }
 
   Future<String> getOrCreateLocalProfileId() async {
     final existing = localProfileId;

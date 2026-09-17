@@ -1,33 +1,52 @@
-import 'package:dinarwise/features/categories/category_localization.dart';
-import 'package:dinarwise/core/analytics/analytics_service.dart';
-import 'package:dinarwise/core/performance/performance_service.dart';
-import 'package:dinarwise/core/theme.dart';
-import 'package:dinarwise/core/widgets/dinar_widgets.dart';
-import 'package:dinarwise/features/analytics/analytics_calculator.dart';
-import 'package:dinarwise/features/payment_methods/payment_method_providers.dart';
-import 'package:dinarwise/features/planning/data/advanced_planning_repository.dart';
-import 'package:dinarwise/features/planning/planning_hub_screen.dart';
+import 'dart:async';
+import 'package:dio/dio.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
-import 'package:dinarwise/core/preferences/app_preferences.dart';
-import 'package:dinarwise/core/preferences/onboarding_controller.dart';
-import 'package:dinarwise/features/capture/offline_ai_notice.dart';
-import 'package:dinarwise/features/expenses/data/expense_providers.dart';
-import 'package:dinarwise/features/expenses/data/expense_repository.dart';
-import 'package:dinarwise/features/expenses/income_actions.dart';
-import 'package:dinarwise/features/planning/data/planning_providers.dart';
-import 'package:dinarwise/features/tutorial/dashboard_tutorial.dart';
-import 'package:dinarwise/l10n/l10n_extension.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:dinarwise/core/analytics/analytics_service.dart';
+import 'package:dinarwise/core/performance/performance_service.dart';
+import 'package:dinarwise/core/preferences/app_preferences.dart';
+import 'package:dinarwise/core/preferences/onboarding_controller.dart';
+import 'package:dinarwise/core/theme.dart';
+import 'package:dinarwise/core/widgets/dinar_widgets.dart';
+import 'package:dinarwise/features/analytics/analytics_calculator.dart';
+import 'package:dinarwise/features/capture/capture_screen.dart';
+import 'package:dinarwise/features/capture/offline_ai_notice.dart';
+import 'package:dinarwise/features/categories/category_localization.dart';
+import 'package:dinarwise/features/expenses/data/expense_providers.dart';
+import 'package:dinarwise/features/expenses/data/expense_repository.dart';
+import 'package:dinarwise/features/expenses/history_screen.dart';
+import 'package:dinarwise/features/expenses/income_actions.dart';
+import 'package:dinarwise/features/payment_methods/payment_method_providers.dart';
+import 'package:dinarwise/features/planning/data/advanced_planning_repository.dart';
+import 'package:dinarwise/features/planning/data/planning_providers.dart';
+import 'package:dinarwise/features/planning/data/recurring_detection_service.dart';
+import 'package:dinarwise/features/planning/planning_hub_screen.dart';
+import 'package:dinarwise/features/planning/widgets/recurring_suggestion_card.dart';
+import 'package:dinarwise/features/categories/data/category_repository.dart';
+import 'package:dinarwise/features/payment_methods/payment_method_repository.dart';
+import 'package:dinarwise/features/receipts/smart/receipt_scan_service.dart';
+import 'package:dinarwise/features/voice_expense/presentation/voice_expense_modal.dart';
+import 'package:dinarwise/features/smart_search/data/smart_search_service.dart';
+import 'package:dinarwise/features/smart_search/domain/smart_search_heuristic.dart';
+import 'package:dinarwise/features/tutorial/dashboard_tutorial.dart';
+import 'package:dinarwise/l10n/generated/app_localizations.dart';
+import 'package:dinarwise/l10n/l10n_extension.dart';
+
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({
     this.openIncome = false,
+    this.openVoiceExpense = false,
+    this.initialIncomeAmountMinor,
     super.key,
   });
 
   final bool openIncome;
+  final bool openVoiceExpense;
+  final int? initialIncomeAmountMinor;
 
   @override
   ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
@@ -37,12 +56,19 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   bool _summaryLogged = false;
   String _breakdownPeriod = 'monthly';
   bool _tutorialScheduled = false;
+
   final _summaryKey = GlobalKey();
   final _addIncomeKey = GlobalKey();
   final _addExpenseKey = GlobalKey();
   final _transactionsKey = GlobalKey();
   final _analyticsKey = GlobalKey();
   final _settingsKey = GlobalKey();
+
+  // Search state
+  final _searchController = TextEditingController();
+  Timer? _searchDebounce;
+  CancelToken? _smartSearchCancelToken;
+  bool _isSmartSearching = false;
 
   DashboardTutorialAnchors get _tutorialAnchors => DashboardTutorialAnchors(
         dashboardSummary: _summaryKey,
@@ -67,11 +93,58 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
     if (widget.openIncome) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) manageIncome(context, ref);
+        if (mounted) {
+          manageIncome(
+            context,
+            ref,
+            initialAmountMinor: widget.initialIncomeAmountMinor,
+          );
+        }
+      });
+    }
+    if (widget.openVoiceExpense) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          showVoiceExpenseModal(context, autoStart: true);
+        }
       });
     }
     WidgetsBinding.instance
         .addPostFrameCallback((_) => _showTutorialIfNeeded());
+  }
+
+  @override
+  void didUpdateWidget(DashboardScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.openIncome &&
+        (!oldWidget.openIncome ||
+            widget.initialIncomeAmountMinor !=
+                oldWidget.initialIncomeAmountMinor)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          manageIncome(
+            context,
+            ref,
+            initialAmountMinor: widget.initialIncomeAmountMinor,
+          );
+        }
+      });
+    }
+    if (widget.openVoiceExpense && !oldWidget.openVoiceExpense) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          showVoiceExpenseModal(context, autoStart: true);
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _searchDebounce?.cancel();
+    _smartSearchCancelToken?.cancel();
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _showTutorialIfNeeded() async {
@@ -92,6 +165,229 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       preferences: preferences,
       analytics: ref.read(analyticsServiceProvider),
       replayed: replayed,
+    );
+  }
+
+  void _searchChanged(String value) {
+    _searchDebounce?.cancel();
+    _smartSearchCancelToken?.cancel();
+
+    final query = value.trim();
+
+    if (query.isEmpty) {
+      setState(() {
+        _isSmartSearching = false;
+      });
+      return;
+    }
+
+    if (isNaturalLanguageQuery(query)) {
+      if (!isCompleteNaturalLanguageQuery(query)) {
+        setState(() {
+          _isSmartSearching = false;
+        });
+        return;
+      }
+
+      _smartSearchCancelToken = CancelToken();
+      final cancelToken = _smartSearchCancelToken;
+      _searchDebounce = Timer(
+        const Duration(milliseconds: 700),
+        () => _executeSmartSearchAndNavigate(query, cancelToken),
+      );
+    } else {
+      setState(() {
+        _isSmartSearching = false;
+      });
+      _searchDebounce = Timer(
+        const Duration(milliseconds: 400),
+        () => _executeLocalSearchAndNavigate(query),
+      );
+    }
+  }
+
+  void _submitSearch(String value) {
+    final query = value.trim();
+    if (query.isEmpty) return;
+    _searchDebounce?.cancel();
+    _smartSearchCancelToken?.cancel();
+
+    if (isNaturalLanguageQuery(query)) {
+      if (isCompleteNaturalLanguageQuery(query)) {
+        _smartSearchCancelToken = CancelToken();
+        _executeSmartSearchAndNavigate(query, _smartSearchCancelToken);
+      } else {
+        _executeLocalSearchAndNavigate(query);
+      }
+    } else {
+      _executeLocalSearchAndNavigate(query);
+    }
+  }
+
+  Future<void> _executeSmartSearchAndNavigate(
+      String query, CancelToken? cancelToken) async {
+    final onboarding = ref.read(onboardingControllerProvider).valueOrNull;
+    final profileId = onboarding?.localProfileId;
+    if (profileId == null) return;
+
+    setState(() {
+      _isSmartSearching = true;
+    });
+    ref.read(analyticsServiceProvider).transactionSearchUsed();
+    try {
+      final categories =
+          ref.read(categoriesProvider).valueOrNull ?? const [];
+      final result =
+          await ref.read(smartSearchServiceProvider).executeSmartSearch(
+                query: query,
+                locale: Localizations.localeOf(context).languageCode,
+                profileId: profileId,
+                existingCategories: categories,
+                cancelToken: cancelToken,
+              );
+      if (!mounted) return;
+      setState(() {
+        _isSmartSearching = false;
+      });
+      _clearSearch();
+      await context.push('/history',
+          extra: HistoryLaunchArgs(
+            searchQuery: query,
+            smartSearchResult: result,
+          ));
+    } on DioException catch (e) {
+      if (e.type == DioExceptionType.cancel) return;
+      if (!mounted) return;
+      setState(() {
+        _isSmartSearching = false;
+      });
+      _clearSearch();
+      await context.push('/history',
+          extra: HistoryLaunchArgs(searchQuery: query));
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _isSmartSearching = false;
+      });
+      _clearSearch();
+      await context.push('/history',
+          extra: HistoryLaunchArgs(searchQuery: query));
+    }
+  }
+
+  Future<void> _executeLocalSearchAndNavigate(String query) async {
+    ref.read(analyticsServiceProvider).transactionSearchUsed();
+    _clearSearch();
+    await context.push('/history',
+        extra: HistoryLaunchArgs(searchQuery: query));
+  }
+
+  void _clearSearch() {
+    _searchDebounce?.cancel();
+    _smartSearchCancelToken?.cancel();
+    _searchController.clear();
+    setState(() {
+      _isSmartSearching = false;
+    });
+  }
+
+  void _showScanBillSheet() {
+    final l = context.l10n;
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 36,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: DinarColors.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_camera_outlined,
+                    color: DinarColors.green),
+                title: Text(l.takeReceiptPhoto),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _handleScanBill(ImageSource.camera);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library_outlined,
+                    color: DinarColors.green),
+                title: Text(l.chooseReceiptPhoto),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _handleScanBill(ImageSource.gallery);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleScanBill(ImageSource source) async {
+    try {
+      final picked =
+          await ref.read(receiptScanServiceProvider).images.pick(source);
+      if (picked != null && mounted) {
+        await context.push(
+          '/capture',
+          extra: CaptureLaunchArgs(sharedReceiptPath: picked),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n.receiptPickError)),
+        );
+      }
+    }
+  }
+
+  Widget _buildTransactionList(
+    List<ExpenseRecord> items,
+    Map<String, CategoryRecord> categoryById,
+    Map<String, PaymentMethodDetails> methodById,
+    AppLocalizations l,
+  ) {
+    if (items.isEmpty) {
+      return DinarCard(
+        child: Column(children: [
+          const Icon(Icons.receipt_long_outlined, size: 40),
+          const SizedBox(height: 12),
+          Text(l.noTransactions),
+          Text(l.noTransactionsDescription, textAlign: TextAlign.center),
+        ]),
+      );
+    }
+    return Column(
+      children: items
+          .map((item) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: DinarTransactionTile(
+                  item: item,
+                  category: categoryById[item.categoryId],
+                  method: methodById[item.paymentMethodId],
+                  onTap: () => item.type == 'income'
+                      ? manageIncome(context, ref, income: item)
+                      : context.push('/capture', extra: item),
+                ),
+              ))
+          .toList(),
     );
   }
 
@@ -119,6 +415,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final goals = ref.watch(_dashboardGoalsProvider).valueOrNull ?? [];
     final records = ref.watch(expensesProvider).valueOrNull ?? [];
     final now = DateTime.now();
+
     final report = const AnalyticsCalculator().calculate(records,
         from: DateTime(now.year, now.month),
         to: DateTime(now.year, now.month + 1, 0));
@@ -138,6 +435,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       _summaryLogged = true;
       analytics.dashboardSummaryViewed();
     }
+
     return Scaffold(
       appBar: DinarHeader(
           subtitle: l.homeLabel,
@@ -156,6 +454,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
             children: [
               Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                // 1. Household heading
                 Text(l.dashboardWelcome,
                     style: Theme.of(context).textTheme.headlineSmall),
                 const SizedBox(height: 6),
@@ -165,7 +464,43 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         .format(now),
                     style: const TextStyle(
                         fontSize: 12, color: DinarColors.muted)),
-                const SizedBox(height: 18),
+                const SizedBox(height: 14),
+
+                // 2. Expense Search / Smart Search bar (Directly below heading, above green dashboard)
+                TextField(
+                  controller: _searchController,
+                  onChanged: _searchChanged,
+                  onSubmitted: _submitSearch,
+                  textInputAction: TextInputAction.search,
+                  decoration: InputDecoration(
+                    prefixIcon: const Icon(Icons.search),
+                    hintText: l.searchTransactions,
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
+                    suffixIcon: _isSmartSearching
+                        ? const Padding(
+                            padding: EdgeInsets.all(12),
+                            child: SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          )
+                        : (_searchController.text.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.clear, size: 20),
+                                onPressed: _clearSearch,
+                              )
+                            : IconButton(
+                                icon: const Icon(Icons.mic, size: 20, color: DinarColors.forest),
+                                tooltip: 'Voice Expense',
+                                onPressed: () => showVoiceExpenseModal(context),
+                              )),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // 3. Green financial dashboard
                 Container(
                   key: _summaryKey,
                   padding: const EdgeInsets.all(22),
@@ -265,6 +600,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             child: Text(l.safeToSpend)),
                       ])),
                 const SizedBox(height: 20),
+
+                // 4. Quick services
                 Text(l.quickServices,
                     style: Theme.of(context).textTheme.labelMedium),
                 const SizedBox(height: 10),
@@ -291,59 +628,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       child: _QuickAction(
                           icon: Icons.document_scanner_outlined,
                           label: l.scanBill,
-                          onTap: () => context.push('/capture'))),
+                          onTap: _showScanBillSheet)),
+                  const SizedBox(width: 8),
+                  Expanded(
+                      child: _QuickAction(
+                          icon: Icons.mic_none_outlined,
+                          label: 'Voice',
+                          tint: DinarColors.mint,
+                          onTap: () => showVoiceExpenseModal(context))),
                 ]),
                 const SizedBox(height: 22),
-                Row(children: [
-                  Expanded(
-                      child: Text(l.smartInsights,
-                          style: Theme.of(context).textTheme.titleMedium)),
-                  IconButton(
-                      tooltip: l.aiFeature,
-                      onPressed: () => showOfflineAiNotice(context, ref),
-                      icon: const Icon(Icons.auto_awesome_outlined, size: 20))
-                ]),
-                DinarCard(
-                    child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                      Text(l.thisMonthLabel,
-                          style: const TextStyle(
-                              color: DinarColors.muted, fontSize: 12)),
-                      const SizedBox(height: 8),
-                      Text(l.averageDailySpending,
-                          style: Theme.of(context).textTheme.titleSmall),
-                      const SizedBox(height: 5),
-                      FinancialAmount(report.averageDailyExpenseMinor),
-                      TextButton(
-                          onPressed: () => context.push('/analytics'),
-                          child: Text(l.analytics)),
-                    ])),
-                if (recurring.any((r) => r.nextOccurrence != null)) ...[
-                  const SizedBox(height: 10),
-                  DinarCard(
-                      child: ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          leading: const Icon(Icons.bolt_outlined),
-                          title: Text(l.nextBill),
-                          subtitle: Text(recurring
-                              .firstWhere((r) => r.nextOccurrence != null)
-                              .name),
-                          onTap: () => context.push('/planning/recurring'))),
-                ],
-                if (bnpl.any((r) => r.nextInstalment != null)) ...[
-                  const SizedBox(height: 10),
-                  DinarCard(
-                      child: ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          leading: const Icon(Icons.calendar_month_outlined),
-                          title: Text(l.nextBnplPayment),
-                          subtitle: Text(bnpl
-                              .firstWhere((r) => r.nextInstalment != null)
-                              .merchant),
-                          onTap: () => context.push('/planning/bnpl'))),
-                ],
-                const SizedBox(height: 18),
+
+                // 5. Spending Breakdown (Immediately below Quick Services)
                 DinarCard(
                     child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -415,6 +711,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       ],
                     ])),
                 const SizedBox(height: 18),
+
+                // 6. Recent Expenses (Immediately below Spending Breakdown)
                 Row(key: _transactionsKey, children: [
                   Expanded(
                       child: Text(l.recentActivity,
@@ -434,33 +732,78 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         onPressed: () => ref.invalidate(expensesProvider),
                         child: Text(l.tryAgain))
                   ])),
-                  data: (items) => items.isEmpty
-                      ? DinarCard(
-                          child: Column(children: [
-                          const Icon(Icons.receipt_long_outlined, size: 40),
-                          const SizedBox(height: 12),
-                          Text(l.noTransactions),
-                          Text(l.noTransactionsDescription,
-                              textAlign: TextAlign.center),
-                        ]))
+                  data: (items) => _buildTransactionList(
+                      items, categoryById, methodById, l),
+                ),
+                const SizedBox(height: 22),
+
+                // 7. Smart Insights (Below Recent Expenses)
+                Row(children: [
+                  Expanded(
+                      child: Text(l.smartInsights,
+                          style: Theme.of(context).textTheme.titleMedium)),
+                  IconButton(
+                      tooltip: l.aiFeature,
+                      onPressed: () => showOfflineAiNotice(context, ref),
+                      icon: const Icon(Icons.auto_awesome_outlined, size: 20))
+                ]),
+                DinarCard(
+                    child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                      Text(l.thisMonthLabel,
+                          style: const TextStyle(
+                              color: DinarColors.muted, fontSize: 12)),
+                      const SizedBox(height: 8),
+                      Text(l.averageDailySpending,
+                          style: Theme.of(context).textTheme.titleSmall),
+                      const SizedBox(height: 5),
+                      FinancialAmount(report.averageDailyExpenseMinor),
+                      TextButton(
+                          onPressed: () => context.push('/analytics'),
+                          child: Text(l.analytics)),
+                    ])),
+                if (recurring.any((r) => r.nextOccurrence != null)) ...[
+                  const SizedBox(height: 10),
+                  DinarCard(
+                      child: ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: const Icon(Icons.bolt_outlined),
+                          title: Text(l.nextBill),
+                          subtitle: Text(recurring
+                              .firstWhere((r) => r.nextOccurrence != null)
+                              .name),
+                          onTap: () => context.push('/planning/recurring'))),
+                ],
+                if (bnpl.any((r) => r.nextInstalment != null)) ...[
+                  const SizedBox(height: 10),
+                  DinarCard(
+                      child: ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: const Icon(Icons.calendar_month_outlined),
+                          title: Text(l.nextBnplPayment),
+                          subtitle: Text(bnpl
+                              .firstWhere((r) => r.nextInstalment != null)
+                              .merchant),
+                          onTap: () => context.push('/planning/bnpl'))),
+                ],
+                const SizedBox(height: 12),
+                ref.watch(recurringSuggestionsProvider).when(
+                  data: (suggestions) => suggestions.isEmpty
+                      ? const SizedBox.shrink()
                       : Column(
-                          children: items
-                              .map((item) => Padding(
-                                    padding: const EdgeInsets.only(bottom: 8),
-                                    child: DinarTransactionTile(
-                                        item: item,
-                                        category: categoryById[item.categoryId],
-                                        method:
-                                            methodById[item.paymentMethodId],
-                                        onTap: () => item.type == 'income'
-                                            ? manageIncome(context, ref,
-                                                income: item)
-                                            : context.push('/capture',
-                                                extra: item)),
-                                  ))
-                              .toList()),
+                          children: [
+                            for (final s in suggestions)
+                              RecurringSuggestionCard(suggestion: s),
+                            const SizedBox(height: 8),
+                          ],
+                        ),
+                  loading: () => const SizedBox.shrink(),
+                  error: (_, __) => const SizedBox.shrink(),
                 ),
                 const SizedBox(height: 18),
+
+                // 8. Financial Planning (At the bottom of Home content)
                 Text(l.financialPlanning,
                     style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 10),

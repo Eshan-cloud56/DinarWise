@@ -153,6 +153,57 @@ class DriftExpenseRepository implements ExpenseRepository {
   }
 
   @override
+  Future<List<ExpenseRecord>> searchByIntent({
+    required String profileId,
+    Set<String>? categoryIds,
+    String? merchant,
+    DateTime? from,
+    DateTime? to,
+    TransactionHistorySort sort = TransactionHistorySort.newest,
+    int limit = 100,
+    int offset = 0,
+  }) async {
+    final transactions = _database.financialTransactions;
+    final query = _database.select(transactions);
+    query.where((t) => t.profileId.equals(profileId));
+    query.where((t) => t.type.equals('expense'));
+
+    if (categoryIds != null && categoryIds.isNotEmpty) {
+      query.where((t) => t.categoryId.isIn(categoryIds));
+    }
+    if (merchant != null && merchant.trim().isNotEmpty) {
+      final needle = merchant.trim().toLowerCase();
+      query.where((t) =>
+          t.merchant.lower().like('%$needle%') |
+          t.description.lower().like('%$needle%'));
+    }
+    if (from != null) {
+      final start = DateTime(from.year, from.month, from.day);
+      query.where((t) => t.transactedAt.isBiggerOrEqualValue(start));
+    }
+    if (to != null) {
+      final endExclusive = DateTime(to.year, to.month, to.day + 1);
+      query.where((t) => t.transactedAt.isSmallerThanValue(endExclusive));
+    }
+    query.orderBy([
+      (t) => switch (sort) {
+        TransactionHistorySort.newest =>
+          OrderingTerm.desc(t.transactedAt),
+        TransactionHistorySort.oldest =>
+          OrderingTerm.asc(t.transactedAt),
+        TransactionHistorySort.highestAmount =>
+          OrderingTerm.desc(t.amountMinor),
+        TransactionHistorySort.lowestAmount =>
+          OrderingTerm.asc(t.amountMinor),
+      },
+      (t) => OrderingTerm.desc(t.createdAt),
+    ]);
+    query.limit(limit, offset: offset);
+    final rows = await query.get();
+    return rows.map(_map).toList();
+  }
+
+  @override
   Future<void> duplicate(ExpenseRecord transaction) {
     return create(
       profileId: transaction.profileId,

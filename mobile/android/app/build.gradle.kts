@@ -55,8 +55,10 @@ val validatePermanentReleaseSigning = tasks.register("validatePermanentReleaseSi
 }
 
 tasks.configureEach {
-    if (name == "preReleaseBuild" || name == "validateSigningRelease") {
-        dependsOn(validatePermanentReleaseSigning)
+    if (name.contains("ReleaseBuild", ignoreCase = true) || name.contains("SigningRelease", ignoreCase = true)) {
+        if (name.startsWith("pre") || name.startsWith("validate")) {
+            dependsOn(validatePermanentReleaseSigning)
+        }
     }
 }
 
@@ -81,6 +83,46 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         multiDexEnabled = true
+
+        externalNativeBuild {
+            cmake {
+                arguments("-DANDROID_STL=c++_shared")
+            }
+        }
+        ndk {
+            abiFilters.addAll(listOf("arm64-v8a", "armeabi-v7a", "x86_64"))
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path = file("src/main/cpp/CMakeLists.txt")
+            version = "3.22.1"
+        }
+    }
+
+    val requestedFlavor = (project.findProperty("flavor") as? String)?.lowercase()
+    val isProduction = requestedFlavor == "production" ||
+        project.hasProperty("production") ||
+        project.hasProperty("play") ||
+        gradle.startParameter.taskNames.any { it.contains("production", ignoreCase = true) }
+    val isQa = requestedFlavor == "qa" ||
+        gradle.startParameter.taskNames.any { it.contains("qa", ignoreCase = true) }
+
+    if (isProduction || isQa) {
+        flavorDimensions += "default"
+        productFlavors {
+            if (isProduction) {
+                create("production") {
+                    dimension = "default"
+                }
+            }
+            if (isQa) {
+                create("qa") {
+                    dimension = "default"
+                }
+            }
+        }
     }
 
     signingConfigs {
@@ -89,6 +131,8 @@ android {
             keyPassword = releaseKeyPassword
             storeFile = releaseStorePath?.takeIf { it.isNotBlank() }?.let { rootProject.file(it) }
             storePassword = releaseStorePassword
+            enableV1Signing = true
+            enableV2Signing = true
         }
     }
 

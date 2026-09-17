@@ -1,8 +1,11 @@
+import 'package:dio/dio.dart';
 import 'package:dinarwise/core/widgets/dinar_form.dart';
 import 'dart:async';
 import 'package:dinarwise/core/widgets/dinar_widgets.dart';
 import 'package:dinarwise/core/theme.dart';
 import 'package:dinarwise/features/analytics/analytics_calculator.dart';
+import 'package:dinarwise/features/smart_search/data/smart_search_service.dart';
+import 'package:dinarwise/features/smart_search/domain/smart_search_heuristic.dart';
 
 import 'package:dinarwise/core/analytics/analytics_service.dart';
 import 'package:dinarwise/core/database/database_provider.dart';
@@ -16,18 +19,39 @@ import 'package:dinarwise/features/expenses/data/expense_repository.dart';
 import 'package:dinarwise/features/expenses/data/history_filter.dart';
 import 'package:dinarwise/features/expenses/data/history_preferences_repository.dart';
 import 'package:dinarwise/features/expenses/income_actions.dart';
+import 'package:dinarwise/l10n/generated/app_localizations.dart';
 import 'package:dinarwise/l10n/l10n_extension.dart';
 import 'package:dinarwise/features/payment_methods/payment_method_providers.dart';
 import 'package:dinarwise/features/payment_methods/payment_method_repository.dart';
+import 'package:dinarwise/features/smart_search/widgets/smart_search_summary_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+class HistoryLaunchArgs {
+  const HistoryLaunchArgs({
+    this.categoryId,
+    this.searchQuery,
+    this.smartSearchResult,
+  });
+
+  final String? categoryId;
+  final String? searchQuery;
+  final SmartSearchResult? smartSearchResult;
+}
+
 class HistoryScreen extends ConsumerStatefulWidget {
-  const HistoryScreen({this.initialCategoryId, super.key});
+  const HistoryScreen({
+    this.initialCategoryId,
+    this.initialSearch,
+    this.initialSmartSearchResult,
+    super.key,
+  });
 
   final String? initialCategoryId;
+  final String? initialSearch;
+  final SmartSearchResult? initialSmartSearchResult;
 
   @override
   ConsumerState<HistoryScreen> createState() => _HistoryScreenState();
@@ -42,6 +66,10 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   List<ExpenseRecord> _items = const [];
   String? _profileId;
   Timer? _debounce;
+  CancelToken? _smartSearchCancelToken;
+  SmartSearchResult? _smartSearchResult;
+  bool _isSmartSearching = false;
+  String? _smartSearchError;
   bool _initializing = true;
   bool _loading = false;
   bool _hasMore = false;
@@ -53,31 +81,69 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
       ..screen('transactions')
       ..transactionsViewed();
     _scrollController.addListener(_onScroll);
+
+    if (widget.initialSearch != null && widget.initialSearch!.isNotEmpty) {
+      _searchController.text = widget.initialSearch!;
+      _filter = _filter.copyWith(search: widget.initialSearch!);
+    }
+    if (widget.initialSmartSearchResult != null) {
+      _smartSearchResult = widget.initialSmartSearchResult;
+      _items = widget.initialSmartSearchResult!.items;
+    }
+
     Future<void>.microtask(_initialize);
   }
 
   @override
   void dispose() {
     _debounce?.cancel();
+    _smartSearchCancelToken?.cancel();
     _searchController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
 
   Future<void> _initialize() async {
-    final onboarding = await ref.read(onboardingControllerProvider.future);
-    final preferences =
-        HistoryPreferencesRepository(ref.read(databaseProvider));
-    final saved = await preferences.load(onboarding.localProfileId);
-    if (!mounted) return;
-    _profileId = onboarding.localProfileId;
-    _filter = (widget.initialCategoryId == null
-            ? saved
-            : saved.copyWith(categoryId: widget.initialCategoryId))
-        .copyWith(type: 'expense');
-    _searchController.text = saved.search;
-    setState(() => _initializing = false);
-    await _load(reset: true);
+    try {
+      final onboarding = await ref.read(onboardingControllerProvider.future);
+      final preferences =
+          HistoryPreferencesRepository(ref.read(databaseProvider));
+      final saved = await preferences.load(onboarding.localProfileId);
+      if (!mounted) return;
+      _profileId = onboarding.localProfileId;
+
+      if (widget.initialSmartSearchResult != null) {
+        _filter = saved.copyWith(
+          categoryId: widget.initialCategoryId,
+          search: widget.initialSearch ?? '',
+          type: 'expense',
+        );
+        _searchController.text = widget.initialSearch ?? '';
+        return;
+      }
+
+      if (widget.initialSearch != null && widget.initialSearch!.isNotEmpty) {
+        _filter = saved.copyWith(
+          categoryId: widget.initialCategoryId,
+          search: widget.initialSearch!,
+          type: 'expense',
+        );
+        _searchController.text = widget.initialSearch!;
+        await _load(reset: true);
+        return;
+      }
+
+      _filter = (widget.initialCategoryId == null
+              ? saved.copyWith(search: '')
+              : saved.copyWith(categoryId: widget.initialCategoryId, search: ''))
+          .copyWith(type: 'expense');
+      _searchController.clear();
+      await _load(reset: true);
+    } finally {
+      if (mounted) {
+        setState(() => _initializing = false);
+      }
+    }
   }
 
   void _onScroll() {
@@ -91,19 +157,15 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     if (profileId == null || _loading) return;
     setState(() => _loading = true);
     final categories = ref.read(categoriesProvider).valueOrNull ?? const [];
-    final needle = _filter.search.trim().toLowerCase();
-    final matchingCategoryIds = needle.isEmpty
-        ? <String>{}
-        : categories
-            .where(
-              (category) =>
-                  localizedCategoryName(context.l10n, category)
-                      .toLowerCase()
-                      .contains(needle) ||
-                  category.name.toLowerCase().contains(needle),
-            )
-            .map((category) => category.id)
-            .toSet();
+    AppLocalizations? l10n;
+    try {
+      if (mounted) l10n = AppLocalizations.of(context);
+    } catch (_) {}
+    final matchingCategoryIds = resolveCategorySearchIds(
+      query: _filter.search,
+      categories: categories,
+      l10n: l10n,
+    );
     try {
       final result = await ref.read(performanceServiceProvider).trace(
             _filter.search.trim().isEmpty
@@ -139,15 +201,101 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
 
   void _searchChanged(String value) {
     _debounce?.cancel();
-    _debounce = Timer(
-      const Duration(milliseconds: 300),
-      () {
-        if (value.trim().isNotEmpty) {
+    _smartSearchCancelToken?.cancel();
+
+    final query = value.trim();
+    if (query.isEmpty) {
+      setState(() {
+        _smartSearchResult = null;
+        _isSmartSearching = false;
+        _smartSearchError = null;
+      });
+      _apply(_filter.copyWith(search: ''));
+      return;
+    }
+
+    if (isNaturalLanguageQuery(query)) {
+      // Clear previous search results immediately to avoid flashing stale results
+      setState(() {
+        _smartSearchResult = null;
+        _smartSearchError = null;
+      });
+
+      // Guard against incomplete intermediate typing states
+      if (!isCompleteNaturalLanguageQuery(query)) {
+        setState(() {
+          _isSmartSearching = false;
+        });
+        return;
+      }
+
+      _smartSearchCancelToken = CancelToken();
+      final cancelToken = _smartSearchCancelToken;
+      _debounce = Timer(
+        const Duration(milliseconds: 700),
+        () async {
+          final profileId = _profileId;
+          if (profileId == null) return;
+          setState(() {
+            _isSmartSearching = true;
+            _smartSearchError = null;
+          });
           ref.read(analyticsServiceProvider).transactionSearchUsed();
-        }
-        _apply(_filter.copyWith(search: value));
-      },
-    );
+          try {
+            final categories =
+                ref.read(categoriesProvider).valueOrNull ?? const [];
+            final result =
+                await ref.read(smartSearchServiceProvider).executeSmartSearch(
+                      query: query,
+                      locale: Localizations.localeOf(context).languageCode,
+                      profileId: profileId,
+                      existingCategories: categories,
+                      cancelToken: cancelToken,
+                    );
+            if (!mounted) return;
+            setState(() {
+              _smartSearchResult = result;
+              _isSmartSearching = false;
+              _smartSearchError = null;
+            });
+          } on DioException catch (e) {
+            if (e.type == DioExceptionType.cancel) return;
+            if (!mounted) return;
+            setState(() {
+              _isSmartSearching = false;
+              _smartSearchError =
+                  Localizations.localeOf(context).languageCode.startsWith('ar')
+                      ? 'البحث الذكي غير متاح حالياً. تحقق من الاتصال وحاول مجدداً.'
+                      : 'Smart Search is unavailable. Check connection and try again.';
+            });
+          } catch (_) {
+            if (!mounted) return;
+            setState(() {
+              _isSmartSearching = false;
+              _smartSearchError =
+                  Localizations.localeOf(context).languageCode.startsWith('ar')
+                      ? 'البحث الذكي غير متاح حالياً. تحقق من الاتصال وحاول مجدداً.'
+                      : 'Smart Search is unavailable. Check connection and try again.';
+            });
+          }
+        },
+      );
+    } else {
+      setState(() {
+        _smartSearchResult = null;
+        _isSmartSearching = false;
+        _smartSearchError = null;
+      });
+      _debounce = Timer(
+        const Duration(milliseconds: 300),
+        () {
+          if (query.isNotEmpty) {
+            ref.read(analyticsServiceProvider).transactionSearchUsed();
+          }
+          _apply(_filter.copyWith(search: query));
+        },
+      );
+    }
   }
 
   Future<void> _chooseDates() async {
@@ -295,30 +443,112 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                           clearPaymentMethod: id == null,
                         ),
                       ),
+                      isSmartSearching: _isSmartSearching,
                       onSortChanged: (sort) =>
                           _apply(_filter.copyWith(sort: sort)),
                       onChooseDates: _chooseDates,
                       onClear: () {
                         _searchController.clear();
+                        setState(() {
+                          _smartSearchResult = null;
+                          _smartSearchError = null;
+                        });
                         _apply(const TransactionHistoryFilter());
                       },
                     ),
                   ),
-                  SliverToBoxAdapter(
+                  if (_smartSearchResult != null)
+                    SliverToBoxAdapter(
                       child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 8),
-                          child: _CashFlowCard(
-                              records:
-                                  ref.watch(expensesProvider).valueOrNull ??
-                                      const []))),
-                  if (_items.isEmpty && !_loading)
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
+                        child: SmartSearchSummaryCard(
+                          result: _smartSearchResult!,
+                          currencySpec: currencySpec,
+                          onClear: () {
+                            _searchController.clear();
+                            setState(() {
+                              _smartSearchResult = null;
+                              _smartSearchError = null;
+                            });
+                            _apply(const TransactionHistoryFilter());
+                          },
+                        ),
+                      ),
+                    )
+                  else if (_isSmartSearching)
+                    const SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
+                        child: Center(
+                          child: CircularProgressIndicator(),
+                        ),
+                      ),
+                    )
+                  else if (_smartSearchError != null)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .errorContainer
+                                .withValues(alpha: 0.5),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.info_outline,
+                                  size: 18,
+                                  color: Theme.of(context).colorScheme.error),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  _smartSearchError!,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onErrorContainer,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    )
+                  else if (_searchController.text.trim().isEmpty)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
+                        child: _CashFlowCard(
+                          records:
+                              ref.watch(expensesProvider).valueOrNull ?? const [],
+                        ),
+                      ),
+                    ),
+                  if ((_smartSearchResult != null
+                          ? _smartSearchResult!.items.isEmpty
+                          : _items.isEmpty) &&
+                      !_loading &&
+                      !_isSmartSearching)
                     SliverFillRemaining(
                       hasScrollBody: false,
                       child: Center(child: Text(l10n.noMatchingTransactions)),
                     )
                   else
-                    ..._groupSlivers(categories, currency, currencySpec),
+                    ..._groupSlivers(
+                      categories,
+                      currency,
+                      currencySpec,
+                      _smartSearchResult?.items,
+                    ),
                   if (_loading)
                     const SliverToBoxAdapter(
                       child: Padding(
@@ -336,13 +566,15 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   List<Widget> _groupSlivers(
     List<CategoryRecord> categories,
     NumberFormat currency,
-    GulfCurrency currencySpec,
-  ) {
+    GulfCurrency currencySpec, [
+    List<ExpenseRecord>? customItems,
+  ]) {
+    final itemsToDisplay = customItems ?? _items;
     final categoryById = {
       for (final category in categories) category.id: category
     };
     final groups = <DateTime, List<ExpenseRecord>>{};
-    for (final item in _items) {
+    for (final item in itemsToDisplay) {
       final date = DateTime(
         item.transactedAt.year,
         item.transactedAt.month,
@@ -410,6 +642,7 @@ class _FilterPanel extends StatelessWidget {
     required this.onSortChanged,
     required this.onChooseDates,
     required this.onClear,
+    this.isSmartSearching = false,
   });
 
   final TransactionHistoryFilter filter;
@@ -423,6 +656,7 @@ class _FilterPanel extends StatelessWidget {
   final ValueChanged<TransactionHistorySort> onSortChanged;
   final VoidCallback onChooseDates;
   final VoidCallback onClear;
+  final bool isSmartSearching;
 
   @override
   Widget build(BuildContext context) {
@@ -437,6 +671,21 @@ class _FilterPanel extends StatelessWidget {
             decoration: InputDecoration(
               prefixIcon: const Icon(Icons.search),
               hintText: l10n.searchTransactions,
+              suffixIcon: isSmartSearching
+                  ? const Padding(
+                      padding: EdgeInsets.all(12),
+                      child: SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    )
+                  : (searchController.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear, size: 20),
+                          onPressed: onClear,
+                        )
+                      : null),
             ),
           ),
           const SizedBox(height: 10),

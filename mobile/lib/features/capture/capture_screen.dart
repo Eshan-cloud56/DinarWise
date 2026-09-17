@@ -31,17 +31,52 @@ import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 
 class CaptureLaunchArgs {
-  const CaptureLaunchArgs({this.expense, this.sharedReceiptPath});
+  const CaptureLaunchArgs({
+    this.expense,
+    this.sharedReceiptPath,
+    this.prefilledMerchant,
+    this.prefilledAmountMinor,
+    this.prefilledDate,
+    this.prefilledCategoryId,
+    this.prefilledPaymentMethodId,
+    this.prefilledDescription,
+    this.prefilledCurrency,
+  });
 
   final ExpenseRecord? expense;
   final String? sharedReceiptPath;
+  final String? prefilledMerchant;
+  final int? prefilledAmountMinor;
+  final DateTime? prefilledDate;
+  final String? prefilledCategoryId;
+  final String? prefilledPaymentMethodId;
+  final String? prefilledDescription;
+  final String? prefilledCurrency;
 }
 
 class CaptureScreen extends ConsumerStatefulWidget {
-  const CaptureScreen({this.expense, this.sharedReceiptPath, super.key});
+  const CaptureScreen({
+    this.expense,
+    this.sharedReceiptPath,
+    this.prefilledMerchant,
+    this.prefilledAmountMinor,
+    this.prefilledDate,
+    this.prefilledCategoryId,
+    this.prefilledPaymentMethodId,
+    this.prefilledDescription,
+    this.prefilledCurrency,
+    super.key,
+  });
 
   final ExpenseRecord? expense;
   final String? sharedReceiptPath;
+  final String? prefilledMerchant;
+  final int? prefilledAmountMinor;
+  final DateTime? prefilledDate;
+  final String? prefilledCategoryId;
+  final String? prefilledPaymentMethodId;
+  final String? prefilledDescription;
+  final String? prefilledCurrency;
 
   @override
   ConsumerState<CaptureScreen> createState() => _CaptureScreenState();
@@ -84,21 +119,24 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
   void initState() {
     super.initState();
     final expense = widget.expense;
-    _currency = GulfCurrency.fromCode(
-      ref.read(onboardingControllerProvider).requireValue.currencyCode,
-    );
-    _merchantController = TextEditingController(text: expense?.merchant);
-    _amountController = TextEditingController(
-      text: expense == null
-          ? ''
-          : _currency
-              .toMajor(expense.amountMinor)
-              .toStringAsFixed(_currency.decimalDigits),
-    );
-    _notesController = TextEditingController(text: expense?.description);
-    _categoryId = expense?.categoryId;
-    _paymentMethodId = expense?.paymentMethodId;
-    _date = expense?.transactedAt ?? DateTime.now();
+    final initialCurrencyCode = widget.prefilledCurrency ??
+        ref.read(onboardingControllerProvider).requireValue.currencyCode;
+    _currency = GulfCurrency.fromCode(initialCurrencyCode);
+    final initialMerchant = expense?.merchant ?? widget.prefilledMerchant;
+    _merchantController = TextEditingController(text: initialMerchant);
+    final initialAmountStr = expense != null
+        ? _currency.toMajor(expense.amountMinor).toStringAsFixed(_currency.decimalDigits)
+        : (widget.prefilledAmountMinor != null
+            ? _currency.toMajor(widget.prefilledAmountMinor!).toStringAsFixed(_currency.decimalDigits)
+            : '');
+    _amountController = TextEditingController(text: initialAmountStr);
+    _notesController = TextEditingController(
+        text: expense?.description ?? widget.prefilledDescription);
+    _categoryId = expense?.categoryId ?? widget.prefilledCategoryId;
+    _paymentMethodId =
+        expense?.paymentMethodId ?? widget.prefilledPaymentMethodId;
+    _date = expense?.transactedAt ?? widget.prefilledDate ?? DateTime.now();
+    _customDateSelected = expense != null || widget.prefilledDate != null;
     _pendingReceiptPath = widget.sharedReceiptPath;
     final analytics = ref.read(analyticsServiceProvider);
     analytics.screen(_editing ? 'edit_expense' : 'add_expense');
@@ -767,12 +805,14 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
                         child: CircularProgressIndicator(strokeWidth: 2))
                     : const Icon(Icons.check_circle_outline),
                 label: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    child: Text(
-                        _saving
-                            ? l10n.saving
-                            : '${l10n.saveExpenseLabel} (${_currency.formatter(Localizations.localeOf(context).toLanguageTag()).format(parseLocalizedAmount(_amountController.text) ?? 0)})',
-                        textAlign: TextAlign.center)),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  child: Text(
+                    _saving
+                        ? l10n.saving
+                        : '${l10n.saveExpenseLabel} (${_currency.formatter(Localizations.localeOf(context).toLanguageTag()).format(parseLocalizedAmount(_amountController.text) ?? 0)})',
+                    textAlign: TextAlign.center,
+                  ),
+                ),
               ),
             ]),
           )),

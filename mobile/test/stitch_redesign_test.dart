@@ -175,7 +175,7 @@ void main() {
     testWidgets('Expense date selection and required merchant in $language',
         (tester) async {
       final db = await _start(tester, language);
-      expect(find.byKey(const ValueKey('nav-1')), findsNothing);
+      expect(find.byKey(const ValueKey('nav-1')), findsOneWidget);
       await tester.tap(find.byKey(const ValueKey('nav-2')));
       await tester.pumpAndSettle();
       final merchant = find.byKey(const ValueKey('expenseMerchantField'));

@@ -1406,4 +1406,112 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get receiptLineItems => 'Reliable line items';
+
+  @override
+  String get automaticTransactionDetection => 'Automatic Transaction Detection';
+
+  @override
+  String get automaticTransactionDetectionSubtitle =>
+      'Detect bank and payment SMS locally to quickly review and add expenses or income.';
+
+  @override
+  String get smsPaymentDetectedTitle => 'Payment detected';
+
+  @override
+  String smsPaymentDetectedBody(String currency, String amount) {
+    return 'A payment of $currency $amount was detected. Add to DinarWise?';
+  }
+
+  @override
+  String get smsCreditDetectedTitle => 'Income detected';
+
+  @override
+  String smsCreditDetectedBody(String currency, String amount, String bank) {
+    return '$currency $amount was credited to your $bank account. Add it to DinarWise Income?';
+  }
+
+  @override
+  String get smsActionAdd => 'Add / Review';
+
+  @override
+  String get smsActionDismiss => 'Dismiss';
+
+  @override
+  String get recurringSuggestionTitle => 'Recurring Expense Detected';
+
+  @override
+  String recurringSuggestionBody(String frequency) {
+    return 'This looks like a $frequency subscription. Track automatically?';
+  }
+
+  @override
+  String get trackAutomatically => 'Track automatically';
+
+  @override
+  String get recurringTrackSuccess =>
+      'Subscription added to recurring payments.';
+
+  @override
+  String get frequencyMonthly => 'monthly';
+
+  @override
+  String get frequencyWeekly => 'weekly';
+
+  @override
+  String get frequencyYearly => 'yearly';
+
+  @override
+  String get smsDisclosureTitle => 'SMS Transaction Detection';
+
+  @override
+  String get smsDisclosureSubtitle => 'Automatic expense & income suggestions';
+
+  @override
+  String get smsDisclosureDescription =>
+      'DinarWise uses financial transaction SMS locally to detect expenses and income. SMS contents are processed on your device and are not uploaded or shared.';
+
+  @override
+  String get smsDisclosurePoint1 =>
+      'Detects transaction amounts, currencies, and merchants from incoming bank notifications.';
+
+  @override
+  String get smsDisclosurePoint2 =>
+      'Prompts you with an interactive notification to review and add the transaction with prefilled fields.';
+
+  @override
+  String get smsDisclosurePoint3 =>
+      '100% on-device & private: SMS messages are never uploaded to servers, Cloudflare, or any external service.';
+
+  @override
+  String get smsDisclosurePoint4 =>
+      'Zero auto-save: transactions are only saved when you explicitly review and confirm them.';
+
+  @override
+  String get smsDisclosurePoint5 =>
+      'Requires the RECEIVE_SMS permission solely to detect incoming bank alerts in real time.';
+
+  @override
+  String get smsDisclosureAgree => 'Agree & Enable';
+
+  @override
+  String get smsDisclosureDecline => 'Not Now';
+
+  @override
+  String get smsDisclosureLearnMore => 'Privacy details';
+
+  @override
+  String get smsPermissionDeniedNotice =>
+      'SMS permission was not granted. Automatic transaction detection remains disabled.';
+
+  @override
+  String get smsDetectionEnabledNotice =>
+      'Automatic transaction detection enabled.';
+
+  @override
+  String get smsDetectionDisabledNotice =>
+      'Automatic transaction detection disabled.';
+
+  @override
+  String get smsDetectionUnavailable =>
+      'Automatic transaction detection is not available in this build.';
 }

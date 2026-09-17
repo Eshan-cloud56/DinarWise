@@ -5,6 +5,8 @@ import 'package:dinarwise/core/database/database_provider.dart';
 import 'package:dinarwise/core/preferences/app_preferences.dart';
 import 'package:dinarwise/core/preferences/onboarding_controller.dart';
 import 'package:dinarwise/features/notifications/notification_providers.dart';
+import 'package:dinarwise/features/sms_detection/sms_disclosure_dialog.dart';
+import 'package:dinarwise/features/sms_detection/sms_platform_channel.dart';
 import 'package:dinarwise/features/tutorial/dashboard_tutorial.dart';
 import 'package:dinarwise/features/receipts/smart/smart_scan_disclosure.dart';
 import 'package:dinarwise/l10n/l10n_extension.dart';
@@ -13,10 +15,49 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:drift/drift.dart' show Value;
 
-class SettingsScreen extends ConsumerWidget {
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
-  Future<void> _changeCurrency(WidgetRef ref, String code) async {
+  @override
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends ConsumerState<SettingsScreen>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkAccess());
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _checkAccess();
+    }
+  }
+
+  Future<void> _checkAccess() async {
+    try {
+      final channel = ref.read(smsPlatformChannelProvider);
+      final hasSms = await channel.hasPermission();
+
+      final isCurrentlyEnabled = ref.read(smsDetectionEnabledProvider);
+      if (!hasSms && isCurrentlyEnabled) {
+        // Permission was revoked in Android Settings -> update state to OFF
+        await ref.read(smsDetectionEnabledProvider.notifier).setEnabled(false);
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _changeCurrency(String code) async {
     final state = await ref.read(onboardingControllerProvider.future);
     final database = ref.read(databaseProvider);
     await database.transaction(() async {
@@ -33,7 +74,7 @@ class SettingsScreen extends ConsumerWidget {
     await ref.read(onboardingControllerProvider.notifier).selectCurrency(code);
   }
 
-  Future<void> _reset(BuildContext context, WidgetRef ref) async {
+  Future<void> _reset(BuildContext context) async {
     final l10n = context.l10n;
     final confirmed = await showDialog<bool>(
       context: context,
@@ -67,7 +108,7 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     ref.read(analyticsServiceProvider)
       ..screen('settings')
       ..settingsViewed();
@@ -97,7 +138,7 @@ class SettingsScreen extends ConsumerWidget {
                   l10n.resetApplicationData,
                   style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
-                onTap: () => _reset(context, ref),
+                onTap: () => _reset(context),
               ),
             ),
             const SizedBox(height: 10),
@@ -139,7 +180,7 @@ class SettingsScreen extends ConsumerWidget {
                           ),
                       ],
                       onChanged: (value) {
-                        if (value != null) _changeCurrency(ref, value);
+                        if (value != null) _changeCurrency(value);
                       },
                     ),
                   ),
@@ -208,6 +249,105 @@ class SettingsScreen extends ConsumerWidget {
                       }
                     },
                   ),
+                  const Divider(height: 1),
+                  () {
+                    final isSupported =
+                        ref.watch(smsSupportedProvider).valueOrNull ?? false;
+                    if (!isSupported) {
+                      return SwitchListTile(
+                        secondary: const Icon(Icons.sms_outlined),
+                        title: Text(l10n.automaticTransactionDetection),
+                        subtitle: Text(l10n.smsDetectionUnavailable),
+                        value: false,
+                        onChanged: null,
+                      );
+                    }
+                    return SwitchListTile(
+                      secondary: const Icon(Icons.sms_outlined),
+                      title: Text(l10n.automaticTransactionDetection),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(l10n.automaticTransactionDetectionSubtitle),
+                          const SizedBox(height: 4),
+                          GestureDetector(
+                            onTap: () => showSmsDetectionDisclosure(
+                              context,
+                              isInformationalOnly: true,
+                            ),
+                            child: Text(
+                              l10n.smsDisclosureLearnMore,
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.primary,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                decoration: TextDecoration.underline,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      value: ref.watch(smsDetectionEnabledProvider),
+                      onChanged: (value) async {
+                        if (value) {
+                          final channel = ref.read(smsPlatformChannelProvider);
+                          final hasSms = await channel.hasPermission();
+
+                          if (!hasSms) {
+                            if (!context.mounted) return;
+                            final agreed =
+                                await showSmsDetectionDisclosure(context);
+                            if (!agreed) {
+                              return;
+                            }
+                            final result = await channel.requestPermission();
+                            if (!result.granted) {
+                              await ref
+                                  .read(smsDetectionEnabledProvider.notifier)
+                                  .setEnabled(false);
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content:
+                                        Text(l10n.smsPermissionDeniedNotice),
+                                    action: result.permanentlyDenied
+                                        ? SnackBarAction(
+                                            label: l10n.settings,
+                                            onPressed: () =>
+                                                channel.openAppSettings(),
+                                          )
+                                        : null,
+                                  ),
+                                );
+                              }
+                              return;
+                            }
+                          }
+                          await ref
+                              .read(smsDetectionEnabledProvider.notifier)
+                              .setEnabled(true);
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(l10n.smsDetectionEnabledNotice),
+                              ),
+                            );
+                          }
+                        } else {
+                          await ref
+                              .read(smsDetectionEnabledProvider.notifier)
+                              .setEnabled(false);
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(l10n.smsDetectionDisabledNotice),
+                              ),
+                            );
+                          }
+                        }
+                      },
+                    );
+                  }(),
                   const Divider(height: 1),
                   ListTile(
                     leading: const Icon(Icons.import_export_outlined),

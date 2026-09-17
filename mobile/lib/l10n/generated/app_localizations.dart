@@ -2683,6 +2683,186 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Reliable line items'**
   String get receiptLineItems;
+
+  /// No description provided for @automaticTransactionDetection.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic Transaction Detection'**
+  String get automaticTransactionDetection;
+
+  /// No description provided for @automaticTransactionDetectionSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Detect bank and payment SMS locally to quickly review and add expenses or income.'**
+  String get automaticTransactionDetectionSubtitle;
+
+  /// No description provided for @smsPaymentDetectedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment detected'**
+  String get smsPaymentDetectedTitle;
+
+  /// No description provided for @smsPaymentDetectedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'A payment of {currency} {amount} was detected. Add to DinarWise?'**
+  String smsPaymentDetectedBody(String currency, String amount);
+
+  /// No description provided for @smsCreditDetectedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Income detected'**
+  String get smsCreditDetectedTitle;
+
+  /// No description provided for @smsCreditDetectedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{currency} {amount} was credited to your {bank} account. Add it to DinarWise Income?'**
+  String smsCreditDetectedBody(String currency, String amount, String bank);
+
+  /// No description provided for @smsActionAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add / Review'**
+  String get smsActionAdd;
+
+  /// No description provided for @smsActionDismiss.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss'**
+  String get smsActionDismiss;
+
+  /// No description provided for @recurringSuggestionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recurring Expense Detected'**
+  String get recurringSuggestionTitle;
+
+  /// No description provided for @recurringSuggestionBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This looks like a {frequency} subscription. Track automatically?'**
+  String recurringSuggestionBody(String frequency);
+
+  /// No description provided for @trackAutomatically.
+  ///
+  /// In en, this message translates to:
+  /// **'Track automatically'**
+  String get trackAutomatically;
+
+  /// No description provided for @recurringTrackSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscription added to recurring payments.'**
+  String get recurringTrackSuccess;
+
+  /// No description provided for @frequencyMonthly.
+  ///
+  /// In en, this message translates to:
+  /// **'monthly'**
+  String get frequencyMonthly;
+
+  /// No description provided for @frequencyWeekly.
+  ///
+  /// In en, this message translates to:
+  /// **'weekly'**
+  String get frequencyWeekly;
+
+  /// No description provided for @frequencyYearly.
+  ///
+  /// In en, this message translates to:
+  /// **'yearly'**
+  String get frequencyYearly;
+
+  /// No description provided for @smsDisclosureTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'SMS Transaction Detection'**
+  String get smsDisclosureTitle;
+
+  /// No description provided for @smsDisclosureSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic expense & income suggestions'**
+  String get smsDisclosureSubtitle;
+
+  /// No description provided for @smsDisclosureDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'DinarWise uses financial transaction SMS locally to detect expenses and income. SMS contents are processed on your device and are not uploaded or shared.'**
+  String get smsDisclosureDescription;
+
+  /// No description provided for @smsDisclosurePoint1.
+  ///
+  /// In en, this message translates to:
+  /// **'Detects transaction amounts, currencies, and merchants from incoming bank notifications.'**
+  String get smsDisclosurePoint1;
+
+  /// No description provided for @smsDisclosurePoint2.
+  ///
+  /// In en, this message translates to:
+  /// **'Prompts you with an interactive notification to review and add the transaction with prefilled fields.'**
+  String get smsDisclosurePoint2;
+
+  /// No description provided for @smsDisclosurePoint3.
+  ///
+  /// In en, this message translates to:
+  /// **'100% on-device & private: SMS messages are never uploaded to servers, Cloudflare, or any external service.'**
+  String get smsDisclosurePoint3;
+
+  /// No description provided for @smsDisclosurePoint4.
+  ///
+  /// In en, this message translates to:
+  /// **'Zero auto-save: transactions are only saved when you explicitly review and confirm them.'**
+  String get smsDisclosurePoint4;
+
+  /// No description provided for @smsDisclosurePoint5.
+  ///
+  /// In en, this message translates to:
+  /// **'Requires the RECEIVE_SMS permission solely to detect incoming bank alerts in real time.'**
+  String get smsDisclosurePoint5;
+
+  /// No description provided for @smsDisclosureAgree.
+  ///
+  /// In en, this message translates to:
+  /// **'Agree & Enable'**
+  String get smsDisclosureAgree;
+
+  /// No description provided for @smsDisclosureDecline.
+  ///
+  /// In en, this message translates to:
+  /// **'Not Now'**
+  String get smsDisclosureDecline;
+
+  /// No description provided for @smsDisclosureLearnMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy details'**
+  String get smsDisclosureLearnMore;
+
+  /// No description provided for @smsPermissionDeniedNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'SMS permission was not granted. Automatic transaction detection remains disabled.'**
+  String get smsPermissionDeniedNotice;
+
+  /// No description provided for @smsDetectionEnabledNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic transaction detection enabled.'**
+  String get smsDetectionEnabledNotice;
+
+  /// No description provided for @smsDetectionDisabledNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic transaction detection disabled.'**
+  String get smsDetectionDisabledNotice;
+
+  /// No description provided for @smsDetectionUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic transaction detection is not available in this build.'**
+  String get smsDetectionUnavailable;
 }
 
 class _AppLocalizationsDelegate

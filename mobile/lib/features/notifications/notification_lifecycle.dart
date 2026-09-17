@@ -1,6 +1,7 @@
 import 'package:dinarwise/core/preferences/onboarding_controller.dart';
 import 'package:dinarwise/core/router.dart';
 import 'package:dinarwise/features/notifications/notification_providers.dart';
+import 'package:dinarwise/features/sms_detection/sms_platform_channel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -25,6 +26,7 @@ class _NotificationLifecycleState extends ConsumerState<NotificationLifecycle>
 
   Future<void> _sync() async {
     try {
+      ref.read(smsPlatformChannelProvider).initialize();
       final service = ref.read(localNotificationServiceProvider);
       await service.initialize(
         onOpen: (payload) => ref.read(routerProvider).go(payload),

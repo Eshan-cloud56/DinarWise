@@ -66,6 +66,16 @@ abstract interface class ExpenseRepository {
     int limit = 50,
     int offset = 0,
   });
+  Future<List<ExpenseRecord>> searchByIntent({
+    required String profileId,
+    Set<String>? categoryIds,
+    String? merchant,
+    DateTime? from,
+    DateTime? to,
+    TransactionHistorySort sort = TransactionHistorySort.newest,
+    int limit = 100,
+    int offset = 0,
+  });
   Future<void> duplicate(ExpenseRecord transaction);
   Future<String> create({
     required String profileId,

@@ -1400,4 +1400,112 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get receiptLineItems => 'بنود الإيصال الموثوقة';
+
+  @override
+  String get automaticTransactionDetection => 'كشف المعاملات تلقائياً (SMS)';
+
+  @override
+  String get automaticTransactionDetectionSubtitle =>
+      'رصد رسائل البنوك والدفع محلياً لمراجعة وإضافة المصروفات أو الدخل بسرعة.';
+
+  @override
+  String get smsPaymentDetectedTitle => 'تم رصد دفعة';
+
+  @override
+  String smsPaymentDetectedBody(String currency, String amount) {
+    return 'تم رصد دفعة بقيمة $amount $currency. هل تريد إضافتها إلى دينار وايز؟';
+  }
+
+  @override
+  String get smsCreditDetectedTitle => 'تم رصد دخل';
+
+  @override
+  String smsCreditDetectedBody(String currency, String amount, String bank) {
+    return 'تم إيداع $amount $currency في حسابك لدى $bank. هل تريد إضافتها كدخل في دينار وايز؟';
+  }
+
+  @override
+  String get smsActionAdd => 'إضافة / مراجعة';
+
+  @override
+  String get smsActionDismiss => 'تجاهل';
+
+  @override
+  String get recurringSuggestionTitle => 'رصد مصروف متكرر';
+
+  @override
+  String recurringSuggestionBody(String frequency) {
+    return 'يبدو هذا اشتراكاً $frequency. هل تريد متابعته تلقائياً؟';
+  }
+
+  @override
+  String get trackAutomatically => 'متابعة تلقائياً';
+
+  @override
+  String get recurringTrackSuccess =>
+      'تمت إضافة الاشتراك إلى المدفوعات المتكررة.';
+
+  @override
+  String get frequencyMonthly => 'شهري';
+
+  @override
+  String get frequencyWeekly => 'أسبوعي';
+
+  @override
+  String get frequencyYearly => 'سنوي';
+
+  @override
+  String get smsDisclosureTitle => 'الكشف عن المعاملات عبر الرسائل النصية';
+
+  @override
+  String get smsDisclosureSubtitle => 'اقتراحات تلقائية للمصروفات والدخل';
+
+  @override
+  String get smsDisclosureDescription =>
+      'يستخدم دينار وايز الرسائل النصية للمعاملات محلياً لرصد المصروفات والدخل. لا يتم رفع أو مشاركة محتوى رسائلك النصية.';
+
+  @override
+  String get smsDisclosurePoint1 =>
+      'رصد المبالغ والعملات والمتاجر من إشعارات البنوك الواردة فور وصولها.';
+
+  @override
+  String get smsDisclosurePoint2 =>
+      'إظهار إشعار تفاعلي لمراجعة المعاملة وإضافتها ببيانات جاهزة ومملوءة مسبقاً.';
+
+  @override
+  String get smsDisclosurePoint3 =>
+      'خصوصية تامة 100% على جهازك: لا يتم إرسال أي رسائل لخوادم خارجية أو Cloudflare إطلاقاً.';
+
+  @override
+  String get smsDisclosurePoint4 =>
+      'لا يوجد حفظ تلقائي: لا تُحفظ أي معاملة إلا بعد مراجعتك وتأكيدك المباشر.';
+
+  @override
+  String get smsDisclosurePoint5 =>
+      'يتطلب إذن RECEIVE_SMS فقط لرصد إشعارات البنوك فور وصولها في الوقت الفعلي.';
+
+  @override
+  String get smsDisclosureAgree => 'موافق وتفعيل';
+
+  @override
+  String get smsDisclosureDecline => 'ليس الآن';
+
+  @override
+  String get smsDisclosureLearnMore => 'تفاصيل الخصوصية';
+
+  @override
+  String get smsPermissionDeniedNotice =>
+      'لم يتم منح إذن الرسائل النصية. يظل الكشف التلقائي معطلاً.';
+
+  @override
+  String get smsDetectionEnabledNotice =>
+      'تم تفعيل الكشف التلقائي عن المعاملات.';
+
+  @override
+  String get smsDetectionDisabledNotice =>
+      'تم إيقاف الكشف التلقائي عن المعاملات.';
+
+  @override
+  String get smsDetectionUnavailable =>
+      'الكشف التلقائي عن المعاملات غير متوفر في هذه النسخة.';
 }

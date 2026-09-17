@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="voice_expense_widget_name">تسجيل صوتي</string>
+    <string name="voice_expense_widget_desc">سجّل مصاريفك فوراً باستخدام الصوت.</string>
+    <string name="voice_expense_widget_title">تسجيل صوتي</string>
+    <string name="voice_expense_widget_subtitle">اضغط للتحدث</string>
+</resources>

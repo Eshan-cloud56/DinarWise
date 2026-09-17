@@ -480,5 +480,54 @@
   "receiptTime": "الوقت",
   "cardLastFour": "آخر 4 أرقام من البطاقة",
   "invoiceNumber": "رقم الفاتورة / الإيصال",
-  "receiptLineItems": "بنود الإيصال الموثوقة"
+  "receiptLineItems": "بنود الإيصال الموثوقة",
+  "automaticTransactionDetection": "كشف المعاملات تلقائياً (SMS)",
+  "automaticTransactionDetectionSubtitle": "رصد رسائل البنوك والدفع محلياً لمراجعة وإضافة المصروفات أو الدخل بسرعة.",
+  "smsPaymentDetectedTitle": "تم رصد دفعة",
+  "smsPaymentDetectedBody": "تم رصد دفعة بقيمة {amount} {currency}. هل تريد إضافتها إلى دينار وايز؟",
+  "@smsPaymentDetectedBody": {
+    "placeholders": {
+      "currency": {"type": "String"},
+      "amount": {"type": "String"}
+    }
+  },
+  "smsCreditDetectedTitle": "تم رصد دخل",
+  "smsCreditDetectedBody": "تم إيداع {amount} {currency} في حسابك لدى {bank}. هل تريد إضافتها كدخل في دينار وايز؟",
+  "@smsCreditDetectedBody": {
+    "placeholders": {
+      "currency": {"type": "String"},
+      "amount": {"type": "String"},
+      "bank": {"type": "String"}
+    }
+  },
+  "smsActionAdd": "إضافة / مراجعة",
+  "smsActionDismiss": "تجاهل",
+  "recurringSuggestionTitle": "رصد مصروف متكرر",
+  "recurringSuggestionBody": "يبدو هذا اشتراكاً {frequency}. هل تريد متابعته تلقائياً؟",
+  "@recurringSuggestionBody": {
+    "placeholders": {
+      "frequency": {"type": "String"}
+    }
+  },
+  "trackAutomatically": "متابعة تلقائياً",
+  "recurringTrackSuccess": "تمت إضافة الاشتراك إلى المدفوعات المتكررة.",
+  "frequencyMonthly": "شهري",
+  "frequencyWeekly": "أسبوعي",
+  "frequencyYearly": "سنوي",
+  "smsDisclosureTitle": "الكشف عن المعاملات عبر الرسائل النصية",
+  "smsDisclosureSubtitle": "اقتراحات تلقائية للمصروفات والدخل",
+  "smsDisclosureDescription": "يستخدم دينار وايز الرسائل النصية للمعاملات محلياً لرصد المصروفات والدخل. لا يتم رفع أو مشاركة محتوى رسائلك النصية.",
+  "smsDisclosurePoint1": "رصد المبالغ والعملات والمتاجر من إشعارات البنوك الواردة فور وصولها.",
+  "smsDisclosurePoint2": "إظهار إشعار تفاعلي لمراجعة المعاملة وإضافتها ببيانات جاهزة ومملوءة مسبقاً.",
+  "smsDisclosurePoint3": "خصوصية تامة 100% على جهازك: لا يتم إرسال أي رسائل لخوادم خارجية أو Cloudflare إطلاقاً.",
+  "smsDisclosurePoint4": "لا يوجد حفظ تلقائي: لا تُحفظ أي معاملة إلا بعد مراجعتك وتأكيدك المباشر.",
+  "smsDisclosurePoint5": "يتطلب إذن RECEIVE_SMS فقط لرصد إشعارات البنوك فور وصولها في الوقت الفعلي.",
+  "smsDisclosureAgree": "موافق وتفعيل",
+  "smsDisclosureDecline": "ليس الآن",
+  "smsDisclosureLearnMore": "تفاصيل الخصوصية",
+  "smsPermissionDeniedNotice": "لم يتم منح إذن الرسائل النصية. يظل الكشف التلقائي معطلاً.",
+  "smsDetectionEnabledNotice": "تم تفعيل الكشف التلقائي عن المعاملات.",
+  "smsDetectionDisabledNotice": "تم إيقاف الكشف التلقائي عن المعاملات.",
+  "smsDetectionUnavailable": "الكشف التلقائي عن المعاملات غير متوفر في هذه النسخة."
 }
+
