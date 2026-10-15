@@ -18,7 +18,7 @@ Future<bool> showSmsDetectionDisclosure(
     barrierDismissible: true,
     builder: (ctx) => AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(ctx).colorScheme.surfaceContainerLow,
       surfaceTintColor: Colors.transparent,
       titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
       contentPadding: const EdgeInsets.symmetric(horizontal: 24),
@@ -44,18 +44,18 @@ Future<bool> showSmsDetectionDisclosure(
               children: [
                 Text(
                   l10n.smsDisclosureTitle,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'PlusJakartaSans',
                     fontWeight: FontWeight.w700,
                     fontSize: 18,
-                    color: DinarColors.ink,
+                    color: Theme.of(ctx).colorScheme.onSurface,
                   ),
                 ),
                 Text(
                   l10n.smsDisclosureSubtitle,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
-                    color: DinarColors.muted,
+                    color: Theme.of(ctx).colorScheme.onSurfaceVariant,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -72,9 +72,9 @@ Future<bool> showSmsDetectionDisclosure(
             const SizedBox(height: 8),
             Text(
               l10n.smsDisclosureDescription,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
-                color: DinarColors.ink,
+                color: Theme.of(ctx).colorScheme.onSurface,
                 height: 1.4,
               ),
             ),
@@ -193,7 +193,9 @@ class _DisclosureBullet extends StatelessWidget {
               text,
               style: TextStyle(
                 fontSize: 13,
-                color: highlight ? DinarColors.forest : DinarColors.ink,
+                color: highlight
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).colorScheme.onSurface,
                 fontWeight: highlight ? FontWeight.w600 : FontWeight.w400,
                 height: 1.35,
               ),

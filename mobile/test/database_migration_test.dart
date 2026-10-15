@@ -147,7 +147,7 @@ Future<void> _createVersionOneSchema(File file) async {
 }
 
 void main() {
-  test('schema v1 migrates to v2 without deleting existing records', () async {
+  test('schema v1 migrates to current schema version without deleting existing records', () async {
     final directory = await Directory.systemTemp.createTemp('dinarwise_v1_');
     final file = File('${directory.path}/migration.sqlite');
     addTearDown(() => directory.delete(recursive: true));
@@ -168,7 +168,7 @@ void main() {
         .customSelect('PRAGMA user_version')
         .map((row) => row.read<int>('user_version'))
         .getSingle();
-    expect(version, 2);
+    expect(version, 3);
 
     final newTables = await database
         .customSelect(

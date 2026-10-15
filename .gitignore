@@ -23,3 +23,5 @@ coverage/
 *.cpgz
 mobile/dist/
 DinarWise/
+*.pdf
+**/ggml-base.bin

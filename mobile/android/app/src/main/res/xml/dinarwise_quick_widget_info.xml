@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/dinarwise_widget_desc"
+    android:initialKeyguardLayout="@layout/dinarwise_quick_widget"
+    android:initialLayout="@layout/dinarwise_quick_widget"
+    android:minWidth="180dp"
+    android:minHeight="76dp"
+    android:previewLayout="@layout/dinarwise_quick_widget"
+    android:resizeMode="horizontal|vertical"
+    android:targetCellWidth="3"
+    android:targetCellHeight="2"
+    android:maxResizeWidth="550dp"
+    android:maxResizeHeight="160dp"
+    android:updatePeriodMillis="0"
+    android:widgetCategory="home_screen" />

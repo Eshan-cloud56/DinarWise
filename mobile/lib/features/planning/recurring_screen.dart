@@ -1,9 +1,8 @@
 import 'package:dinarwise/core/widgets/dinar_form.dart';
-import 'package:dinarwise/core/currency/gulf_currency.dart';
+import 'package:dinarwise/core/currency/app_currency.dart';
 import 'package:dinarwise/core/preferences/onboarding_controller.dart';
 import 'package:dinarwise/features/categories/category_localization.dart';
 import 'package:dinarwise/features/categories/data/category_repository.dart';
-import 'package:dinarwise/features/expenses/amount_parser.dart';
 import 'package:dinarwise/features/expenses/data/expense_providers.dart';
 import 'package:dinarwise/features/planning/data/commitments_repository.dart';
 import 'package:dinarwise/features/planning/data/planning_providers.dart';
@@ -21,12 +20,17 @@ class RecurringScreen extends ConsumerWidget {
     RecurringDetails? item,
   ]) async {
     final categories = ref.read(categoriesProvider).valueOrNull ?? const [];
+    final appCurrency = ref.read(selectedCurrencyProvider);
     final draft = await showModalBottomSheet<RecurringDraft>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       showDragHandle: true,
-      builder: (_) => _RecurringEditor(item: item, categories: categories),
+      builder: (_) => _RecurringEditor(
+        item: item,
+        categories: categories,
+        appCurrency: appCurrency,
+      ),
     );
     if (draft == null) return;
     final onboarding = await ref.read(onboardingControllerProvider.future);
@@ -38,6 +42,7 @@ class RecurringScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final items = ref.watch(recurringDetailsProvider);
+    final appCurrency = ref.watch(selectedCurrencyProvider);
     final currency = _currency(context, ref);
     return Scaffold(
       appBar: AppBar(title: Text(context.l10n.billsAndSubscriptions)),
@@ -59,7 +64,7 @@ class RecurringScreen extends ConsumerWidget {
                   final item = records[index];
                   return Card(
                     child: ListTile(
-                      onTap: () => _details(context, ref, item, currency),
+                      onTap: () => _details(context, ref, item, currency, appCurrency),
                       leading: CircleAvatar(
                         child: Icon(
                           item.isSubscription
@@ -75,7 +80,7 @@ class RecurringScreen extends ConsumerWidget {
                       trailing: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text(currency.format(item.amountMinor / 100)),
+                          Text(currency.format(appCurrency.toMajor(item.amountMinor))),
                           if (item.status == 'ended') Text(context.l10n.ended),
                         ],
                       ),
@@ -92,6 +97,7 @@ class RecurringScreen extends ConsumerWidget {
     WidgetRef ref,
     RecurringDetails item,
     NumberFormat currency,
+    AppCurrency appCurrency,
   ) {
     final repository = ref.read(commitmentsRepositoryProvider);
     return showModalBottomSheet<void>(
@@ -110,8 +116,8 @@ class RecurringScreen extends ConsumerWidget {
               ),
               subtitle: Text(
                 '${context.l10n.lifetimePaid}: '
-                '${currency.format(item.lifetimePaidMinor / 100)}'
-                '${item.recurrence == 'yearly' ? '\n${context.l10n.monthlyEquivalent}: ${currency.format(item.monthlyEquivalentMinor / 100)}' : ''}',
+                '${currency.format(appCurrency.toMajor(item.lifetimePaidMinor))}'
+                '${item.recurrence == 'yearly' ? '\n${context.l10n.monthlyEquivalent}: ${currency.format(appCurrency.toMajor(item.monthlyEquivalentMinor))}' : ''}',
               ),
               trailing: IconButton(
                 onPressed: () {
@@ -125,7 +131,7 @@ class RecurringScreen extends ConsumerWidget {
               child: ListView(
                 children: item.occurrences.map((occurrence) {
                   return ListTile(
-                    title: Text(currency.format(occurrence.amountMinor / 100)),
+                    title: Text(currency.format(appCurrency.toMajor(occurrence.amountMinor))),
                     subtitle: Text(
                       '${DateFormat.yMMMd().format(occurrence.scheduledAt)} • '
                       '${occurrence.status == 'paid' ? context.l10n.paid : context.l10n.upcoming}',
@@ -153,6 +159,7 @@ class RecurringScreen extends ConsumerWidget {
                                   context,
                                   repository,
                                   occurrence,
+                                  appCurrency,
                                 );
                               }
                               if (context.mounted) Navigator.pop(context);
@@ -194,9 +201,10 @@ class RecurringScreen extends ConsumerWidget {
     BuildContext context,
     CommitmentsRepository repository,
     RecurringOccurrenceDetails occurrence,
+    AppCurrency appCurrency,
   ) async {
     final controller = TextEditingController(
-      text: (occurrence.amountMinor / 100).toStringAsFixed(2),
+      text: appCurrency.formatAmountForInput(occurrence.amountMinor),
     );
     final save = await showDialog<bool>(
       context: context,
@@ -219,22 +227,27 @@ class RecurringScreen extends ConsumerWidget {
         ],
       ),
     );
-    final amount = parseLocalizedAmount(controller.text);
+    final amountMinor = appCurrency.parseToMinor(controller.text);
     controller.dispose();
-    if (save == true && amount != null && amount > 0) {
+    if (save == true && amountMinor > 0) {
       await repository.editOccurrence(
         occurrence.id,
-        (amount * 100).round(),
+        amountMinor,
       );
     }
   }
 }
 
 class _RecurringEditor extends StatefulWidget {
-  const _RecurringEditor({required this.item, required this.categories});
+  const _RecurringEditor({
+    required this.item,
+    required this.categories,
+    required this.appCurrency,
+  });
 
   final RecurringDetails? item;
   final List<CategoryRecord> categories;
+  final AppCurrency appCurrency;
 
   @override
   State<_RecurringEditor> createState() => _RecurringEditorState();
@@ -246,7 +259,7 @@ class _RecurringEditorState extends State<_RecurringEditor> {
   late final TextEditingController _amount = TextEditingController(
     text: widget.item == null
         ? null
-        : (widget.item!.amountMinor / 100).toStringAsFixed(2),
+        : widget.appCurrency.formatAmountForInput(widget.item!.amountMinor),
   );
   late final TextEditingController _occurrences = TextEditingController(
     text: widget.item?.maxOccurrences?.toString(),
@@ -362,8 +375,8 @@ class _RecurringEditorState extends State<_RecurringEditor> {
           width: double.infinity,
           child: FilledButton(
             onPressed: () {
-              final amount = parseLocalizedAmount(_amount.text);
-              if (_name.text.trim().isEmpty || amount == null || amount <= 0) {
+              final amountMinor = widget.appCurrency.parseToMinor(_amount.text);
+              if (_name.text.trim().isEmpty || amountMinor <= 0) {
                 return;
               }
               Navigator.pop(
@@ -371,7 +384,7 @@ class _RecurringEditorState extends State<_RecurringEditor> {
                 RecurringDraft(
                   id: widget.item?.id,
                   name: _name.text.trim(),
-                  amountMinor: (amount * 100).round(),
+                  amountMinor: amountMinor,
                   recurrence: _recurrence,
                   intervalCount: _interval,
                   categoryId: _categoryId,

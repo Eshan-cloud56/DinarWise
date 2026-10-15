@@ -345,5 +345,36 @@ void main() {
       await tester.pumpAndSettle();
       await tester.runAsync(env.db.close);
     });
+
+    testWidgets('HistoryScreen with autoFocusSearch: true requests focus on search TextField', (tester) async {
+      final env = await setupTestEnv(tester);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            sharedPreferencesProvider.overrideWithValue(env.prefs),
+            databaseProvider.overrideWithValue(env.db),
+          ],
+          child: const MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: Scaffold(
+              body: HistoryScreen(
+                autoFocusSearch: true,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      final textField = tester.widget<TextField>(find.byType(TextField));
+      expect(textField.focusNode?.hasFocus, isTrue);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+      await tester.runAsync(env.db.close);
+    });
   });
 }

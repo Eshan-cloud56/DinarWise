@@ -4,4 +4,14 @@
     <string name="voice_expense_widget_desc">سجّل مصاريفك فوراً باستخدام الصوت.</string>
     <string name="voice_expense_widget_title">تسجيل صوتي</string>
     <string name="voice_expense_widget_subtitle">اضغط للتحدث</string>
+
+    <string name="dinarwise_widget_name">أداة دينار وايز السريعة</string>
+    <string name="dinarwise_widget_desc">وصول سريع إلى الكاميرا والوسائط والمصاريف الصوتية.</string>
+    <string name="dinarwise_widget_title">دينار وايز</string>
+    <string name="dinarwise_widget_subtitle">إجراءات سريعة</string>
+    <string name="widget_action_camera">كاميرا</string>
+    <string name="widget_action_media">وسائط</string>
+    <string name="widget_action_voice">صوت</string>
+    <string name="widget_action_search">بحث</string>
+    <string name="widget_search_hint">البحث في أحدث المصاريف</string>
 </resources>

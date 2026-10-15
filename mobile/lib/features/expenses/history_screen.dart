@@ -34,11 +34,13 @@ class HistoryLaunchArgs {
     this.categoryId,
     this.searchQuery,
     this.smartSearchResult,
+    this.autoFocusSearch = false,
   });
 
   final String? categoryId;
   final String? searchQuery;
   final SmartSearchResult? smartSearchResult;
+  final bool autoFocusSearch;
 }
 
 class HistoryScreen extends ConsumerStatefulWidget {
@@ -46,12 +48,14 @@ class HistoryScreen extends ConsumerStatefulWidget {
     this.initialCategoryId,
     this.initialSearch,
     this.initialSmartSearchResult,
+    this.autoFocusSearch = false,
     super.key,
   });
 
   final String? initialCategoryId;
   final String? initialSearch;
   final SmartSearchResult? initialSmartSearchResult;
+  final bool autoFocusSearch;
 
   @override
   ConsumerState<HistoryScreen> createState() => _HistoryScreenState();
@@ -61,6 +65,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   static const _pageSize = 50;
 
   final _searchController = TextEditingController();
+  final _searchFocusNode = FocusNode();
   final _scrollController = ScrollController();
   TransactionHistoryFilter _filter = const TransactionHistoryFilter();
   List<ExpenseRecord> _items = const [];
@@ -91,6 +96,14 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
       _items = widget.initialSmartSearchResult!.items;
     }
 
+    if (widget.autoFocusSearch) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _searchFocusNode.requestFocus();
+        }
+      });
+    }
+
     Future<void>.microtask(_initialize);
   }
 
@@ -99,6 +112,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     _debounce?.cancel();
     _smartSearchCancelToken?.cancel();
     _searchController.dispose();
+    _searchFocusNode.dispose();
     _scrollController.dispose();
     super.dispose();
   }
@@ -263,19 +277,13 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
             if (!mounted) return;
             setState(() {
               _isSmartSearching = false;
-              _smartSearchError =
-                  Localizations.localeOf(context).languageCode.startsWith('ar')
-                      ? 'البحث الذكي غير متاح حالياً. تحقق من الاتصال وحاول مجدداً.'
-                      : 'Smart Search is unavailable. Check connection and try again.';
+              _smartSearchError = context.l10n.smartSearchUnavailable;
             });
           } catch (_) {
             if (!mounted) return;
             setState(() {
               _isSmartSearching = false;
-              _smartSearchError =
-                  Localizations.localeOf(context).languageCode.startsWith('ar')
-                      ? 'البحث الذكي غير متاح حالياً. تحقق من الاتصال وحاول مجدداً.'
-                      : 'Smart Search is unavailable. Check connection and try again.';
+              _smartSearchError = context.l10n.smartSearchUnavailable;
             });
           }
         },
@@ -419,6 +427,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                       categories: categories,
                       paymentMethods: paymentMethods,
                       searchController: _searchController,
+                      searchFocusNode: _searchFocusNode,
                       onSearchChanged: _searchChanged,
                       onTypeChanged: (type) {
                         ref
@@ -635,6 +644,7 @@ class _FilterPanel extends StatelessWidget {
     required this.categories,
     required this.paymentMethods,
     required this.searchController,
+    this.searchFocusNode,
     required this.onSearchChanged,
     required this.onTypeChanged,
     required this.onCategoryChanged,
@@ -649,6 +659,7 @@ class _FilterPanel extends StatelessWidget {
   final List<CategoryRecord> categories;
   final List<PaymentMethodDetails> paymentMethods;
   final TextEditingController searchController;
+  final FocusNode? searchFocusNode;
   final ValueChanged<String> onSearchChanged;
   final ValueChanged<String> onTypeChanged;
   final ValueChanged<String?> onCategoryChanged;
@@ -667,6 +678,7 @@ class _FilterPanel extends StatelessWidget {
         children: [
           TextField(
             controller: searchController,
+            focusNode: searchFocusNode,
             onChanged: onSearchChanged,
             decoration: InputDecoration(
               prefixIcon: const Icon(Icons.search),
@@ -704,7 +716,7 @@ class _FilterPanel extends StatelessWidget {
                         labelStyle: TextStyle(
                             color: filter.type == option.$1
                                 ? Colors.white
-                                : DinarColors.ink),
+                                : Theme.of(context).colorScheme.onSurface),
                         onSelected: (_) => onTypeChanged(option.$1),
                       )),
               ])),

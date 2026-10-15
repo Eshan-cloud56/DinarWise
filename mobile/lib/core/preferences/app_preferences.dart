@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
@@ -7,6 +8,8 @@ const _privacyAcceptedKey = 'privacy_policy_accepted';
 const _privacyVersionKey = 'privacy_policy_version';
 const _privacyAcceptedAtKey = 'privacy_policy_accepted_at';
 const _onboardingCompletedKey = 'onboarding_completed';
+const _introCompletedKey = 'intro_slides_completed';
+const _themeModeKey = 'app_theme_mode';
 const _localProfileIdKey = 'local_profile_id';
 const _selectedCurrencyKey = 'selected_currency';
 const _analyticsAllowedKey = 'analytics_allowed';
@@ -36,6 +39,34 @@ class AppPreferences {
 
   bool get onboardingCompleted =>
       _preferences.getBool(_onboardingCompletedKey) ?? false;
+
+  bool get introCompleted =>
+      _preferences.getBool(_introCompletedKey) ?? false;
+
+  Future<void> setIntroCompleted(bool completed) =>
+      _preferences.setBool(_introCompletedKey, completed);
+
+  ThemeMode get themeMode {
+    final modeStr = _preferences.getString(_themeModeKey);
+    switch (modeStr) {
+      case 'light':
+        return ThemeMode.light;
+      case 'dark':
+        return ThemeMode.dark;
+      case 'system':
+      default:
+        return ThemeMode.system;
+    }
+  }
+
+  Future<void> setThemeMode(ThemeMode mode) {
+    final modeStr = switch (mode) {
+      ThemeMode.light => 'light',
+      ThemeMode.dark => 'dark',
+      ThemeMode.system => 'system',
+    };
+    return _preferences.setString(_themeModeKey, modeStr);
+  }
 
   String? get localProfileId => _preferences.getString(_localProfileIdKey);
   String? get selectedCurrency => _preferences.getString(_selectedCurrencyKey);
@@ -118,7 +149,9 @@ class AppPreferences {
       _privacyAcceptedAtKey,
       acceptedAt.toUtc().toIso8601String(),
     );
-    await _preferences.setBool(_onboardingCompletedKey, false);
+    if (selectedCurrency == null || selectedCurrency!.isEmpty) {
+      await _preferences.setBool(_onboardingCompletedKey, false);
+    }
   }
 
   Future<void> clearOnboardingAndPreferences() async {

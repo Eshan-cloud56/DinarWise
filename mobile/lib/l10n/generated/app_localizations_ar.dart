@@ -1292,6 +1292,20 @@ class AppLocalizationsAr extends AppLocalizations {
       'سجّل المتجر والفئة والتاريخ والملاحظات الاختيارية لكل مصروف.';
 
   @override
+  String get tutorialScanBillTitle => 'إرفاق فاتورة';
+
+  @override
+  String get tutorialScanBillDescription =>
+      'التقط صورة للإيصال بالكاميرا أو اخترها من المعرض لاستخراج تفاصيل المصروف تلقائياً ومراجعتها قبل الحفظ.';
+
+  @override
+  String get tutorialVoiceTitle => 'المصروف الصوتي';
+
+  @override
+  String get tutorialVoiceDescription =>
+      'تحدث بمصروفك بصوت طبيعي وراجع التفاصيل التي تم التعرف عليها بدقة قبل الحفظ.';
+
+  @override
   String get tutorialTransactionsTitle => 'المصروفات الأخيرة';
 
   @override
@@ -1508,4 +1522,248 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get smsDetectionUnavailable =>
       'الكشف التلقائي عن المعاملات غير متوفر في هذه النسخة.';
+
+  @override
+  String get voice => 'صوت';
+
+  @override
+  String get voiceExpense => 'المصروف الصوتي';
+
+  @override
+  String get helpAndTutorials => 'المساعدة والدروس التعليمية';
+
+  @override
+  String get featureTutorials => 'الدروس التعليمية للميزات';
+
+  @override
+  String get featureTutorialsSubtitle =>
+      'تعرّف على كيفية استخدام جميع ميزات دينار وايز.\nاضغط على أي درس لعرضه.';
+
+  @override
+  String get replayAllTutorials => 'إعادة عرض جميع الدروس';
+
+  @override
+  String get allTutorialsReset => 'تمت إعادة ضبط جميع الدروس!';
+
+  @override
+  String get allTutorialsResetSnackbar =>
+      'تمت إعادة ضبط جميع الدروس. ستظهر لك مجددًا عند زيارة كل ميزة.';
+
+  @override
+  String tutorialResetSnackbar(String title) {
+    return 'تمت إعادة ضبط درس $title. سيظهر لك عند زيارة الميزة مجددًا.';
+  }
+
+  @override
+  String get replay => 'إعادة عرض';
+
+  @override
+  String get gotIt => 'فهمت';
+
+  @override
+  String stepXofY(int current, int total) {
+    return 'الخطوة $current من $total';
+  }
+
+  @override
+  String get tutorialHomeDescription =>
+      'تعرّف على ملخص لوحة التحكم والإجراءات السريعة وتوزيع الإنفاق والرؤى الذكية.';
+
+  @override
+  String get tutorialHistoryDescription =>
+      'استعرض وابحث وصَفِّ معاملاتك مع نتائج فورية.';
+
+  @override
+  String get tutorialSmartSearchTitle => 'البحث الذكي';
+
+  @override
+  String get tutorialSmartSearchDescription =>
+      'اطرح أسئلة باللغة الطبيعية عن أموالك. تبقى سجلاتك المالية وعمليات الحساب على جهازك.';
+
+  @override
+  String get tutorialSmartReceiptTitle => 'المسح الذكي للفواتير';
+
+  @override
+  String get tutorialSmartReceiptDescription =>
+      'امسح الإيصالات بالكاميرا أو المعرض واملأ تفاصيل المصروف تلقائياً.';
+
+  @override
+  String get tutorialVoiceExpenseTitle => 'المصروف الصوتي';
+
+  @override
+  String get tutorialVoiceExpenseDescription =>
+      'تحدث بمصروفك بصوت طبيعي ودع الذكاء الاصطناعي على الجهاز يملأ التفاصيل.';
+
+  @override
+  String get tutorialSmsDetectionTitle => 'الكشف التلقائي عن المعاملات';
+
+  @override
+  String get tutorialSmsDetectionDescription =>
+      'كشف إشعارات الرسائل المصرفية تلقائياً واقتراح قيود المصروفات.';
+
+  @override
+  String get tutorialSpendingAlertsTitle => 'تنبيهات الإنفاق';
+
+  @override
+  String get tutorialSpendingAlertsDescription =>
+      'عيّن حدوداً مخصصة وتلقّ إشعارات عند تجاوز حدود إنفاقك.';
+
+  @override
+  String get tutorialPlanningTitle => 'التخطيط المالي';
+
+  @override
+  String get tutorialPlanningDescription =>
+      'الميزانيات وأهداف الادخار والمصاريف المتكررة ومتابعة الشراء الآن والدفع لاحقاً.';
+
+  @override
+  String get tutorialBottomNavTitle => 'التنقل في التطبيق';
+
+  @override
+  String get tutorialBottomNavDescription =>
+      'نظرة سريعة على أشرطة التنقل السفلية ووظيفة كل منها.';
+
+  @override
+  String get tutorialHomeWidgetTitle => 'أداة الشاشة الرئيسية';
+
+  @override
+  String get tutorialHomeWidgetDescription =>
+      'أداة دينار وايز السريعة: أضفها إلى شاشتك الرئيسية للوصول السريع إلى البحث في المصاريف والكاميرا والوسائط والمصروف الصوتي.';
+
+  @override
+  String get widgetTutorialTitle => 'أداة دينار وايز السريعة';
+
+  @override
+  String get widgetTutorialSubtitle =>
+      'أضف أداة دينار وايز إلى شاشتك الرئيسية في أندرويد للوصول السريع للبحث والمسح الذكي للفواتير ورفع الإيصالات والمصروف الصوتي.';
+
+  @override
+  String get widgetTutorialSearchDesc =>
+      'البحث في أحدث المصاريف مع التركيز الفوري على لوحة المفاتيح.';
+
+  @override
+  String get widgetTutorialCameraDesc =>
+      'مسح إيصال جديد باستخدام التعرف الضوئي على الحروف دون اتصال.';
+
+  @override
+  String get widgetTutorialMediaDesc =>
+      'استيراد صورة إيصال موجودة من معرض الصور.';
+
+  @override
+  String get widgetTutorialVoiceDesc =>
+      'سجّل مصروفاً دون استخدام اليدين عبر التحدث بصوت طبيعي.';
+
+  @override
+  String get widgetTutorialTip =>
+      'تلميح: اضغط مطولاً على أي مساحة فارغة في شاشتك الرئيسية، ثم انقر على “الأدوات” (Widgets)، واسحب دينار وايز إلى شاشتك.';
+
+  @override
+  String get voiceExpenseSubtitle =>
+      'تحدث بمصروفك بصوت طبيعي — خصوصية تامة 100% على جهازك.';
+
+  @override
+  String get trySaying => 'جرّب أن تقول:';
+
+  @override
+  String get voiceExample1 => '• “صرفت 100 ريال في البيك كاش”';
+
+  @override
+  String get voiceExample2 => '• “أمس صرفت 80 ريال بنزين بالبطاقة”';
+
+  @override
+  String get tapToRecord => 'اضغط للتسجيل';
+
+  @override
+  String get listening => 'جارٍ الاستماع…';
+
+  @override
+  String get tapWhenDone => 'اضغط عند الانتهاء';
+
+  @override
+  String get transcribingAudio => 'جارٍ تحويل الصوت على الجهاز…';
+
+  @override
+  String get whisperModel => 'نموذج Whisper Base متعدد اللغات';
+
+  @override
+  String get recognizedExpense => 'المصروف المكتشف';
+
+  @override
+  String get amountNotRecognized => 'لم يتم التعرف على المبلغ';
+
+  @override
+  String get required => 'مطلوب';
+
+  @override
+  String get merchantRequiredBanner =>
+      'المتجر مطلوب: تم استخراج تفاصيل المصروف، ولكن اسم المتجر غير متوفر. يرجى إدخال اسم المتجر قبل الحفظ.';
+
+  @override
+  String get reviewInAddExpense => 'مراجعة في إضافة مصروف';
+
+  @override
+  String get transcriptionFailed => 'فشل تحويل الصوت';
+
+  @override
+  String get couldNotTranscribe =>
+      'تعذر تحويل الكلام الصوتي. يرجى المحاولة مرة أخرى.';
+
+  @override
+  String get voiceMicPermissionRequired =>
+      'يلزم منح إذن الميكروفون لاستخدام المصروف الصوتي.';
+
+  @override
+  String get voiceRecordInitFailed => 'تعذر تهيئة تسجيل الصوت.';
+
+  @override
+  String get voiceNoSpeechDetected =>
+      'لم يتم رصد أي كلام. يرجى التحدث مرة أخرى.';
+
+  @override
+  String get voiceTranscriptionError =>
+      'تعذر تحويل الكلام الصوتي. يرجى المحاولة مرة أخرى.';
+
+  @override
+  String get smartSearchUnavailable =>
+      'البحث الذكي غير متاح حالياً. تحقق من الاتصال وحاول مجدداً.';
+
+  @override
+  String get note => 'ملاحظة';
+
+  @override
+  String get retry => 'إعادة المحاولة';
+
+  @override
+  String get widgetActionSearch => 'بحث';
+
+  @override
+  String get widgetActionCamera => 'كاميرا';
+
+  @override
+  String get widgetActionMedia => 'وسائط';
+
+  @override
+  String get appearance => 'المظهر';
+
+  @override
+  String get themeModeSystem => 'النظام الافتراضي';
+
+  @override
+  String get themeModeLight => 'الوضع الفاتح';
+
+  @override
+  String get themeModeDark => 'الوضع الداكن';
+
+  @override
+  String get introTour => 'جولة البداية التعريفية';
+
+  @override
+  String get introTourSubtitle => 'استعراض شرائح ومزايا البداية التعريفية';
+
+  @override
+  String get introNext => 'التالي';
+
+  @override
+  String introSlideCount(Object current, Object total) {
+    return 'الشريحة $current من $total';
+  }
 }

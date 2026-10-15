@@ -1298,6 +1298,20 @@ class AppLocalizationsEn extends AppLocalizations {
       'Record the merchant, category, date and optional notes for each expense.';
 
   @override
+  String get tutorialScanBillTitle => 'Scan bill';
+
+  @override
+  String get tutorialScanBillDescription =>
+      'Take a receipt photo or choose from your gallery to extract expense details automatically, and review everything before saving.';
+
+  @override
+  String get tutorialVoiceTitle => 'Voice expense';
+
+  @override
+  String get tutorialVoiceDescription =>
+      'Speak an expense naturally and review the recognized details before saving.';
+
+  @override
   String get tutorialTransactionsTitle => 'Recent expenses';
 
   @override
@@ -1514,4 +1528,247 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get smsDetectionUnavailable =>
       'Automatic transaction detection is not available in this build.';
+
+  @override
+  String get voice => 'Voice';
+
+  @override
+  String get voiceExpense => 'Voice Expense';
+
+  @override
+  String get helpAndTutorials => 'Help & Tutorials';
+
+  @override
+  String get featureTutorials => 'Feature Tutorials';
+
+  @override
+  String get featureTutorialsSubtitle =>
+      'Learn how to use every feature of DinarWise.\nTap any tutorial to view it.';
+
+  @override
+  String get replayAllTutorials => 'Replay All Feature Tutorials';
+
+  @override
+  String get allTutorialsReset => 'All Tutorials Reset!';
+
+  @override
+  String get allTutorialsResetSnackbar =>
+      'All tutorials have been reset. You will see them again when you visit each feature.';
+
+  @override
+  String tutorialResetSnackbar(String title) {
+    return '$title tutorial reset. It will appear when you next visit the feature.';
+  }
+
+  @override
+  String get replay => 'Replay';
+
+  @override
+  String get gotIt => 'Got it';
+
+  @override
+  String stepXofY(int current, int total) {
+    return 'Step $current of $total';
+  }
+
+  @override
+  String get tutorialHomeDescription =>
+      'Learn about the dashboard snapshot, quick actions, spending breakdown, and smart insights.';
+
+  @override
+  String get tutorialHistoryDescription =>
+      'Browse, search, and filter your transactions with instant results.';
+
+  @override
+  String get tutorialSmartSearchTitle => 'Smart Search';
+
+  @override
+  String get tutorialSmartSearchDescription =>
+      'Ask natural-language questions about your finances. Your financial records and calculations remain on your device.';
+
+  @override
+  String get tutorialSmartReceiptTitle => 'Smart Bill Scan';
+
+  @override
+  String get tutorialSmartReceiptDescription =>
+      'Scan receipts with your camera or gallery and auto-fill expense details.';
+
+  @override
+  String get tutorialVoiceExpenseTitle => 'Voice Expense';
+
+  @override
+  String get tutorialVoiceExpenseDescription =>
+      'Speak your expense naturally and let on-device AI fill in the details.';
+
+  @override
+  String get tutorialSmsDetectionTitle => 'Automatic Transaction Detection';
+
+  @override
+  String get tutorialSmsDetectionDescription =>
+      'Automatically detect bank SMS notifications and suggest expense entries.';
+
+  @override
+  String get tutorialSpendingAlertsTitle => 'Spending Alerts';
+
+  @override
+  String get tutorialSpendingAlertsDescription =>
+      'Set custom thresholds and get notified when your spending exceeds limits.';
+
+  @override
+  String get tutorialPlanningTitle => 'Financial Planning';
+
+  @override
+  String get tutorialPlanningDescription =>
+      'Budgets, savings goals, recurring expenses, and Buy Now Pay Later tracking.';
+
+  @override
+  String get tutorialBottomNavTitle => 'Navigation Overview';
+
+  @override
+  String get tutorialBottomNavDescription =>
+      'A quick overview of the bottom navigation tabs and what each one does.';
+
+  @override
+  String get tutorialHomeWidgetTitle => 'Home Screen Widget';
+
+  @override
+  String get tutorialHomeWidgetDescription =>
+      'DinarWise Quick Widget: Add to your Android home screen for quick access to Search Recent Expenses, Camera, Media, and Voice Expense.';
+
+  @override
+  String get widgetTutorialTitle => 'DinarWise Quick Widget';
+
+  @override
+  String get widgetTutorialSubtitle =>
+      'Add the DinarWise widget to your Android home screen for quick access to Search, Smart Bill Scan, receipt upload, and Voice Expense.';
+
+  @override
+  String get widgetTutorialSearchDesc =>
+      'Search recent expenses with immediate keyboard focus.';
+
+  @override
+  String get widgetTutorialCameraDesc => 'Scan a new receipt with offline OCR.';
+
+  @override
+  String get widgetTutorialMediaDesc =>
+      'Import an existing receipt photo from your gallery.';
+
+  @override
+  String get widgetTutorialVoiceDesc =>
+      'Create an expense hands-free by speaking naturally.';
+
+  @override
+  String get widgetTutorialTip =>
+      'Tip: Long-press any empty space on your Android home screen, tap “Widgets”, and drag DinarWise to your home screen.';
+
+  @override
+  String get voiceExpenseSubtitle =>
+      'Speak your expense naturally — 100% on-device & private.';
+
+  @override
+  String get trySaying => 'Try saying:';
+
+  @override
+  String get voiceExample1 => '• “I spent 100 SAR at Al Baik using cash.”';
+
+  @override
+  String get voiceExample2 => '• “Spent 80 SAR on fuel with card yesterday.”';
+
+  @override
+  String get tapToRecord => 'Tap to record';
+
+  @override
+  String get listening => 'Listening…';
+
+  @override
+  String get tapWhenDone => 'Tap when done';
+
+  @override
+  String get transcribingAudio => 'Transcribing audio on-device…';
+
+  @override
+  String get whisperModel => 'Whisper Base multilingual model';
+
+  @override
+  String get recognizedExpense => 'Recognized Expense';
+
+  @override
+  String get amountNotRecognized => 'Amount not recognized';
+
+  @override
+  String get required => 'Required';
+
+  @override
+  String get merchantRequiredBanner =>
+      'Merchant required: We detected the expense details, but the merchant name is missing. Please enter the merchant before saving.';
+
+  @override
+  String get reviewInAddExpense => 'Review in Add Expense';
+
+  @override
+  String get transcriptionFailed => 'Transcription Failed';
+
+  @override
+  String get couldNotTranscribe =>
+      'Could not transcribe speech. Please try again.';
+
+  @override
+  String get voiceMicPermissionRequired =>
+      'Microphone permission is required to use Voice Expense.';
+
+  @override
+  String get voiceRecordInitFailed => 'Could not initialize audio recording.';
+
+  @override
+  String get voiceNoSpeechDetected =>
+      'No speech was detected. Please try speaking again.';
+
+  @override
+  String get voiceTranscriptionError =>
+      'Could not transcribe speech. Please try again.';
+
+  @override
+  String get smartSearchUnavailable =>
+      'Smart Search is unavailable. Check connection and try again.';
+
+  @override
+  String get note => 'Note';
+
+  @override
+  String get retry => 'Retry';
+
+  @override
+  String get widgetActionSearch => 'Search';
+
+  @override
+  String get widgetActionCamera => 'Camera';
+
+  @override
+  String get widgetActionMedia => 'Media';
+
+  @override
+  String get appearance => 'Appearance';
+
+  @override
+  String get themeModeSystem => 'System default';
+
+  @override
+  String get themeModeLight => 'Light mode';
+
+  @override
+  String get themeModeDark => 'Dark mode';
+
+  @override
+  String get introTour => 'Introduction Tour';
+
+  @override
+  String get introTourSubtitle => 'View the introduction slides and highlights';
+
+  @override
+  String get introNext => 'Next';
+
+  @override
+  String introSlideCount(Object current, Object total) {
+    return 'Slide $current of $total';
+  }
 }

@@ -13,7 +13,6 @@ import 'package:dinarwise/core/preferences/onboarding_controller.dart';
 import 'package:dinarwise/core/theme.dart';
 import 'package:dinarwise/core/widgets/dinar_widgets.dart';
 import 'package:dinarwise/features/analytics/analytics_calculator.dart';
-import 'package:dinarwise/features/capture/capture_screen.dart';
 import 'package:dinarwise/features/capture/offline_ai_notice.dart';
 import 'package:dinarwise/features/categories/category_localization.dart';
 import 'package:dinarwise/features/expenses/data/expense_providers.dart';
@@ -28,7 +27,7 @@ import 'package:dinarwise/features/planning/planning_hub_screen.dart';
 import 'package:dinarwise/features/planning/widgets/recurring_suggestion_card.dart';
 import 'package:dinarwise/features/categories/data/category_repository.dart';
 import 'package:dinarwise/features/payment_methods/payment_method_repository.dart';
-import 'package:dinarwise/features/receipts/smart/receipt_scan_service.dart';
+import 'package:dinarwise/features/receipts/smart/receipt_launcher.dart';
 import 'package:dinarwise/features/voice_expense/presentation/voice_expense_modal.dart';
 import 'package:dinarwise/features/smart_search/data/smart_search_service.dart';
 import 'package:dinarwise/features/smart_search/domain/smart_search_heuristic.dart';
@@ -60,6 +59,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   final _summaryKey = GlobalKey();
   final _addIncomeKey = GlobalKey();
   final _addExpenseKey = GlobalKey();
+  final _scanBillKey = GlobalKey();
+  final _voiceKey = GlobalKey();
   final _transactionsKey = GlobalKey();
   final _analyticsKey = GlobalKey();
   final _settingsKey = GlobalKey();
@@ -74,6 +75,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         dashboardSummary: _summaryKey,
         addIncome: _addIncomeKey,
         addExpense: _addExpenseKey,
+        scanBill: _scanBillKey,
+        voice: _voiceKey,
         transactions: _transactionsKey,
         analytics: _analyticsKey,
         settings: _settingsKey,
@@ -295,7 +298,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final l = context.l10n;
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -310,13 +313,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 height: 4,
                 margin: const EdgeInsets.only(bottom: 12),
                 decoration: BoxDecoration(
-                  color: DinarColors.border,
+                  color: Theme.of(context).colorScheme.outlineVariant,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
               ListTile(
-                leading: const Icon(Icons.photo_camera_outlined,
-                    color: DinarColors.green),
+                leading: Icon(Icons.camera_alt_outlined,
+                    color: Theme.of(context).colorScheme.primary),
                 title: Text(l.takeReceiptPhoto),
                 onTap: () {
                   Navigator.pop(sheetContext);
@@ -324,8 +327,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.photo_library_outlined,
-                    color: DinarColors.green),
+                leading: Icon(Icons.photo_library_outlined,
+                    color: Theme.of(context).colorScheme.primary),
                 title: Text(l.chooseReceiptPhoto),
                 onTap: () {
                   Navigator.pop(sheetContext);
@@ -340,22 +343,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   Future<void> _handleScanBill(ImageSource source) async {
-    try {
-      final picked =
-          await ref.read(receiptScanServiceProvider).images.pick(source);
-      if (picked != null && mounted) {
-        await context.push(
-          '/capture',
-          extra: CaptureLaunchArgs(sharedReceiptPath: picked),
-        );
-      }
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.receiptPickError)),
-        );
-      }
-    }
+    await launchSmartBillScan(context, ref, source: source);
   }
 
   Widget _buildTransactionList(
@@ -493,7 +481,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                               )
                             : IconButton(
                                 icon: const Icon(Icons.mic, size: 20, color: DinarColors.forest),
-                                tooltip: 'Voice Expense',
+                                tooltip: l.voiceExpense,
                                 onPressed: () => showVoiceExpenseModal(context),
                               )),
                   ),
@@ -625,17 +613,21 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                               onTap: () => manageIncome(context, ref)))),
                   const SizedBox(width: 8),
                   Expanded(
-                      child: _QuickAction(
-                          icon: Icons.document_scanner_outlined,
-                          label: l.scanBill,
-                          onTap: _showScanBillSheet)),
+                      child: KeyedSubtree(
+                          key: _scanBillKey,
+                          child: _QuickAction(
+                              icon: Icons.document_scanner_outlined,
+                              label: l.scanBill,
+                              onTap: _showScanBillSheet))),
                   const SizedBox(width: 8),
                   Expanded(
-                      child: _QuickAction(
-                          icon: Icons.mic_none_outlined,
-                          label: 'Voice',
-                          tint: DinarColors.mint,
-                          onTap: () => showVoiceExpenseModal(context))),
+                      child: KeyedSubtree(
+                          key: _voiceKey,
+                          child: _QuickAction(
+                              icon: Icons.mic_none_outlined,
+                              label: l.voice,
+                              tint: DinarColors.mint,
+                              onTap: () => showVoiceExpenseModal(context)))),
                 ]),
                 const SizedBox(height: 22),
 

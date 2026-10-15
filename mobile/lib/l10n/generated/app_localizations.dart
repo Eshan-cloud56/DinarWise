@@ -2486,6 +2486,30 @@ abstract class AppLocalizations {
   /// **'Record the merchant, category, date and optional notes for each expense.'**
   String get tutorialExpenseDescription;
 
+  /// No description provided for @tutorialScanBillTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan bill'**
+  String get tutorialScanBillTitle;
+
+  /// No description provided for @tutorialScanBillDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Take a receipt photo or choose from your gallery to extract expense details automatically, and review everything before saving.'**
+  String get tutorialScanBillDescription;
+
+  /// No description provided for @tutorialVoiceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice expense'**
+  String get tutorialVoiceTitle;
+
+  /// No description provided for @tutorialVoiceDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Speak an expense naturally and review the recognized details before saving.'**
+  String get tutorialVoiceDescription;
+
   /// No description provided for @tutorialTransactionsTitle.
   ///
   /// In en, this message translates to:
@@ -2863,6 +2887,432 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Automatic transaction detection is not available in this build.'**
   String get smsDetectionUnavailable;
+
+  /// No description provided for @voice.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice'**
+  String get voice;
+
+  /// No description provided for @voiceExpense.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice Expense'**
+  String get voiceExpense;
+
+  /// No description provided for @helpAndTutorials.
+  ///
+  /// In en, this message translates to:
+  /// **'Help & Tutorials'**
+  String get helpAndTutorials;
+
+  /// No description provided for @featureTutorials.
+  ///
+  /// In en, this message translates to:
+  /// **'Feature Tutorials'**
+  String get featureTutorials;
+
+  /// No description provided for @featureTutorialsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Learn how to use every feature of DinarWise.\nTap any tutorial to view it.'**
+  String get featureTutorialsSubtitle;
+
+  /// No description provided for @replayAllTutorials.
+  ///
+  /// In en, this message translates to:
+  /// **'Replay All Feature Tutorials'**
+  String get replayAllTutorials;
+
+  /// No description provided for @allTutorialsReset.
+  ///
+  /// In en, this message translates to:
+  /// **'All Tutorials Reset!'**
+  String get allTutorialsReset;
+
+  /// No description provided for @allTutorialsResetSnackbar.
+  ///
+  /// In en, this message translates to:
+  /// **'All tutorials have been reset. You will see them again when you visit each feature.'**
+  String get allTutorialsResetSnackbar;
+
+  /// No description provided for @tutorialResetSnackbar.
+  ///
+  /// In en, this message translates to:
+  /// **'{title} tutorial reset. It will appear when you next visit the feature.'**
+  String tutorialResetSnackbar(String title);
+
+  /// No description provided for @replay.
+  ///
+  /// In en, this message translates to:
+  /// **'Replay'**
+  String get replay;
+
+  /// No description provided for @gotIt.
+  ///
+  /// In en, this message translates to:
+  /// **'Got it'**
+  String get gotIt;
+
+  /// No description provided for @stepXofY.
+  ///
+  /// In en, this message translates to:
+  /// **'Step {current} of {total}'**
+  String stepXofY(int current, int total);
+
+  /// No description provided for @tutorialHomeDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Learn about the dashboard snapshot, quick actions, spending breakdown, and smart insights.'**
+  String get tutorialHomeDescription;
+
+  /// No description provided for @tutorialHistoryDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Browse, search, and filter your transactions with instant results.'**
+  String get tutorialHistoryDescription;
+
+  /// No description provided for @tutorialSmartSearchTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Smart Search'**
+  String get tutorialSmartSearchTitle;
+
+  /// No description provided for @tutorialSmartSearchDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask natural-language questions about your finances. Your financial records and calculations remain on your device.'**
+  String get tutorialSmartSearchDescription;
+
+  /// No description provided for @tutorialSmartReceiptTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Smart Bill Scan'**
+  String get tutorialSmartReceiptTitle;
+
+  /// No description provided for @tutorialSmartReceiptDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan receipts with your camera or gallery and auto-fill expense details.'**
+  String get tutorialSmartReceiptDescription;
+
+  /// No description provided for @tutorialVoiceExpenseTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice Expense'**
+  String get tutorialVoiceExpenseTitle;
+
+  /// No description provided for @tutorialVoiceExpenseDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Speak your expense naturally and let on-device AI fill in the details.'**
+  String get tutorialVoiceExpenseDescription;
+
+  /// No description provided for @tutorialSmsDetectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic Transaction Detection'**
+  String get tutorialSmsDetectionTitle;
+
+  /// No description provided for @tutorialSmsDetectionDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatically detect bank SMS notifications and suggest expense entries.'**
+  String get tutorialSmsDetectionDescription;
+
+  /// No description provided for @tutorialSpendingAlertsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Spending Alerts'**
+  String get tutorialSpendingAlertsTitle;
+
+  /// No description provided for @tutorialSpendingAlertsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Set custom thresholds and get notified when your spending exceeds limits.'**
+  String get tutorialSpendingAlertsDescription;
+
+  /// No description provided for @tutorialPlanningTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Financial Planning'**
+  String get tutorialPlanningTitle;
+
+  /// No description provided for @tutorialPlanningDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Budgets, savings goals, recurring expenses, and Buy Now Pay Later tracking.'**
+  String get tutorialPlanningDescription;
+
+  /// No description provided for @tutorialBottomNavTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Navigation Overview'**
+  String get tutorialBottomNavTitle;
+
+  /// No description provided for @tutorialBottomNavDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'A quick overview of the bottom navigation tabs and what each one does.'**
+  String get tutorialBottomNavDescription;
+
+  /// No description provided for @tutorialHomeWidgetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Home Screen Widget'**
+  String get tutorialHomeWidgetTitle;
+
+  /// No description provided for @tutorialHomeWidgetDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'DinarWise Quick Widget: Add to your Android home screen for quick access to Search Recent Expenses, Camera, Media, and Voice Expense.'**
+  String get tutorialHomeWidgetDescription;
+
+  /// No description provided for @widgetTutorialTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'DinarWise Quick Widget'**
+  String get widgetTutorialTitle;
+
+  /// No description provided for @widgetTutorialSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add the DinarWise widget to your Android home screen for quick access to Search, Smart Bill Scan, receipt upload, and Voice Expense.'**
+  String get widgetTutorialSubtitle;
+
+  /// No description provided for @widgetTutorialSearchDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Search recent expenses with immediate keyboard focus.'**
+  String get widgetTutorialSearchDesc;
+
+  /// No description provided for @widgetTutorialCameraDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan a new receipt with offline OCR.'**
+  String get widgetTutorialCameraDesc;
+
+  /// No description provided for @widgetTutorialMediaDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Import an existing receipt photo from your gallery.'**
+  String get widgetTutorialMediaDesc;
+
+  /// No description provided for @widgetTutorialVoiceDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Create an expense hands-free by speaking naturally.'**
+  String get widgetTutorialVoiceDesc;
+
+  /// No description provided for @widgetTutorialTip.
+  ///
+  /// In en, this message translates to:
+  /// **'Tip: Long-press any empty space on your Android home screen, tap “Widgets”, and drag DinarWise to your home screen.'**
+  String get widgetTutorialTip;
+
+  /// No description provided for @voiceExpenseSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Speak your expense naturally — 100% on-device & private.'**
+  String get voiceExpenseSubtitle;
+
+  /// No description provided for @trySaying.
+  ///
+  /// In en, this message translates to:
+  /// **'Try saying:'**
+  String get trySaying;
+
+  /// No description provided for @voiceExample1.
+  ///
+  /// In en, this message translates to:
+  /// **'• “I spent 100 SAR at Al Baik using cash.”'**
+  String get voiceExample1;
+
+  /// No description provided for @voiceExample2.
+  ///
+  /// In en, this message translates to:
+  /// **'• “Spent 80 SAR on fuel with card yesterday.”'**
+  String get voiceExample2;
+
+  /// No description provided for @tapToRecord.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to record'**
+  String get tapToRecord;
+
+  /// No description provided for @listening.
+  ///
+  /// In en, this message translates to:
+  /// **'Listening…'**
+  String get listening;
+
+  /// No description provided for @tapWhenDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap when done'**
+  String get tapWhenDone;
+
+  /// No description provided for @transcribingAudio.
+  ///
+  /// In en, this message translates to:
+  /// **'Transcribing audio on-device…'**
+  String get transcribingAudio;
+
+  /// No description provided for @whisperModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Whisper Base multilingual model'**
+  String get whisperModel;
+
+  /// No description provided for @recognizedExpense.
+  ///
+  /// In en, this message translates to:
+  /// **'Recognized Expense'**
+  String get recognizedExpense;
+
+  /// No description provided for @amountNotRecognized.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount not recognized'**
+  String get amountNotRecognized;
+
+  /// No description provided for @required.
+  ///
+  /// In en, this message translates to:
+  /// **'Required'**
+  String get required;
+
+  /// No description provided for @merchantRequiredBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'Merchant required: We detected the expense details, but the merchant name is missing. Please enter the merchant before saving.'**
+  String get merchantRequiredBanner;
+
+  /// No description provided for @reviewInAddExpense.
+  ///
+  /// In en, this message translates to:
+  /// **'Review in Add Expense'**
+  String get reviewInAddExpense;
+
+  /// No description provided for @transcriptionFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Transcription Failed'**
+  String get transcriptionFailed;
+
+  /// No description provided for @couldNotTranscribe.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not transcribe speech. Please try again.'**
+  String get couldNotTranscribe;
+
+  /// No description provided for @voiceMicPermissionRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Microphone permission is required to use Voice Expense.'**
+  String get voiceMicPermissionRequired;
+
+  /// No description provided for @voiceRecordInitFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not initialize audio recording.'**
+  String get voiceRecordInitFailed;
+
+  /// No description provided for @voiceNoSpeechDetected.
+  ///
+  /// In en, this message translates to:
+  /// **'No speech was detected. Please try speaking again.'**
+  String get voiceNoSpeechDetected;
+
+  /// No description provided for @voiceTranscriptionError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not transcribe speech. Please try again.'**
+  String get voiceTranscriptionError;
+
+  /// No description provided for @smartSearchUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Smart Search is unavailable. Check connection and try again.'**
+  String get smartSearchUnavailable;
+
+  /// No description provided for @note.
+  ///
+  /// In en, this message translates to:
+  /// **'Note'**
+  String get note;
+
+  /// No description provided for @retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get retry;
+
+  /// No description provided for @widgetActionSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get widgetActionSearch;
+
+  /// No description provided for @widgetActionCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera'**
+  String get widgetActionCamera;
+
+  /// No description provided for @widgetActionMedia.
+  ///
+  /// In en, this message translates to:
+  /// **'Media'**
+  String get widgetActionMedia;
+
+  /// No description provided for @appearance.
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance'**
+  String get appearance;
+
+  /// No description provided for @themeModeSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'System default'**
+  String get themeModeSystem;
+
+  /// No description provided for @themeModeLight.
+  ///
+  /// In en, this message translates to:
+  /// **'Light mode'**
+  String get themeModeLight;
+
+  /// No description provided for @themeModeDark.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark mode'**
+  String get themeModeDark;
+
+  /// No description provided for @introTour.
+  ///
+  /// In en, this message translates to:
+  /// **'Introduction Tour'**
+  String get introTour;
+
+  /// No description provided for @introTourSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'View the introduction slides and highlights'**
+  String get introTourSubtitle;
+
+  /// No description provided for @introNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get introNext;
+
+  /// No description provided for @introSlideCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Slide {current} of {total}'**
+  String introSlideCount(Object current, Object total);
 }
 
 class _AppLocalizationsDelegate

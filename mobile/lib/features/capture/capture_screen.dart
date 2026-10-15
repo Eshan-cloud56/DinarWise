@@ -41,6 +41,9 @@ class CaptureLaunchArgs {
     this.prefilledPaymentMethodId,
     this.prefilledDescription,
     this.prefilledCurrency,
+    this.autoFocusMerchant = false,
+    this.isCurrencyMismatch = false,
+    this.detectedCurrency,
   });
 
   final ExpenseRecord? expense;
@@ -52,6 +55,9 @@ class CaptureLaunchArgs {
   final String? prefilledPaymentMethodId;
   final String? prefilledDescription;
   final String? prefilledCurrency;
+  final bool autoFocusMerchant;
+  final bool isCurrencyMismatch;
+  final String? detectedCurrency;
 }
 
 class CaptureScreen extends ConsumerStatefulWidget {
@@ -65,6 +71,9 @@ class CaptureScreen extends ConsumerStatefulWidget {
     this.prefilledPaymentMethodId,
     this.prefilledDescription,
     this.prefilledCurrency,
+    this.autoFocusMerchant = false,
+    this.isCurrencyMismatch = false,
+    this.detectedCurrency,
     super.key,
   });
 
@@ -77,6 +86,9 @@ class CaptureScreen extends ConsumerStatefulWidget {
   final String? prefilledPaymentMethodId;
   final String? prefilledDescription;
   final String? prefilledCurrency;
+  final bool autoFocusMerchant;
+  final bool isCurrencyMismatch;
+  final String? detectedCurrency;
 
   @override
   ConsumerState<CaptureScreen> createState() => _CaptureScreenState();
@@ -87,13 +99,17 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
   late final TextEditingController _merchantController;
   late final TextEditingController _amountController;
   late final TextEditingController _notesController;
+  final FocusNode _merchantFocusNode = FocusNode();
   String? _categoryId;
   String? _paymentMethodId;
   late DateTime _date;
   bool _customDateSelected = false;
   bool _saving = false;
   String? _error;
-  late final GulfCurrency _currency;
+  late final AppCurrency _baseCurrency;
+  late AppCurrency _currency;
+  late bool _hasCurrencyMismatch;
+  String? _detectedCurrency;
   String? _pendingReceiptPath;
   String? _storedReceiptPath;
   bool _scanningReceipt = false;
@@ -119,15 +135,23 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
   void initState() {
     super.initState();
     final expense = widget.expense;
-    final initialCurrencyCode = widget.prefilledCurrency ??
-        ref.read(onboardingControllerProvider).requireValue.currencyCode;
-    _currency = GulfCurrency.fromCode(initialCurrencyCode);
+    final baseCurrencyCode =
+        ref.read(onboardingControllerProvider).valueOrNull?.currencyCode ?? 'SAR';
+    _baseCurrency = AppCurrency.fromCode(baseCurrencyCode);
+    final initialCurrencyCode = widget.prefilledCurrency ?? baseCurrencyCode;
+    _currency = AppCurrency.fromCode(initialCurrencyCode);
+    _hasCurrencyMismatch = widget.isCurrencyMismatch ||
+        (_currency.code != _baseCurrency.code);
+    _detectedCurrency = widget.detectedCurrency ??
+        (widget.prefilledCurrency != null && widget.prefilledCurrency != _baseCurrency.code
+            ? widget.prefilledCurrency
+            : null);
     final initialMerchant = expense?.merchant ?? widget.prefilledMerchant;
     _merchantController = TextEditingController(text: initialMerchant);
     final initialAmountStr = expense != null
-        ? _currency.toMajor(expense.amountMinor).toStringAsFixed(_currency.decimalDigits)
-        : (widget.prefilledAmountMinor != null
-            ? _currency.toMajor(widget.prefilledAmountMinor!).toStringAsFixed(_currency.decimalDigits)
+        ? _currency.formatAmountForInput(expense.amountMinor)
+        : (widget.prefilledAmountMinor != null && !_hasCurrencyMismatch
+            ? _currency.formatAmountForInput(widget.prefilledAmountMinor!)
             : '');
     _amountController = TextEditingController(text: initialAmountStr);
     _notesController = TextEditingController(
@@ -153,6 +177,15 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
         if (mounted) _scanReceipt(_pendingReceiptPath!, ReceiptScript.auto);
       });
     }
+    // Auto-focus merchant field when opened from Voice Expense without merchant
+    if (widget.autoFocusMerchant) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _merchantFocusNode.requestFocus();
+          _formKey.currentState?.validate();
+        }
+      });
+    }
   }
 
   @override
@@ -160,10 +193,22 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
     _merchantController.dispose();
     _amountController.dispose();
     _notesController.dispose();
+    _merchantFocusNode.dispose();
     super.dispose();
   }
 
   Future<void> _save() async {
+    if (_hasCurrencyMismatch || _currency.code != _baseCurrency.code) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Cannot save transaction in ${_currency.code}. Ledger is configured in ${_baseCurrency.code}.',
+          ),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+      return;
+    }
     if (!_formKey.currentState!.validate() || _categoryId == null) return;
     setState(() {
       _saving = true;
@@ -548,6 +593,8 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
           child: Form(
             key: _formKey,
             child: ListView(padding: const EdgeInsets.all(20), children: [
+              if (_hasCurrencyMismatch)
+                _buildCurrencyMismatchBanner(context),
               if (!_editing)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 8),
@@ -580,7 +627,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
                       decoration: InputDecoration(
                           labelText: l10n.amount,
                           hintText: '0.00',
-                          fillColor: Colors.white),
+                          fillColor: Theme.of(context).colorScheme.surface),
                       validator: (value) {
                         final amount = parseLocalizedAmount(value ?? '');
                         return amount == null || amount <= 0
@@ -625,8 +672,11 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
                             child: FilledButton.tonal(
                               key: ValueKey('keypad-$digit'),
                               style: FilledButton.styleFrom(
-                                  backgroundColor: DinarColors.inset,
-                                  foregroundColor: DinarColors.ink,
+                                  backgroundColor: Theme.of(context)
+                                      .colorScheme
+                                      .surfaceContainerHighest,
+                                  foregroundColor:
+                                      Theme.of(context).colorScheme.onSurface,
                                   padding: EdgeInsets.zero),
                               onPressed: _saving ? null : () => _keypad(digit),
                               child: digit == 'back'
@@ -676,6 +726,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
                 TextFormField(
                   key: const ValueKey('expenseMerchantField'),
                   controller: _merchantController,
+                  focusNode: _merchantFocusNode,
                   textInputAction: TextInputAction.next,
                   decoration: InputDecoration(
                       labelText: '${l10n.merchant} *',
@@ -739,10 +790,20 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
                     loading: () => const LinearProgressIndicator(),
                     error: (_, __) => const SizedBox.shrink(),
                     data: (items) {
-                      _paymentMethodId ??= items
-                          .where((method) => method.isDefault)
-                          .firstOrNull
-                          ?.id;
+                      final prefillId = widget.prefilledPaymentMethodId;
+                      // Explicit voice input must override default form values.
+                      // Priority: spoken payment method -> configured user default -> unset/default
+                      if (prefillId != null && items.any((item) => item.id == prefillId)) {
+                        if (_paymentMethodId == null ||
+                            !items.any((item) => item.id == _paymentMethodId)) {
+                          _paymentMethodId = prefillId;
+                        }
+                      } else {
+                        _paymentMethodId ??= items
+                            .where((method) => method.isDefault)
+                            .firstOrNull
+                            ?.id;
+                      }
                       return DinarDropdownField<String>(
                         isExpanded: true,
                         initialValue:
@@ -798,7 +859,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
               const SizedBox(height: 20),
               FilledButton.icon(
                 key: const ValueKey('saveExpenseButton'),
-                onPressed: _saving ? null : _save,
+                onPressed: (_saving || _hasCurrencyMismatch || _currency.code != _baseCurrency.code) ? null : _save,
                 icon: _saving
                     ? const SizedBox.square(
                         dimension: 18,
@@ -809,13 +870,76 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
                   child: Text(
                     _saving
                         ? l10n.saving
-                        : '${l10n.saveExpenseLabel} (${_currency.formatter(Localizations.localeOf(context).toLanguageTag()).format(parseLocalizedAmount(_amountController.text) ?? 0)})',
+                        : (_hasCurrencyMismatch || _currency.code != _baseCurrency.code
+                            ? 'Resolve Currency to Save'
+                            : '${l10n.saveExpenseLabel} (${_currency.formatter(Localizations.localeOf(context).toLanguageTag()).format(parseLocalizedAmount(_amountController.text) ?? 0)})'),
                     textAlign: TextAlign.center,
                   ),
                 ),
               ),
             ]),
           )),
+    );
+  }
+
+  Widget _buildCurrencyMismatchBanner(BuildContext context) {
+    final detected = _detectedCurrency ?? _currency.code;
+    return Container(
+      key: const ValueKey('currencyMismatchBanner'),
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.amber.shade50,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.amber.shade400, width: 1.5),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: Colors.amber.shade900, size: 24),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Currency Mismatch',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.amber.shade900,
+                    fontSize: 15,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '• Detected draft currency: $detected\n'
+            '• Configured DinarWise currency: ${_baseCurrency.code}\n\n'
+            'Save is blocked because DinarWise is a single-currency ledger and does not perform foreign exchange conversion. '
+            'Please enter the equivalent value in ${_baseCurrency.code} to save.',
+            style: TextStyle(fontSize: 13, color: Colors.brown.shade900, height: 1.4),
+          ),
+          const SizedBox(height: 12),
+          ElevatedButton.icon(
+            key: const ValueKey('resolveCurrencyMismatchButton'),
+            icon: const Icon(Icons.check, size: 18),
+            label: Text('Resolve to ${_baseCurrency.code}'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.amber.shade800,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () {
+              setState(() {
+                _currency = _baseCurrency;
+                _hasCurrencyMismatch = false;
+                _amountController.clear();
+              });
+            },
+          ),
+        ],
+      ),
     );
   }
 }

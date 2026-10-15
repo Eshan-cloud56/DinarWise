@@ -12,7 +12,8 @@
     <application
         android:label="Dinar Wise: Expense AI Manager"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:usesCleartextTraffic="false">
         <meta-data android:name="firebase_analytics_collection_enabled" android:value="true"/>
         <meta-data android:name="firebase_crashlytics_collection_enabled" android:value="true"/>
         <meta-data android:name="firebase_performance_collection_enabled" android:value="true"/>
@@ -39,6 +40,16 @@
                 <action android:name="android.intent.action.QUICKBOOT_POWERON"/>
                 <action android:name="com.htc.intent.action.QUICKBOOT_POWERON"/>
             </intent-filter>
+        </receiver>
+        <receiver
+            android:name=".DinarWiseWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/dinarwise_quick_widget_info" />
         </receiver>
         <receiver
             android:name=".VoiceExpenseWidgetProvider"
@@ -73,6 +84,18 @@
             </intent-filter>
             <intent-filter>
                 <action android:name="com.sl.dinarwise.ACTION_VOICE_EXPENSE" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="com.sl.dinarwise.ACTION_WIDGET_CAMERA" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="com.sl.dinarwise.ACTION_WIDGET_MEDIA" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="com.sl.dinarwise.ACTION_WIDGET_VOICE" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
             <intent-filter>

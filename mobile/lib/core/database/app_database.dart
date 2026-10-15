@@ -401,7 +401,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? openConnection());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -519,6 +519,136 @@ class AppDatabase extends _$AppDatabase {
             await migrator.createTable(securityPreferences);
             await migrator.createTable(uiPreferences);
             await _createPerformanceIndexes();
+          }
+          if (from < 3) {
+            // Version 2 -> 3: Currency precision migration for 3-decimal currencies (KWD, BHD, OMR).
+            // Historical values were stored using factor 100. Normalize them to ISO factor 1000.
+            await transaction(() async {
+              final existingTables = (await customSelect(
+                "SELECT name FROM sqlite_master WHERE type = 'table'",
+              ).get()).map((row) => row.read<String>('name')).toSet();
+
+              Future<void> runIfTableExists(String table, String sql) async {
+                if (existingTables.contains(table)) {
+                  await customStatement(sql);
+                }
+              }
+
+              await runIfTableExists('financial_transactions', '''
+                UPDATE financial_transactions
+                SET amount_minor = amount_minor * 10
+                WHERE currency IN ('KWD', 'BHD', 'OMR');
+              ''');
+              // Also update original_amount_minor if column exists
+              final ftColumns = (await customSelect(
+                "PRAGMA table_info('financial_transactions')",
+              ).get()).map((row) => row.read<String>('name')).toSet();
+              if (ftColumns.contains('original_amount_minor')) {
+                await customStatement('''
+                  UPDATE financial_transactions
+                  SET original_amount_minor = original_amount_minor * 10
+                  WHERE original_amount_minor IS NOT NULL
+                    AND (original_currency IN ('KWD', 'BHD', 'OMR') OR (original_currency IS NULL AND currency IN ('KWD', 'BHD', 'OMR')));
+                ''');
+              }
+
+              await runIfTableExists('financial_preferences', '''
+                UPDATE financial_preferences
+                SET monthly_income_minor = monthly_income_minor * 10
+                WHERE currency IN ('KWD', 'BHD', 'OMR');
+              ''');
+              await runIfTableExists('recurring_payments', '''
+                UPDATE recurring_payments
+                SET amount_minor = amount_minor * 10
+                WHERE currency IN ('KWD', 'BHD', 'OMR');
+              ''');
+              await runIfTableExists('recurring_occurrences', '''
+                UPDATE recurring_occurrences
+                SET amount_minor = amount_minor * 10
+                WHERE recurring_payment_id IN (SELECT id FROM recurring_payments WHERE currency IN ('KWD', 'BHD', 'OMR'));
+              ''');
+              await runIfTableExists('recurring_payment_history', '''
+                UPDATE recurring_payment_history
+                SET amount_minor = amount_minor * 10
+                WHERE recurring_payment_id IN (SELECT id FROM recurring_payments WHERE currency IN ('KWD', 'BHD', 'OMR'));
+              ''');
+              await runIfTableExists('subscription_price_history', '''
+                UPDATE subscription_price_history
+                SET old_amount_minor = old_amount_minor * 10,
+                    new_amount_minor = new_amount_minor * 10
+                WHERE recurring_payment_id IN (SELECT id FROM recurring_payments WHERE currency IN ('KWD', 'BHD', 'OMR'));
+              ''');
+              await runIfTableExists('bnpl_plans', '''
+                UPDATE bnpl_plans
+                SET purchase_amount_minor = purchase_amount_minor * 10
+                WHERE currency IN ('KWD', 'BHD', 'OMR');
+              ''');
+              await runIfTableExists('bnpl_instalments', '''
+                UPDATE bnpl_instalments
+                SET amount_minor = amount_minor * 10
+                WHERE plan_id IN (SELECT id FROM bnpl_plans WHERE currency IN ('KWD', 'BHD', 'OMR'));
+              ''');
+              await runIfTableExists('bnpl_payment_history', '''
+                UPDATE bnpl_payment_history
+                SET amount_minor = amount_minor * 10
+                WHERE plan_id IN (SELECT id FROM bnpl_plans WHERE currency IN ('KWD', 'BHD', 'OMR'));
+              ''');
+              if (existingTables.contains('budgets')) {
+                await customStatement('''
+                  UPDATE budgets
+                  SET limit_minor = limit_minor * 10
+                  WHERE profile_id IN (SELECT profile_id FROM financial_preferences WHERE currency IN ('KWD', 'BHD', 'OMR'));
+                ''');
+                final bColumns = (await customSelect(
+                  "PRAGMA table_info('budgets')",
+                ).get()).map((row) => row.read<String>('name')).toSet();
+                if (bColumns.contains('fixed_commitments_minor')) {
+                  await customStatement('''
+                    UPDATE budgets
+                    SET fixed_commitments_minor = fixed_commitments_minor * 10
+                    WHERE profile_id IN (SELECT profile_id FROM financial_preferences WHERE currency IN ('KWD', 'BHD', 'OMR'));
+                  ''');
+                }
+                if (bColumns.contains('emergency_buffer_minor')) {
+                  await customStatement('''
+                    UPDATE budgets
+                    SET emergency_buffer_minor = emergency_buffer_minor * 10
+                    WHERE profile_id IN (SELECT profile_id FROM financial_preferences WHERE currency IN ('KWD', 'BHD', 'OMR'));
+                  ''');
+                }
+                if (bColumns.contains('carried_amount_minor')) {
+                  await customStatement('''
+                    UPDATE budgets
+                    SET carried_amount_minor = carried_amount_minor * 10
+                    WHERE profile_id IN (SELECT profile_id FROM financial_preferences WHERE currency IN ('KWD', 'BHD', 'OMR'));
+                  ''');
+                }
+              }
+              await runIfTableExists('budget_categories', '''
+                UPDATE budget_categories
+                SET limit_minor = limit_minor * 10
+                WHERE limit_minor IS NOT NULL
+                  AND profile_id IN (SELECT profile_id FROM financial_preferences WHERE currency IN ('KWD', 'BHD', 'OMR'));
+              ''');
+              await runIfTableExists('budget_history', '''
+                UPDATE budget_history
+                SET limit_minor = limit_minor * 10,
+                    spent_minor = spent_minor * 10,
+                    carried_minor = carried_minor * 10
+                WHERE profile_id IN (SELECT profile_id FROM financial_preferences WHERE currency IN ('KWD', 'BHD', 'OMR'));
+              ''');
+              await runIfTableExists('savings_goals', '''
+                UPDATE savings_goals
+                SET target_minor = target_minor * 10,
+                    current_minor = current_minor * 10
+                WHERE profile_id IN (SELECT profile_id FROM financial_preferences WHERE currency IN ('KWD', 'BHD', 'OMR'));
+              ''');
+              await runIfTableExists('goal_contributions', '''
+                UPDATE goal_contributions
+                SET amount_minor = amount_minor * 10
+                WHERE profile_id IN (SELECT profile_id FROM financial_preferences WHERE currency IN ('KWD', 'BHD', 'OMR'));
+              ''');
+            });
           }
         },
         beforeOpen: (_) async {

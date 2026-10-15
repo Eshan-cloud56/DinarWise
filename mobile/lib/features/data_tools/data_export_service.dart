@@ -4,6 +4,7 @@ import 'dart:math';
 
 import 'package:cryptography/cryptography.dart';
 import 'package:csv/csv.dart';
+import 'package:dinarwise/core/currency/app_currency.dart';
 import 'package:dinarwise/core/database/app_database.dart';
 import 'package:drift/drift.dart';
 import 'package:dinarwise/features/expenses/data/expense_repository.dart';
@@ -186,11 +187,16 @@ class DataExportService {
           pw.TableHelper.fromTextArray(
             headers: const ['Total income', 'Total expenses', 'Balance'],
             data: [
-              [
-                (income / 100).toStringAsFixed(2),
-                (spent / 100).toStringAsFixed(2),
-                ((income - spent) / 100).toStringAsFixed(2),
-              ],
+              () {
+                final baseCurr = rows.isNotEmpty
+                    ? AppCurrency.fromCode(rows.first.currency)
+                    : AppCurrency.fromCode('SAR');
+                return [
+                  baseCurr.formatMinor(income),
+                  baseCurr.formatMinor(spent),
+                  baseCurr.formatMinor(income - spent),
+                ];
+              }(),
             ],
           ),
           pw.SizedBox(height: 20),
@@ -202,7 +208,7 @@ class DataExportService {
                   row.transactedAt.toIso8601String().substring(0, 10),
                   row.type,
                   row.merchant ?? '',
-                  '${row.currency} ${(row.amountMinor / 100).toStringAsFixed(2)}',
+                  AppCurrency.fromCode(row.currency).formatMinor(row.amountMinor),
                 ],
             ],
           ),

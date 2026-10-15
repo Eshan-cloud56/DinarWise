@@ -179,7 +179,7 @@ class DinarBottomNav extends StatelessWidget {
     ];
     const routes = ['/', '/history', '/capture', '/planning', '/analytics'];
     return Material(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surfaceContainerLow,
         child: SafeArea(
             top: false,
             child: Padding(

@@ -55,8 +55,8 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
     final l10n = context.l10n;
     final records = ref.watch(expensesProvider);
     final categories = ref.watch(categoriesProvider).valueOrNull ?? const [];
-    final currency = ref
-        .watch(selectedCurrencyProvider)
+    final appCurrency = ref.watch(selectedCurrencyProvider);
+    final currency = appCurrency
         .formatter(Localizations.localeOf(context).toLanguageTag());
     return Scaffold(
       appBar: DinarHeader(subtitle: l10n.analytics),
@@ -118,16 +118,16 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                 children: [
                   _MetricCard(
                     label: l10n.totalIncome,
-                    value: currency.format(summary.totalIncomeMinor / 100),
+                    value: currency.format(appCurrency.toMajor(summary.totalIncomeMinor)),
                   ),
                   _MetricCard(
                     label: l10n.totalExpenses,
-                    value: currency.format(summary.totalExpenseMinor / 100),
+                    value: currency.format(appCurrency.toMajor(summary.totalExpenseMinor)),
                   ),
                   _MetricCard(
                     label: l10n.averageDailySpending,
                     value:
-                        currency.format(summary.averageDailyExpenseMinor / 100),
+                        currency.format(appCurrency.toMajor(summary.averageDailyExpenseMinor)),
                   ),
                   _MetricCard(
                     label: l10n.savingsRate,
@@ -143,12 +143,14 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                 current: summary.currentWeekExpenseMinor,
                 previous: summary.previousWeekExpenseMinor,
                 currency: currency,
+                appCurrency: appCurrency,
               ),
               _ComparisonCard(
                 title: l10n.monthComparison,
                 current: summary.currentMonthExpenseMinor,
                 previous: summary.previousMonthExpenseMinor,
                 currency: currency,
+                appCurrency: appCurrency,
               ),
               const SizedBox(height: 12),
               Text(
@@ -160,6 +162,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                 income: summary.totalIncomeMinor,
                 expense: summary.totalExpenseMinor,
                 currency: currency,
+                appCurrency: appCurrency,
               ),
               const SizedBox(height: 18),
               Text(
@@ -194,6 +197,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                   _ => summary.monthlyExpenses,
                 },
                 currency: currency,
+                appCurrency: appCurrency,
                 period: _chartPeriod,
               ),
               const SizedBox(height: 18),
@@ -221,7 +225,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                               ? l10n.other
                               : localizedCategoryName(l10n, category),
                         ),
-                        trailing: Text(currency.format(entry.value / 100)),
+                        trailing: Text(currency.format(appCurrency.toMajor(entry.value))),
                         onTap: () =>
                             context.push('/history?category=${entry.key}'),
                       ),
@@ -316,21 +320,23 @@ class _ComparisonCard extends StatelessWidget {
     required this.current,
     required this.previous,
     required this.currency,
+    required this.appCurrency,
   });
 
   final String title;
   final int current;
   final int previous;
   final NumberFormat currency;
+  final AppCurrency appCurrency;
 
   @override
   Widget build(BuildContext context) => Card(
         child: ListTile(
           title: Text(title),
           subtitle: Text(
-            '${context.l10n.currentPeriod}: ${currency.format(current / 100)}\n'
+            '${context.l10n.currentPeriod}: ${currency.format(appCurrency.toMajor(current))}\n'
             '${context.l10n.previousPeriod}: '
-            '${currency.format(previous / 100)}',
+            '${currency.format(appCurrency.toMajor(previous))}',
           ),
           trailing: Icon(
             current <= previous ? Icons.trending_down : Icons.trending_up,
@@ -344,11 +350,13 @@ class _BarChart extends StatelessWidget {
   const _BarChart({
     required this.values,
     required this.currency,
+    required this.appCurrency,
     required this.period,
   });
 
   final Map<DateTime, int> values;
   final NumberFormat currency;
+  final AppCurrency appCurrency;
   final String period;
 
   @override
@@ -390,7 +398,7 @@ class _BarChart extends StatelessWidget {
                     child: LinearProgressIndicator(value: fraction),
                   ),
                   const SizedBox(width: 8),
-                  Text(currency.format(entry.value / 100)),
+                  Text(currency.format(appCurrency.toMajor(entry.value))),
                 ],
               ),
             );
@@ -406,11 +414,13 @@ class _IncomeExpenseChart extends StatelessWidget {
     required this.income,
     required this.expense,
     required this.currency,
+    required this.appCurrency,
   });
 
   final int income;
   final int expense;
   final NumberFormat currency;
+  final AppCurrency appCurrency;
 
   @override
   Widget build(BuildContext context) {
@@ -426,6 +436,7 @@ class _IncomeExpenseChart extends StatelessWidget {
               maximum: maximum,
               color: Colors.green,
               currency: currency,
+              appCurrency: appCurrency,
             ),
             const SizedBox(height: 14),
             _ComparisonBar(
@@ -434,6 +445,7 @@ class _IncomeExpenseChart extends StatelessWidget {
               maximum: maximum,
               color: Colors.red,
               currency: currency,
+              appCurrency: appCurrency,
             ),
           ],
         ),
@@ -449,6 +461,7 @@ class _ComparisonBar extends StatelessWidget {
     required this.maximum,
     required this.color,
     required this.currency,
+    required this.appCurrency,
   });
 
   final String label;
@@ -456,6 +469,7 @@ class _ComparisonBar extends StatelessWidget {
   final int maximum;
   final Color color;
   final NumberFormat currency;
+  final AppCurrency appCurrency;
 
   @override
   Widget build(BuildContext context) => Column(
@@ -464,7 +478,7 @@ class _ComparisonBar extends StatelessWidget {
           Row(
             children: [
               Expanded(child: Text(label)),
-              Text(currency.format(amount / 100)),
+              Text(currency.format(appCurrency.toMajor(amount))),
             ],
           ),
           const SizedBox(height: 5),

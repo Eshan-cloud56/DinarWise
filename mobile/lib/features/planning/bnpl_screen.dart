@@ -17,12 +17,13 @@ class BnplScreen extends ConsumerWidget {
     WidgetRef ref, [
     BnplPlanDetails? plan,
   ]) async {
+    final appCurrency = ref.read(selectedCurrencyProvider);
     final draft = await showModalBottomSheet<BnplDraft>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       showDragHandle: true,
-      builder: (_) => _BnplEditor(plan: plan),
+      builder: (_) => _BnplEditor(plan: plan, appCurrency: appCurrency),
     );
     if (draft == null) return;
     final onboarding = await ref.read(onboardingControllerProvider.future);
@@ -41,7 +42,9 @@ class BnplScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final plans = ref.watch(bnplDetailsProvider);
-    final currency = _currency(context, ref);
+    final appCurrency = ref.watch(selectedCurrencyProvider);
+    final currency = appCurrency
+        .formatter(Localizations.localeOf(context).toLanguageTag());
     return Scaffold(
       appBar: AppBar(title: Text(context.l10n.bnplPlans)),
       floatingActionButton: FloatingActionButton.extended(
@@ -63,7 +66,7 @@ class BnplScreen extends ConsumerWidget {
                 child: ListTile(
                   title: Text(context.l10n.totalOutstandingBnpl),
                   trailing: Text(
-                    currency.format(outstanding / 100),
+                    currency.format(appCurrency.toMajor(outstanding)),
                     style: const TextStyle(fontWeight: FontWeight.w800),
                   ),
                 ),
@@ -77,7 +80,7 @@ class BnplScreen extends ConsumerWidget {
                 ...items.map(
                   (plan) => Card(
                     child: ListTile(
-                      onTap: () => _details(context, ref, plan, currency),
+                      onTap: () => _details(context, ref, plan, currency, appCurrency),
                       leading: const CircleAvatar(
                         child: Icon(Icons.calendar_month_outlined),
                       ),
@@ -85,7 +88,7 @@ class BnplScreen extends ConsumerWidget {
                       subtitle: Text(
                         '${_provider(context, plan)} • '
                         '${context.l10n.remaining}: '
-                        '${currency.format(plan.remainingMinor / 100)}',
+                        '${currency.format(appCurrency.toMajor(plan.remainingMinor))}',
                       ),
                       trailing: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -126,6 +129,7 @@ class BnplScreen extends ConsumerWidget {
     WidgetRef ref,
     BnplPlanDetails plan,
     NumberFormat currency,
+    AppCurrency appCurrency,
   ) {
     final repository = ref.read(commitmentsRepositoryProvider);
     return showModalBottomSheet<void>(
@@ -144,9 +148,9 @@ class BnplScreen extends ConsumerWidget {
               ),
               subtitle: Text(
                 '${context.l10n.paidAmount}: '
-                '${currency.format(plan.paidMinor / 100)}\n'
+                '${currency.format(appCurrency.toMajor(plan.paidMinor))}\n'
                 '${context.l10n.remaining}: '
-                '${currency.format(plan.remainingMinor / 100)}',
+                '${currency.format(appCurrency.toMajor(plan.remainingMinor))}',
               ),
               trailing: IconButton(
                 onPressed: () {
@@ -165,7 +169,7 @@ class BnplScreen extends ConsumerWidget {
                     value: item.isPaid,
                     title: Text(
                       '${context.l10n.instalmentNumber(index + 1)} — '
-                      '${currency.format(item.amountMinor / 100)}',
+                      '${currency.format(appCurrency.toMajor(item.amountMinor))}',
                     ),
                     subtitle: Text(
                       '${DateFormat.yMMMd().format(item.dueDate)}'
@@ -211,7 +215,7 @@ class BnplScreen extends ConsumerWidget {
                               subtitle:
                                   Text(DateFormat.yMd().format(row.occurredAt)),
                               trailing:
-                                  Text(currency.format(row.amountMinor / 100)),
+                                  Text(currency.format(appCurrency.toMajor(row.amountMinor))),
                             ),
                           )
                           .toList(),
@@ -228,9 +232,10 @@ class BnplScreen extends ConsumerWidget {
 }
 
 class _BnplEditor extends StatefulWidget {
-  const _BnplEditor({this.plan});
+  const _BnplEditor({this.plan, required this.appCurrency});
 
   final BnplPlanDetails? plan;
+  final AppCurrency appCurrency;
 
   @override
   State<_BnplEditor> createState() => _BnplEditorState();
@@ -242,7 +247,7 @@ class _BnplEditorState extends State<_BnplEditor> {
   late final TextEditingController _amount = TextEditingController(
     text: widget.plan == null
         ? null
-        : (widget.plan!.purchaseAmountMinor / 100).toStringAsFixed(2),
+        : widget.appCurrency.formatAmountForInput(widget.plan!.purchaseAmountMinor),
   );
   late final TextEditingController _custom =
       TextEditingController(text: widget.plan?.customProvider);
@@ -260,7 +265,7 @@ class _BnplEditorState extends State<_BnplEditor> {
   void _save() {
     final amount = parseLocalizedAmount(_amount.text);
     if (_merchant.text.trim().isEmpty || amount == null || amount <= 0) return;
-    final amountMinor = (amount * 100).round();
+    final amountMinor = widget.appCurrency.toMinor(amount);
     const count = 4;
     final base = amountMinor ~/ count;
     final remainder = amountMinor % count;
@@ -342,7 +347,3 @@ class _BnplEditorState extends State<_BnplEditor> {
         ),
       ]);
 }
-
-NumberFormat _currency(BuildContext context, WidgetRef ref) => ref
-    .watch(selectedCurrencyProvider)
-    .formatter(Localizations.localeOf(context).toLanguageTag());

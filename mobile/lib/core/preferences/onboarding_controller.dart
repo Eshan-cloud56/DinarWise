@@ -6,7 +6,7 @@ import 'package:dinarwise/core/preferences/app_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-enum StartupDestination { language, privacy, currency, dashboard }
+enum StartupDestination { language, intro, privacy, currency, dashboard }
 
 class OnboardingState {
   const OnboardingState({
@@ -15,6 +15,7 @@ class OnboardingState {
     required this.privacyVersion,
     required this.onboardingCompleted,
     required this.localProfileId,
+    this.introCompleted = false,
     this.currencyCode,
   });
 
@@ -22,6 +23,7 @@ class OnboardingState {
   final bool privacyAccepted;
   final String? privacyVersion;
   final bool onboardingCompleted;
+  final bool introCompleted;
   final String localProfileId;
   final String? currencyCode;
 
@@ -30,8 +32,9 @@ class OnboardingState {
 
   StartupDestination get destination {
     if (locale == null) return StartupDestination.language;
+    if (!introCompleted) return StartupDestination.intro;
     if (!hasCurrentConsent) return StartupDestination.privacy;
-    if (currencyCode == null || !onboardingCompleted) {
+    if (currencyCode == null || currencyCode!.isEmpty || !onboardingCompleted) {
       return StartupDestination.currency;
     }
     return StartupDestination.dashboard;
@@ -42,6 +45,7 @@ class OnboardingState {
     bool? privacyAccepted,
     String? privacyVersion,
     bool? onboardingCompleted,
+    bool? introCompleted,
     String? localProfileId,
     String? currencyCode,
   }) {
@@ -50,6 +54,7 @@ class OnboardingState {
       privacyAccepted: privacyAccepted ?? this.privacyAccepted,
       privacyVersion: privacyVersion ?? this.privacyVersion,
       onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
+      introCompleted: introCompleted ?? this.introCompleted,
       localProfileId: localProfileId ?? this.localProfileId,
       currencyCode: currencyCode ?? this.currencyCode,
     );
@@ -82,13 +87,18 @@ class OnboardingController extends AsyncNotifier<OnboardingState> {
     String profileId,
   ) {
     final languageCode = preferences.selectedLanguage;
+    final currency = preferences.selectedCurrency;
+    final onboardingCompleted = preferences.onboardingCompleted ||
+        (currency != null && currency.isNotEmpty);
     return OnboardingState(
       locale: languageCode == null ? null : Locale(languageCode),
       privacyAccepted: preferences.privacyAccepted,
       privacyVersion: preferences.privacyVersion,
-      onboardingCompleted: preferences.onboardingCompleted,
+      onboardingCompleted: onboardingCompleted,
+      introCompleted:
+          preferences.introCompleted || onboardingCompleted,
       localProfileId: profileId,
-      currencyCode: preferences.selectedCurrency,
+      currencyCode: currency,
     );
   }
 
@@ -104,6 +114,12 @@ class OnboardingController extends AsyncNotifier<OnboardingState> {
     analytics.setAppLanguage(languageCode);
   }
 
+  Future<void> completeIntro() async {
+    await ref.read(appPreferencesProvider).setIntroCompleted(true);
+    final current = state.requireValue;
+    state = AsyncData(current.copyWith(introCompleted: true));
+  }
+
   Future<void> acceptPrivacyPolicy() async {
     final acceptedAt = DateTime.now().toUtc();
     await ref.read(appPreferencesProvider).acceptPrivacyPolicy(
@@ -111,11 +127,13 @@ class OnboardingController extends AsyncNotifier<OnboardingState> {
           acceptedAt: acceptedAt,
         );
     final current = state.requireValue;
+    final alreadyCompleted =
+        current.currencyCode != null && current.currencyCode!.isNotEmpty;
     state = AsyncData(
       current.copyWith(
         privacyAccepted: true,
         privacyVersion: currentPrivacyPolicyVersion,
-        onboardingCompleted: false,
+        onboardingCompleted: alreadyCompleted,
       ),
     );
   }

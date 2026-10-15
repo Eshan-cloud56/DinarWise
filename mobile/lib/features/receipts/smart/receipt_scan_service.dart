@@ -38,6 +38,7 @@ class ReceiptScanService {
         for (final key in [
           'merchantName',
           'total',
+          'currency',
           'date',
           'time',
           'paymentMethod',

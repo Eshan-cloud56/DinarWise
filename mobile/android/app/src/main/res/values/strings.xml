@@ -4,4 +4,14 @@
     <string name="voice_expense_widget_desc">Record an expense instantly using your voice.</string>
     <string name="voice_expense_widget_title">Voice Expense</string>
     <string name="voice_expense_widget_subtitle">Tap to speak</string>
+
+    <string name="dinarwise_widget_name">DinarWise Quick Widget</string>
+    <string name="dinarwise_widget_desc">Fast access to Camera, Media, and Voice Expense.</string>
+    <string name="dinarwise_widget_title">DinarWise</string>
+    <string name="dinarwise_widget_subtitle">Quick Actions</string>
+    <string name="widget_action_camera">Camera</string>
+    <string name="widget_action_media">Media</string>
+    <string name="widget_action_voice">Voice</string>
+    <string name="widget_action_search">Search</string>
+    <string name="widget_search_hint">Search Recent Expenses</string>
 </resources>

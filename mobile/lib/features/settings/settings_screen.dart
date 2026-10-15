@@ -1,9 +1,11 @@
+import 'package:dinarwise/core/currency/app_currency.dart';
 import 'package:dinarwise/core/currency/gulf_currency.dart';
 import 'package:dinarwise/core/analytics/analytics_service.dart';
 import 'package:dinarwise/core/database/app_database.dart';
 import 'package:dinarwise/core/database/database_provider.dart';
 import 'package:dinarwise/core/preferences/app_preferences.dart';
 import 'package:dinarwise/core/preferences/onboarding_controller.dart';
+import 'package:dinarwise/core/theme_provider.dart';
 import 'package:dinarwise/features/notifications/notification_providers.dart';
 import 'package:dinarwise/features/sms_detection/sms_disclosure_dialog.dart';
 import 'package:dinarwise/features/sms_detection/sms_platform_channel.dart';
@@ -57,13 +59,75 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     } catch (_) {}
   }
 
+  Future<bool> _hasFinancialData() async {
+    final database = ref.read(databaseProvider);
+    final rows = await (database.select(database.financialTransactions)
+          ..limit(1))
+        .get();
+    return rows.isNotEmpty;
+  }
+
+  Future<void> _handleCurrencyTap(BuildContext context) async {
+    final state = await ref.read(onboardingControllerProvider.future);
+    final currentCode = state.currencyCode ?? 'SAR';
+    final hasData = await _hasFinancialData();
+    if (!context.mounted) return;
+
+    if (hasData) {
+      await showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          icon: Icon(
+            Icons.lock_outline_rounded,
+            color: Theme.of(ctx).colorScheme.primary,
+            size: 40,
+          ),
+          title: const Text('Cannot Change Base Currency'),
+          content: Text(
+            'Existing transactions and financial records use your current base currency ($currentCode).\n\n'
+            'DinarWise is a single-currency ledger and does not perform automatic foreign exchange conversion. '
+            'Changing the base currency while records exist would silently relabel and corrupt historical amounts.\n\n'
+            'To use a different currency, you must reset your data to start a new ledger.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text('Keep $currentCode'),
+            ),
+            FilledButton.tonal(
+              onPressed: () {
+                Navigator.pop(ctx);
+                _reset(context);
+              },
+              child: const Text('Reset Data & Start Fresh'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    final picked = await showModalBottomSheet<AppCurrency>(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) =>
+          _SearchableCurrencyBottomSheet(selectedCode: currentCode),
+    );
+
+    if (picked != null && picked.code != currentCode) {
+      await _changeCurrency(picked.code);
+    }
+  }
+
   Future<void> _changeCurrency(String code) async {
+    final hasData = await _hasFinancialData();
+    if (hasData) {
+      // Guard against silent relabeling: never update transactions
+      return;
+    }
     final state = await ref.read(onboardingControllerProvider.future);
     final database = ref.read(databaseProvider);
     await database.transaction(() async {
-      await (database.update(database.financialTransactions)
-            ..where((row) => row.profileId.equals(state.localProfileId)))
-          .write(FinancialTransactionsCompanion(currency: Value(code)));
       await database.into(database.financialPreferences).insertOnConflictUpdate(
             FinancialPreferencesCompanion.insert(
               profileId: state.localProfileId,
@@ -167,22 +231,50 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                   ),
                   const Divider(height: 1),
                   ListTile(
+                    key: const ValueKey('settingsCurrencyTile'),
                     leading: const Icon(Icons.currency_exchange_outlined),
                     title: Text(l10n.chooseCurrency),
-                    trailing: DropdownButton<String>(
-                      value: state.currencyCode ?? 'SAR',
+                    subtitle: Text(
+                      '${state.currencyCode ?? "SAR"} • ${AppCurrency.fromCode(state.currencyCode).name(Localizations.localeOf(context).languageCode)}',
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => _handleCurrencyTap(context),
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: const Icon(Icons.palette_outlined),
+                    title: Text(l10n.appearance),
+                    trailing: DropdownButton<ThemeMode>(
+                      value: ref.watch(themeModeProvider),
                       underline: const SizedBox.shrink(),
                       items: [
-                        for (final currency in GulfCurrency.supported)
-                          DropdownMenuItem(
-                            value: currency.code,
-                            child: Text(currency.code),
-                          ),
+                        DropdownMenuItem(
+                          value: ThemeMode.system,
+                          child: Text(l10n.themeModeSystem),
+                        ),
+                        DropdownMenuItem(
+                          value: ThemeMode.light,
+                          child: Text(l10n.themeModeLight),
+                        ),
+                        DropdownMenuItem(
+                          value: ThemeMode.dark,
+                          child: Text(l10n.themeModeDark),
+                        ),
                       ],
-                      onChanged: (value) {
-                        if (value != null) _changeCurrency(value);
+                      onChanged: (mode) {
+                        if (mode != null) {
+                          ref.read(themeModeProvider.notifier).setThemeMode(mode);
+                        }
                       },
                     ),
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: const Icon(Icons.auto_stories_outlined),
+                    title: Text(l10n.introTour),
+                    subtitle: Text(l10n.introTourSubtitle),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => context.push('/intro?replay=true'),
                   ),
                   const Divider(height: 1),
                   ListTile(
@@ -198,6 +290,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                         context.go('/');
                       }
                     },
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: const Icon(Icons.help_outline),
+                    title: Text(l10n.helpAndTutorials),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => context.push('/settings/help-tutorials'),
                   ),
                   const Divider(height: 1),
                   ListTile(
@@ -374,6 +473,126 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _SearchableCurrencyBottomSheet extends StatefulWidget {
+  const _SearchableCurrencyBottomSheet({required this.selectedCode});
+  final String selectedCode;
+
+  @override
+  State<_SearchableCurrencyBottomSheet> createState() =>
+      _SearchableCurrencyBottomSheetState();
+}
+
+class _SearchableCurrencyBottomSheetState
+    extends State<_SearchableCurrencyBottomSheet> {
+  String _search = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final language = Localizations.localeOf(context).languageCode;
+    final isSearching = _search.trim().isNotEmpty;
+    final list = isSearching
+        ? AppCurrency.search(_search)
+        : AppCurrency.allCurrencies;
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.85,
+      minChildSize: 0.5,
+      maxChildSize: 0.95,
+      expand: false,
+      builder: (context, scrollController) => Column(
+        children: [
+          Container(
+            margin: const EdgeInsets.symmetric(vertical: 10),
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade300,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
+            child: TextField(
+              key: const ValueKey('settingsCurrencySearchField'),
+              autofocus: false,
+              decoration: InputDecoration(
+                hintText: language == 'ar'
+                    ? 'ابحث عن العملة...'
+                    : 'Search currency (code, name, symbol)...',
+                prefixIcon: const Icon(Icons.search, size: 20),
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              onChanged: (val) => setState(() => _search = val),
+            ),
+          ),
+          Expanded(
+            child: ListView.builder(
+              controller: scrollController,
+              itemCount: list.length,
+              itemBuilder: (context, index) {
+                final currency = list[index];
+                final isSelected = currency.code == widget.selectedCode;
+                return ListTile(
+                  key: ValueKey('currency_item_${currency.code}'),
+                  leading: Icon(
+                    isSelected
+                        ? Icons.radio_button_checked
+                        : Icons.radio_button_off,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  title: Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          currency.name(language),
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (currency.isGcc) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.primaryContainer,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            'GCC',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).colorScheme.onPrimaryContainer,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  subtitle: Text(
+                    '${currency.code} • ${currency.symbol}',
+                  ),
+                  onTap: () => Navigator.pop(context, currency),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

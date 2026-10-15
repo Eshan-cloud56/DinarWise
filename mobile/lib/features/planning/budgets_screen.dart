@@ -1,9 +1,8 @@
 import 'package:dinarwise/core/widgets/dinar_form.dart';
-import 'package:dinarwise/core/currency/gulf_currency.dart';
+import 'package:dinarwise/core/currency/app_currency.dart';
 import 'package:dinarwise/core/preferences/onboarding_controller.dart';
 import 'package:dinarwise/features/categories/category_localization.dart';
 import 'package:dinarwise/features/categories/data/category_repository.dart';
-import 'package:dinarwise/features/expenses/amount_parser.dart';
 import 'package:dinarwise/features/expenses/data/expense_providers.dart';
 import 'package:dinarwise/features/planning/data/advanced_planning_repository.dart';
 import 'package:dinarwise/features/planning/data/planning_providers.dart';
@@ -29,12 +28,17 @@ class BudgetsScreen extends ConsumerWidget {
     BudgetDetails? budget,
   ]) async {
     final categories = ref.read(categoriesProvider).valueOrNull ?? const [];
+    final appCurrency = ref.read(selectedCurrencyProvider);
     final draft = await showModalBottomSheet<BudgetDraft>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       showDragHandle: true,
-      builder: (_) => _BudgetEditor(budget: budget, categories: categories),
+      builder: (_) => _BudgetEditor(
+        budget: budget,
+        categories: categories,
+        appCurrency: appCurrency,
+      ),
     );
     if (draft == null) return;
     final onboarding = await ref.read(onboardingControllerProvider.future);
@@ -47,6 +51,7 @@ class BudgetsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final budgets = ref.watch(_budgetsProvider);
     final safe = ref.watch(safeToSpendProvider).valueOrNull;
+    final appCurrency = ref.watch(selectedCurrencyProvider);
     final currency = _currency(context, ref);
     return Scaffold(
       appBar: AppBar(title: Text(context.l10n.budgets)),
@@ -59,7 +64,11 @@ class BudgetsScreen extends ConsumerWidget {
         padding: const EdgeInsets.all(16),
         children: [
           if (safe != null)
-            _SafeToSpendCard(snapshot: safe, currency: currency),
+            _SafeToSpendCard(
+              snapshot: safe,
+              currency: currency,
+              appCurrency: appCurrency,
+            ),
           const SizedBox(height: 12),
           budgets.when(
             loading: () => const Center(child: CircularProgressIndicator()),
@@ -75,9 +84,10 @@ class BudgetsScreen extends ConsumerWidget {
                           (budget) => _BudgetCard(
                             budget: budget,
                             currency: currency,
+                            appCurrency: appCurrency,
                             onEdit: () => _edit(context, ref, budget),
                             onHistory: () =>
-                                _showHistory(context, ref, budget, currency),
+                                _showHistory(context, ref, budget, currency, appCurrency),
                             onDelete: () => ref
                                 .read(advancedPlanningRepositoryProvider)
                                 .deleteBudget(budget.id),
@@ -97,6 +107,7 @@ class BudgetsScreen extends ConsumerWidget {
     WidgetRef ref,
     BudgetDetails budget,
     NumberFormat currency,
+    AppCurrency appCurrency,
   ) {
     final stream = ref
         .read(advancedPlanningRepositoryProvider)
@@ -113,7 +124,7 @@ class BudgetsScreen extends ConsumerWidget {
               children: [
                 Text(
                   context.l10n.budgetHistory,
-                  style: Theme.of(context).textTheme.titleLarge,
+                  style: Theme.of(context).textTheme.titleMedium,
                 ),
                 Expanded(
                   child: rows.isEmpty
@@ -129,10 +140,10 @@ class BudgetsScreen extends ConsumerWidget {
                               ),
                               subtitle: Text(
                                 '${context.l10n.amountSpent}: '
-                                '${currency.format(row.spentMinor / 100)}',
+                                '${currency.format(appCurrency.toMajor(row.spentMinor))}',
                               ),
                               trailing:
-                                  Text(currency.format(row.limitMinor / 100)),
+                                  Text(currency.format(appCurrency.toMajor(row.limitMinor))),
                             );
                           },
                         ),
@@ -150,10 +161,12 @@ class _SafeToSpendCard extends StatelessWidget {
   const _SafeToSpendCard({
     required this.snapshot,
     required this.currency,
+    required this.appCurrency,
   });
 
   final SafeToSpendSnapshot snapshot;
   final NumberFormat currency;
+  final AppCurrency appCurrency;
 
   @override
   Widget build(BuildContext context) => Card(
@@ -168,7 +181,7 @@ class _SafeToSpendCard extends StatelessWidget {
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               Text(
-                currency.format(snapshot.amountMinor / 100),
+                currency.format(appCurrency.toMajor(snapshot.amountMinor)),
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.w800,
                     ),
@@ -179,23 +192,23 @@ class _SafeToSpendCard extends StatelessWidget {
               const Divider(),
               Text(
                 '${context.l10n.dailySafeToSpend}: '
-                '${currency.format(snapshot.dailyMinor / 100)}',
+                '${currency.format(appCurrency.toMajor(snapshot.dailyMinor))}',
               ),
               Text(
                 '${context.l10n.upcomingBills}: '
-                '${currency.format(snapshot.upcomingBillsMinor / 100)}',
+                '${currency.format(appCurrency.toMajor(snapshot.upcomingBillsMinor))}',
               ),
               Text(
                 '${context.l10n.upcomingBnpl}: '
-                '${currency.format(snapshot.upcomingBnplMinor / 100)}',
+                '${currency.format(appCurrency.toMajor(snapshot.upcomingBnplMinor))}',
               ),
               Text(
                 '${context.l10n.plannedSavings}: '
-                '${currency.format(snapshot.plannedSavingsMinor / 100)}',
+                '${currency.format(appCurrency.toMajor(snapshot.plannedSavingsMinor))}',
               ),
               Text(
                 '${context.l10n.emergencyBuffer}: '
-                '${currency.format(snapshot.emergencyBufferMinor / 100)}',
+                '${currency.format(appCurrency.toMajor(snapshot.emergencyBufferMinor))}',
               ),
             ],
           ),
@@ -207,6 +220,7 @@ class _BudgetCard extends StatelessWidget {
   const _BudgetCard({
     required this.budget,
     required this.currency,
+    required this.appCurrency,
     required this.onEdit,
     required this.onHistory,
     required this.onDelete,
@@ -214,6 +228,7 @@ class _BudgetCard extends StatelessWidget {
 
   final BudgetDetails budget;
   final NumberFormat currency;
+  final AppCurrency appCurrency;
   final VoidCallback onEdit;
   final VoidCallback onHistory;
   final VoidCallback onDelete;
@@ -272,11 +287,11 @@ class _BudgetCard extends StatelessWidget {
             const SizedBox(height: 10),
             Text(
               '${context.l10n.amountSpent}: '
-              '${currency.format(budget.spentMinor / 100)}',
+              '${currency.format(appCurrency.toMajor(budget.spentMinor))}',
             ),
             Text(
               '${context.l10n.amountRemaining}: '
-              '${currency.format(progress.remainingMinor / 100)}',
+              '${currency.format(appCurrency.toMajor(progress.remainingMinor))}',
               style: TextStyle(color: color),
             ),
             Text(
@@ -298,10 +313,15 @@ class _BudgetCard extends StatelessWidget {
 }
 
 class _BudgetEditor extends StatefulWidget {
-  const _BudgetEditor({required this.budget, required this.categories});
+  const _BudgetEditor({
+    required this.budget,
+    required this.categories,
+    required this.appCurrency,
+  });
 
   final BudgetDetails? budget;
   final List<CategoryRecord> categories;
+  final AppCurrency appCurrency;
 
   @override
   State<_BudgetEditor> createState() => _BudgetEditorState();
@@ -313,17 +333,17 @@ class _BudgetEditorState extends State<_BudgetEditor> {
   late final TextEditingController _limit = TextEditingController(
     text: widget.budget == null
         ? null
-        : (widget.budget!.limitMinor / 100).toStringAsFixed(2),
+        : widget.appCurrency.formatAmountForInput(widget.budget!.limitMinor),
   );
   late final TextEditingController _fixed = TextEditingController(
     text: widget.budget == null
         ? null
-        : (widget.budget!.fixedCommitmentsMinor / 100).toStringAsFixed(2),
+        : widget.appCurrency.formatAmountForInput(widget.budget!.fixedCommitmentsMinor),
   );
   late final TextEditingController _buffer = TextEditingController(
     text: widget.budget == null
         ? null
-        : (widget.budget!.emergencyBufferMinor / 100).toStringAsFixed(2),
+        : widget.appCurrency.formatAmountForInput(widget.budget!.emergencyBufferMinor),
   );
   late bool _overall = widget.budget?.isOverall ?? false;
   late String _rollover = widget.budget?.rolloverMode ?? 'none';
@@ -341,8 +361,8 @@ class _BudgetEditorState extends State<_BudgetEditor> {
   }
 
   void _save() {
-    final limit = parseLocalizedAmount(_limit.text);
-    if (_name.text.trim().isEmpty || limit == null || limit <= 0) return;
+    final limitMinor = widget.appCurrency.parseToMinor(_limit.text);
+    if (_name.text.trim().isEmpty || limitMinor <= 0) return;
     final now = DateTime.now();
     final starts = DateTime(now.year, now.month);
     final ends = _cycle == 'salary'
@@ -353,7 +373,7 @@ class _BudgetEditorState extends State<_BudgetEditor> {
       BudgetDraft(
         id: widget.budget?.id,
         name: _name.text.trim(),
-        limitMinor: (limit * 100).round(),
+        limitMinor: limitMinor,
         startsOn: starts,
         endsOn: ends,
         isOverall: _overall,
@@ -361,9 +381,9 @@ class _BudgetEditorState extends State<_BudgetEditor> {
         cycleType: _cycle,
         payday: _cycle == 'salary' ? _payday : null,
         fixedCommitmentsMinor:
-            ((parseLocalizedAmount(_fixed.text) ?? 0) * 100).round(),
+            widget.appCurrency.parseToMinor(_fixed.text),
         emergencyBufferMinor:
-            ((parseLocalizedAmount(_buffer.text) ?? 0) * 100).round(),
+            widget.appCurrency.parseToMinor(_buffer.text),
         categoryIds: _overall ? const [] : _categories.toList(),
       ),
     );

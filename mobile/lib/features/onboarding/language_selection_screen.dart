@@ -17,7 +17,7 @@ class LanguageSelectionScreen extends ConsumerWidget {
     await ref
         .read(onboardingControllerProvider.notifier)
         .selectLanguage(languageCode);
-    if (context.mounted) context.go('/privacy');
+    if (context.mounted) context.go('/intro');
   }
 
   @override

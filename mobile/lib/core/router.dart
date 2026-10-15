@@ -7,6 +7,7 @@ import 'package:dinarwise/features/calculators/calculators_screen.dart';
 import 'package:dinarwise/features/dashboard/dashboard_screen.dart';
 import 'package:dinarwise/features/expenses/data/expense_repository.dart';
 import 'package:dinarwise/features/expenses/history_screen.dart';
+import 'package:dinarwise/features/onboarding/intro_slides_screen.dart';
 import 'package:dinarwise/features/onboarding/language_selection_screen.dart';
 import 'package:dinarwise/features/onboarding/currency_selection_screen.dart';
 import 'package:dinarwise/features/onboarding/privacy_consent_screen.dart';
@@ -18,12 +19,16 @@ import 'package:dinarwise/features/planning/recurring_screen.dart';
 import 'package:dinarwise/features/planning/savings_goals_screen.dart';
 import 'package:dinarwise/features/settings/custom_categories_screen.dart';
 import 'package:dinarwise/features/settings/data_tools_screen.dart';
+import 'package:dinarwise/features/settings/help_tutorials_screen.dart';
 import 'package:dinarwise/features/settings/payment_methods_screen.dart';
 import 'package:dinarwise/features/settings/receipt_storage_screen.dart';
 import 'package:dinarwise/features/settings/security_settings_screen.dart';
 import 'package:dinarwise/features/settings/settings_screen.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
+final rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 
 final routerProvider = Provider<GoRouter>((ref) {
   final destination = ref.watch(
@@ -33,11 +38,13 @@ final routerProvider = Provider<GoRouter>((ref) {
   );
   final initialLocation = switch (destination) {
     StartupDestination.language => '/language',
+    StartupDestination.intro => '/intro',
     StartupDestination.privacy => '/privacy',
     StartupDestination.currency => '/currency',
     StartupDestination.dashboard => '/',
   };
   return GoRouter(
+    navigatorKey: rootNavigatorKey,
     initialLocation: initialLocation,
     observers: [
       AnalyticsNavigationObserver(ref.watch(analyticsServiceProvider)),
@@ -47,13 +54,20 @@ final routerProvider = Provider<GoRouter>((ref) {
       if (destination == StartupDestination.language) {
         return location == '/language' ? null : '/language';
       }
+      if (destination == StartupDestination.intro) {
+        return location == '/intro' ? null : '/intro';
+      }
       if (destination == StartupDestination.privacy) {
         return location == '/privacy' ? null : '/privacy';
       }
       if (destination == StartupDestination.currency) {
         return location == '/currency' ? null : '/currency';
       }
+      if (location == '/intro' && route.uri.queryParameters['replay'] == 'true') {
+        return null;
+      }
       if (location == '/language' ||
+          location == '/intro' ||
           location == '/privacy' ||
           location == '/currency') {
         return '/';
@@ -65,6 +79,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/language',
         name: 'onboarding',
         builder: (_, __) => const LanguageSelectionScreen(),
+      ),
+      GoRoute(
+        path: '/intro',
+        name: 'intro_slides',
+        builder: (_, state) {
+          final isReplay = state.uri.queryParameters['replay'] == 'true';
+          return IntroSlidesScreen(replay: isReplay);
+        },
       ),
       GoRoute(
         path: '/privacy',
@@ -102,11 +124,13 @@ final routerProvider = Provider<GoRouter>((ref) {
               initialCategoryId: extra.categoryId,
               initialSearch: extra.searchQuery,
               initialSmartSearchResult: extra.smartSearchResult,
+              autoFocusSearch: extra.autoFocusSearch,
             );
           }
           return HistoryScreen(
             initialCategoryId: state.uri.queryParameters['category'],
             initialSearch: state.uri.queryParameters['search'],
+            autoFocusSearch: state.uri.queryParameters['focus'] == 'true',
           );
         },
       ),
@@ -140,6 +164,9 @@ final routerProvider = Provider<GoRouter>((ref) {
               prefilledPaymentMethodId: extra.prefilledPaymentMethodId,
               prefilledDescription: extra.prefilledDescription,
               prefilledCurrency: extra.prefilledCurrency,
+              autoFocusMerchant: extra.autoFocusMerchant,
+              isCurrencyMismatch: extra.isCurrencyMismatch,
+              detectedCurrency: extra.detectedCurrency,
             );
           }
           if (extra is ExpenseRecord) {
@@ -184,6 +211,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/settings/security',
         builder: (_, __) => const SecuritySettingsScreen(),
+      ),
+      GoRoute(
+        path: '/settings/help-tutorials',
+        builder: (_, __) => const HelpTutorialsScreen(),
       ),
       GoRoute(
         path: '/planning/:section',

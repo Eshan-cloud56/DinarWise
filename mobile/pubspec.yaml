@@ -1,7 +1,7 @@
 name: dinarwise
 description: Localized household finance for Saudi Arabia and the GCC.
 publish_to: none
-version: 1.0.1+5001
+version: 1.0.1+5002
 
 environment:
   sdk: ">=3.5.0 <4.0.0"
@@ -54,7 +54,8 @@ flutter:
     - assets/fonts/Inter-OFL.txt
     - assets/fonts/PlusJakartaSans-OFL.txt
     - assets/fonts/NotoSansArabic-OFL.txt
-    - assets/branding/stitch-logo.png
+    - assets/branding/
+    - assets/intro/
   fonts:
     - family: Inter
       fonts:

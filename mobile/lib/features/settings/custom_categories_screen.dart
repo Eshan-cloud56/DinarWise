@@ -1,7 +1,7 @@
 import 'package:dinarwise/core/widgets/dinar_form.dart';
 import 'package:dinarwise/features/categories/custom_category_dialog.dart';
 import 'package:dinarwise/core/analytics/analytics_service.dart';
-import 'package:dinarwise/core/currency/gulf_currency.dart';
+import 'package:dinarwise/core/currency/app_currency.dart';
 import 'package:dinarwise/features/categories/data/category_repository.dart';
 import 'package:dinarwise/features/expenses/data/expense_providers.dart';
 import 'package:dinarwise/l10n/l10n_extension.dart';
@@ -182,8 +182,8 @@ class _CustomCategoriesScreenState
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final currency = ref
-        .watch(selectedCurrencyProvider)
+    final appCurrency = ref.watch(selectedCurrencyProvider);
+    final currency = appCurrency
         .formatter(Localizations.localeOf(context).toLanguageTag());
     final categories = ref.watch(categoriesProvider);
     return Scaffold(
@@ -257,7 +257,7 @@ class _CustomCategoriesScreenState
                         title: Text(category.name),
                         subtitle: Text(
                           '${l10n.usageCount(category.usageCount)} • '
-                          '${currency.format(category.spendingMinor / 100)}',
+                          '${currency.format(appCurrency.toMajor(category.spendingMinor))}',
                         ),
                         trailing: PopupMenuButton<String>(
                           onSelected: (action) {

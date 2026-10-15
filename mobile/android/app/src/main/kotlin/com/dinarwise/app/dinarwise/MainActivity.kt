@@ -21,11 +21,14 @@ class MainActivity : FlutterFragmentActivity() {
     private var pendingVoiceExpenseLaunch = false
     private var smartReceiptBridge: SmartReceiptBridge? = null
     private var voiceExpenseBridge: VoiceExpenseBridge? = null
+    private var quickWidgetChannel: MethodChannel? = null
+    private var pendingWidgetAction: String? = null
 
     override fun onCreate(savedInstanceState: android.os.Bundle?) {
         super.onCreate(savedInstanceState)
         handleNotificationIntent(intent)
         handleVoiceExpenseIntent(intent)
+        handleWidgetIntent(intent)
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -35,6 +38,21 @@ class MainActivity : FlutterFragmentActivity() {
         if (pendingVoiceExpenseLaunch) {
             voiceExpenseBridge?.setPendingWidgetLaunch(true)
             pendingVoiceExpenseLaunch = false
+        }
+        quickWidgetChannel = MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            "dinarwise/quick_widget"
+        ).apply {
+            setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "consumeInitialAction" -> {
+                        val action = pendingWidgetAction
+                        pendingWidgetAction = null
+                        result.success(action)
+                    }
+                    else -> result.notImplemented()
+                }
+            }
         }
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
@@ -218,11 +236,47 @@ class MainActivity : FlutterFragmentActivity() {
         setIntent(intent)
         handleNotificationIntent(intent)
         handleVoiceExpenseIntent(intent)
+        handleWidgetIntent(intent)
         val path = receiptPath(intent) ?: return
         if (sharedReceiptChannel == null) {
             pendingReceiptPath = path
         } else {
             sharedReceiptChannel?.invokeMethod("sharedReceipt", path)
+        }
+    }
+
+    private fun extractWidgetAction(intent: Intent?): String? {
+        if (intent == null) return null
+        return when (intent.action) {
+            DinarWiseWidgetProvider.ACTION_WIDGET_CAMERA -> DinarWiseWidgetProvider.ACTION_WIDGET_CAMERA
+            DinarWiseWidgetProvider.ACTION_WIDGET_MEDIA -> DinarWiseWidgetProvider.ACTION_WIDGET_MEDIA
+            DinarWiseWidgetProvider.ACTION_WIDGET_VOICE -> DinarWiseWidgetProvider.ACTION_WIDGET_VOICE
+            DinarWiseWidgetProvider.ACTION_WIDGET_SEARCH -> DinarWiseWidgetProvider.ACTION_WIDGET_SEARCH
+            else -> {
+                val extra = intent.getStringExtra("widget_action")
+                if (extra == DinarWiseWidgetProvider.ACTION_WIDGET_CAMERA ||
+                    extra == DinarWiseWidgetProvider.ACTION_WIDGET_MEDIA ||
+                    extra == DinarWiseWidgetProvider.ACTION_WIDGET_VOICE ||
+                    extra == DinarWiseWidgetProvider.ACTION_WIDGET_SEARCH) {
+                    extra
+                } else {
+                    null
+                }
+            }
+        }
+    }
+
+    private fun handleWidgetIntent(intent: Intent?) {
+        val action = extractWidgetAction(intent) ?: return
+        intent?.action = null
+        intent?.removeExtra("widget_action")
+        val channel = quickWidgetChannel
+        if (channel != null) {
+            runOnUiThread {
+                channel.invokeMethod("onWidgetAction", action)
+            }
+        } else {
+            pendingWidgetAction = action
         }
     }
 
@@ -291,6 +345,7 @@ class MainActivity : FlutterFragmentActivity() {
     override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {
         SmsReceiver.listener = null
         smsDetectionChannel = null
+        quickWidgetChannel = null
         smartReceiptBridge?.close()
         smartReceiptBridge = null
         voiceExpenseBridge = null

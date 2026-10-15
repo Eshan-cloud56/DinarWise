@@ -49,7 +49,7 @@ Java_com_sl_dinarwise_expensemanager_WhisperLib_freeContext(
 
 JNIEXPORT jint JNICALL
 Java_com_sl_dinarwise_expensemanager_WhisperLib_fullTranscribe(
-        JNIEnv *env, jobject thiz, jlong context_ptr, jint num_threads, jfloatArray audio_data) {
+        JNIEnv *env, jobject thiz, jlong context_ptr, jint num_threads, jfloatArray audio_data, jstring language_str, jstring initial_prompt_str) {
     UNUSED(thiz);
     if (context_ptr == 0) return -1;
 
@@ -65,16 +65,45 @@ Java_com_sl_dinarwise_expensemanager_WhisperLib_fullTranscribe(
     params.print_timestamps = false;
     params.print_special    = false;
     params.translate        = false;
-    params.language         = "auto"; // Multilingual auto-detection
+
+    const char *lang_chars = NULL;
+    if (language_str != NULL) {
+        lang_chars = (*env)->GetStringUTFChars(env, language_str, NULL);
+    }
+    params.language         = (lang_chars != NULL && strlen(lang_chars) > 0) ? lang_chars : "auto";
     params.n_threads        = num_threads > 0 ? num_threads : 4;
     params.offset_ms        = 0;
     params.no_context       = true;
     params.single_segment   = false;
 
+    const char *prompt_chars = NULL;
+    if (initial_prompt_str != NULL) {
+        prompt_chars = (*env)->GetStringUTFChars(env, initial_prompt_str, NULL);
+    }
+    params.initial_prompt   = (prompt_chars != NULL && strlen(prompt_chars) > 0) ? prompt_chars : NULL;
+
     int ret = whisper_full(context, params, audio_data_arr, audio_data_length);
+    if (prompt_chars != NULL) {
+        (*env)->ReleaseStringUTFChars(env, initial_prompt_str, prompt_chars);
+    }
+    if (lang_chars != NULL) {
+        (*env)->ReleaseStringUTFChars(env, language_str, lang_chars);
+    }
     (*env)->ReleaseFloatArrayElements(env, audio_data, audio_data_arr, JNI_ABORT);
 
     return (jint) ret;
+}
+
+JNIEXPORT jstring JNICALL
+Java_com_sl_dinarwise_expensemanager_WhisperLib_getDetectedLanguage(
+        JNIEnv *env, jobject thiz, jlong context_ptr) {
+    UNUSED(thiz);
+    if (context_ptr == 0) return (*env)->NewStringUTF(env, "");
+    struct whisper_context *context = (struct whisper_context *) context_ptr;
+    int lang_id = whisper_full_lang_id(context);
+    const char *lang_str = whisper_lang_str(lang_id);
+    if (!lang_str) return (*env)->NewStringUTF(env, "");
+    return (*env)->NewStringUTF(env, lang_str);
 }
 
 JNIEXPORT jint JNICALL

@@ -1,6 +1,7 @@
 import 'dart:convert';
+import 'package:dinarwise/core/currency/app_currency.dart';
 
-const receiptCurrencies = {'SAR', 'AED', 'KWD', 'BHD', 'QAR', 'OMR'};
+final receiptCurrencies = {for (final c in AppCurrency.allCurrencies) c.code};
 const receiptFields = [
   'merchantName',
   'total',
@@ -151,7 +152,7 @@ class ReceiptValidator {
     }
     final currency = fields['currency']?.toUpperCase();
     if (currency != null) {
-      if (!receiptCurrencies.contains(currency)) {
+      if (AppCurrency.tryFromCode(currency) == null) {
         reject('currency');
       } else {
         fields['currency'] = currency;

@@ -11,6 +11,8 @@ abstract final class TutorialStepIds {
   static const dashboardSummary = 'dashboard_summary';
   static const addIncome = 'add_income';
   static const addExpense = 'add_expense';
+  static const scanBill = 'scan_bill';
+  static const voiceExpense = 'voice_expense';
   static const transactions = 'transactions';
   static const analytics = 'analytics';
   static const categories = 'categories';
@@ -25,11 +27,16 @@ class DashboardTutorialAnchors {
     required this.transactions,
     required this.analytics,
     required this.settings,
-  });
+    GlobalKey? scanBill,
+    GlobalKey? voice,
+  })  : scanBill = scanBill ?? GlobalKey(),
+        voice = voice ?? GlobalKey();
 
   final GlobalKey dashboardSummary;
   final GlobalKey addIncome;
   final GlobalKey addExpense;
+  final GlobalKey scanBill;
+  final GlobalKey voice;
   final GlobalKey transactions;
   final GlobalKey analytics;
   final GlobalKey settings;
@@ -78,6 +85,18 @@ Future<void> showDashboardTutorial({
       title: l10n.tutorialExpenseTitle,
       description: l10n.tutorialExpenseDescription,
       target: anchors.addExpense,
+    ),
+    _TutorialStep(
+      id: TutorialStepIds.scanBill,
+      title: l10n.tutorialScanBillTitle,
+      description: l10n.tutorialScanBillDescription,
+      target: anchors.scanBill,
+    ),
+    _TutorialStep(
+      id: TutorialStepIds.voiceExpense,
+      title: l10n.tutorialVoiceTitle,
+      description: l10n.tutorialVoiceDescription,
+      target: anchors.voice,
     ),
     _TutorialStep(
       id: TutorialStepIds.transactions,

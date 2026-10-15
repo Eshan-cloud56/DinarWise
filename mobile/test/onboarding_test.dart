@@ -49,11 +49,19 @@ void main() {
     await tester.runAsync(database.close);
   });
 
+  Future<void> advanceThroughIntro(WidgetTester tester) async {
+    for (var i = 0; i < 3; i++) {
+      await tester.tap(find.byKey(const ValueKey('introNextButton')));
+      await tester.pumpAndSettle();
+    }
+  }
+
   testWidgets('English selection opens English privacy consent',
       (tester) async {
     final database = await pumpApp(tester);
     await tester.tap(find.text('English').first);
     await tester.pumpAndSettle();
+    await advanceThroughIntro(tester);
     expect(find.text('Welcome to DinarWise'), findsOneWidget);
     expect(find.byKey(const ValueKey('privacyPolicyAcknowledgementText')),
         findsOneWidget);
@@ -87,6 +95,7 @@ void main() {
     final database = await pumpApp(tester);
     await tester.tap(find.text('العربية'));
     await tester.pumpAndSettle();
+    await advanceThroughIntro(tester);
     expect(find.text('أهلاً بك في دينار وايز'), findsOneWidget);
     expect(find.byKey(const ValueKey('privacyPolicyAcknowledgementText')),
         findsOneWidget);
@@ -116,6 +125,7 @@ void main() {
     final database = await pumpApp(tester);
     await tester.tap(find.text('English').first);
     await tester.pumpAndSettle();
+    await advanceThroughIntro(tester);
     final button = tester.widget<FilledButton>(
       find.widgetWithText(FilledButton, 'Get Started'),
     );
@@ -278,7 +288,7 @@ void main() {
       },
     );
     await tester.pumpAndSettle();
-    for (var index = 0; index < 6; index++) {
+    for (var index = 0; index < 8; index++) {
       expect(find.text('Next'), findsOneWidget);
       await tester.tap(find.text('Next'));
       await tester.pumpAndSettle();

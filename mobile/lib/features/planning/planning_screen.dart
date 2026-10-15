@@ -1,6 +1,6 @@
 import 'package:dinarwise/core/widgets/dinar_form.dart';
 import 'package:dinarwise/core/preferences/onboarding_controller.dart';
-import 'package:dinarwise/core/currency/gulf_currency.dart';
+import 'package:dinarwise/core/currency/app_currency.dart';
 import 'package:dinarwise/features/categories/category_localization.dart';
 import 'package:dinarwise/features/categories/custom_category_dialog.dart';
 import 'package:dinarwise/features/expenses/data/expense_providers.dart';
@@ -114,17 +114,18 @@ class PlanningScreen extends ConsumerWidget {
       amountController.dispose();
       return;
     }
-    final amount = double.tryParse(amountController.text.trim());
+    final appCurrency = ref.read(selectedCurrencyProvider);
+    final amountMinor = appCurrency.parseToMinor(amountController.text);
     final name = nameController.text.trim();
     nameController.dispose();
     amountController.dispose();
-    if (name.isEmpty || amount == null || amount <= 0) return;
+    if (name.isEmpty || amountMinor <= 0) return;
     final onboarding = await ref.read(onboardingControllerProvider.future);
     await ref.read(planningRepositoryProvider).create(
           profileId: onboarding.localProfileId,
           section: section,
           name: name,
-          amountMinor: (amount * 100).round(),
+          amountMinor: amountMinor,
           date: DateTime.now(),
           categoryId: categoryId,
         );
@@ -134,9 +135,8 @@ class PlanningScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
     final items = ref.watch(planningItemsProvider(section));
-    final currency = ref
-        .watch(selectedCurrencyProvider)
-        .formatter(Localizations.localeOf(context).toLanguageTag());
+    final appCurrency = ref.watch(selectedCurrencyProvider);
+    final currency = appCurrency.formatter(Localizations.localeOf(context).toLanguageTag());
     return Scaffold(
       appBar: AppBar(title: Text(_title(context))),
       floatingActionButton: FloatingActionButton.extended(
@@ -171,7 +171,7 @@ class PlanningScreen extends ConsumerWidget {
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(currency.format(record.amountMinor / 100)),
+                          Text(currency.format(appCurrency.toMajor(record.amountMinor))),
                           IconButton(
                             tooltip: l10n.delete,
                             onPressed: () => ref

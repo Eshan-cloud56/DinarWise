@@ -34,10 +34,17 @@ class _ReceiptReviewDialogState extends State<ReceiptReviewDialog> {
   late final Map<String, TextEditingController> _fields;
   late final Map<String, FocusNode> _focus;
   bool _closing = false;
+  late bool _hasCurrencyMismatch;
+  String? _detectedCurrency;
 
   @override
   void initState() {
     super.initState();
+    final receiptCurrency = widget.receipt.fields['currency'];
+    _hasCurrencyMismatch = receiptCurrency != null &&
+        receiptCurrency.toUpperCase() !=
+            widget.ledgerCurrency.code.toUpperCase();
+    _detectedCurrency = receiptCurrency;
     final valid = ReceiptValidator().validate({
       for (final key in receiptReviewFields) key: widget.receipt.fields[key],
     }).fields;
@@ -109,6 +116,7 @@ class _ReceiptReviewDialogState extends State<ReceiptReviewDialog> {
   }
 
   bool get _canApply {
+    if (_hasCurrencyMismatch) return false;
     final valid = _values();
     final amount =
         ReceiptValidator().milli(valid.fields['total'] ?? '', positive: true);
@@ -146,6 +154,71 @@ class _ReceiptReviewDialogState extends State<ReceiptReviewDialog> {
             child: SingleChildScrollView(
               controller: _scroll,
               child: Column(mainAxisSize: MainAxisSize.min, children: [
+                if (_hasCurrencyMismatch)
+                  Container(
+                    key: const ValueKey('receiptCurrencyMismatchBanner'),
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      border:
+                          Border.all(color: Colors.amber.shade400, width: 1.5),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.warning_amber_rounded,
+                                size: 20, color: Colors.amber.shade900),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Receipt Currency Mismatch',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.amber.shade900,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          '• Detected on receipt: $_detectedCurrency\n'
+                          '• Configured ledger currency: ${widget.ledgerCurrency.code}\n\n'
+                          'Save is blocked until resolved to your configured currency. Please enter the equivalent amount in ${widget.ledgerCurrency.code}.',
+                          style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.brown.shade900,
+                              height: 1.35),
+                        ),
+                        const SizedBox(height: 10),
+                        ElevatedButton.icon(
+                          key: const ValueKey('receiptResolveMismatchButton'),
+                          icon: const Icon(Icons.check, size: 16),
+                          label: Text(
+                              'Resolve to ${widget.ledgerCurrency.code}'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.amber.shade800,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 8),
+                            textStyle: const TextStyle(
+                                fontSize: 12, fontWeight: FontWeight.bold),
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _hasCurrencyMismatch = false;
+                              _fields['total']!.clear();
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
                 for (final key in receiptReviewFields)
                   Padding(
                       padding: const EdgeInsets.only(bottom: 16),
@@ -154,7 +227,15 @@ class _ReceiptReviewDialogState extends State<ReceiptReviewDialog> {
                         controller: _fields[key],
                         focusNode: _focus[key],
                         scrollPadding: const EdgeInsets.all(24),
-                        onChanged: (_) => setState(() {}),
+                        onChanged: (_) {
+                          if (key == 'total' && _hasCurrencyMismatch) {
+                            setState(() {
+                              _hasCurrencyMismatch = false;
+                            });
+                          } else {
+                            setState(() {});
+                          }
+                        },
                         keyboardType: key == 'total'
                             ? const TextInputType.numberWithOptions(
                                 decimal: true)

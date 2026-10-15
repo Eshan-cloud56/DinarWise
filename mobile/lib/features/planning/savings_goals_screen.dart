@@ -38,12 +38,13 @@ class SavingsGoalsScreen extends ConsumerWidget {
     WidgetRef ref, [
     GoalDetails? goal,
   ]) async {
+    final appCurrency = ref.read(selectedCurrencyProvider);
     final result = await showModalBottomSheet<_GoalDraft>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       showDragHandle: true,
-      builder: (_) => _GoalEditor(goal: goal),
+      builder: (_) => _GoalEditor(goal: goal, appCurrency: appCurrency),
     );
     if (result == null) return;
     final onboarding = await ref.read(onboardingControllerProvider.future);
@@ -60,8 +61,8 @@ class SavingsGoalsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final goals = ref.watch(_goalsProvider);
-    final currency = ref
-        .watch(selectedCurrencyProvider)
+    final appCurrency = ref.watch(selectedCurrencyProvider);
+    final currency = appCurrency
         .formatter(Localizations.localeOf(context).toLanguageTag());
     return Scaffold(
       appBar: AppBar(title: Text(context.l10n.savingsGoals)),
@@ -84,7 +85,7 @@ class SavingsGoalsScreen extends ConsumerWidget {
                   final progress = goal.progress;
                   return Card(
                     child: InkWell(
-                      onTap: () => _showGoal(context, ref, goal, currency),
+                      onTap: () => _showGoal(context, ref, goal, currency, appCurrency),
                       child: Padding(
                         padding: const EdgeInsets.all(16),
                         child: Column(
@@ -116,12 +117,12 @@ class SavingsGoalsScreen extends ConsumerWidget {
                             ),
                             const SizedBox(height: 8),
                             ResponsiveFinancialText(
-                              '${currency.format(goal.currentMinor / 100)} / '
-                              '${currency.format(goal.targetMinor / 100)}',
+                              '${currency.format(appCurrency.toMajor(goal.currentMinor))} / '
+                              '${currency.format(appCurrency.toMajor(goal.targetMinor))}',
                             ),
                             ResponsiveFinancialText(
                               '${context.l10n.remaining}: '
-                              '${currency.format(progress.remainingMinor / 100)}',
+                              '${currency.format(appCurrency.toMajor(progress.remainingMinor))}',
                             ),
                             if (progress.isComplete)
                               Text(
@@ -147,6 +148,7 @@ class SavingsGoalsScreen extends ConsumerWidget {
     WidgetRef ref,
     GoalDetails goal,
     NumberFormat currency,
+    AppCurrency appCurrency,
   ) {
     final repository = ref.read(advancedPlanningRepositoryProvider);
     return showModalBottomSheet<void>(
@@ -176,11 +178,11 @@ class SavingsGoalsScreen extends ConsumerWidget {
                       const SizedBox(height: 10),
                       Text(
                         '${context.l10n.requiredWeekly}: '
-                        '${currency.format(progress.requiredWeeklyMinor / 100)}',
+                        '${currency.format(appCurrency.toMajor(progress.requiredWeeklyMinor))}',
                       ),
                       Text(
                         '${context.l10n.requiredMonthly}: '
-                        '${currency.format(progress.requiredMonthlyMinor / 100)}',
+                        '${currency.format(appCurrency.toMajor(progress.requiredMonthlyMinor))}',
                       ),
                       FilledButton.icon(
                         onPressed: () => _editContribution(context, ref, goal),
@@ -200,7 +202,7 @@ class SavingsGoalsScreen extends ConsumerWidget {
                             final contribution = contributions[index];
                             return ListTile(
                               title: Text(
-                                currency.format(contribution.amountMinor / 100),
+                                currency.format(appCurrency.toMajor(contribution.amountMinor)),
                               ),
                               subtitle: Text(
                                 [
@@ -255,10 +257,11 @@ class SavingsGoalsScreen extends ConsumerWidget {
     GoalDetails goal, [
     GoalContributionDetails? contribution,
   ]) async {
+    final appCurrency = ref.read(selectedCurrencyProvider);
     final amount = TextEditingController(
       text: contribution == null
           ? null
-          : (contribution.amountMinor / 100).toStringAsFixed(2),
+          : appCurrency.formatAmountForInput(contribution.amountMinor),
     );
     final note = TextEditingController(text: contribution?.note);
     final save = await showDialog<bool>(
@@ -304,7 +307,7 @@ class SavingsGoalsScreen extends ConsumerWidget {
           profileId: onboarding.localProfileId,
           goalId: goal.id,
           contributionId: contribution?.id,
-          amountMinor: (parsed * 100).round(),
+          amountMinor: appCurrency.toMinor(parsed),
           date: contribution?.contributedAt ?? DateTime.now(),
           note: noteValue,
         );
@@ -326,9 +329,10 @@ class _GoalDraft {
 }
 
 class _GoalEditor extends StatefulWidget {
-  const _GoalEditor({this.goal});
+  const _GoalEditor({this.goal, required this.appCurrency});
 
   final GoalDetails? goal;
+  final AppCurrency appCurrency;
 
   @override
   State<_GoalEditor> createState() => _GoalEditorState();
@@ -341,7 +345,7 @@ class _GoalEditorState extends State<_GoalEditor> {
   late final TextEditingController _target = TextEditingController(
     text: widget.goal == null
         ? null
-        : (widget.goal!.targetMinor / 100).toStringAsFixed(2),
+        : widget.appCurrency.formatAmountForInput(widget.goal!.targetMinor),
   );
   late String _template = widget.goal?.templateCode ?? 'custom';
   late DateTime? _date = widget.goal?.targetDate;
@@ -438,7 +442,7 @@ class _GoalEditorState extends State<_GoalEditor> {
                 context,
                 _GoalDraft(
                   name: _name.text.trim(),
-                  targetMinor: (target * 100).round(),
+                  targetMinor: widget.appCurrency.toMinor(target),
                   targetDate: _date,
                   templateCode: _template,
                 ),
